@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
  *
  */
 
-/* $Id: config.h,v 1.48 2001/12/11 14:53:11 karls Exp $ */
+/* $Id: config.h,v 1.51 2003/07/01 13:21:16 michaels Exp $ */
 
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
@@ -66,7 +66,7 @@
 	 */
 
 /*
- * default client/server lockfile.
+ * default client/server lockfile (put in $TMPDIR, or /tmp).
  * Put this on a fast, low-latency fs, under /tmp is usually good.
  */
 #define SOCKS_LOCKFILE				"./sockslockXXXXXXXXXX"

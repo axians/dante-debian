@@ -1,3 +1,41 @@
+dante (1.1.14-2) unstable; urgency=low
+
+  * improve extended descriptions (closes: #209510, #210116)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sat, 15 Nov 2003 18:59:33 +0000
+
+dante (1.1.14-1) unstable; urgency=low
+
+  * new upstream
+  * removed SO_BSDCOMPAT call as it's pointless and causes annoying
+    messages in 2.6.x (closes: #206487)
+  * set libwrap uid to nobody (default was root)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sun, 24 Aug 2003 16:20:28 +0100
+
+dante (1.1.13-1) unstable; urgency=low
+
+  * new upstream (closes: #168434)
+  * this fixes the Bad file descriptor errors (closes: #135275)
+  * build issues dissappeared (new libc/gcc?)
+    applied previous workaround anyway (closes: #167092)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sat,  4 Jan 2003 22:11:38 +0000
+
+dante (1.1.12-2) unstable; urgency=low
+
+  * hopefully work around the case when netlink isn't compiled into
+    the kernel.  This isn't the ideal fix, but one step at a time (closes:
+    #139434)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sun, 14 Apr 2002 18:09:14 +0100
+
+dante (1.1.12-1) unstable; urgency=low
+
+  * new upstream
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sun, 14 Apr 2002 16:00:22 +0100
+
 dante (1.1.11.12p1-4) unstable; urgency=low
 
   * use Andreas Voegele's init.d script so that dante can write its pidfile

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,10 +41,38 @@
  *
  */
 
+#define _NO_FUNCTION_REDIFINE
+
 #include "common.h"
 
+#if SOCKS_CLIENT && SOCKSLIBRARY_DYNAMIC
+
+#if HAVE_EXTRA_OSF_SYMBOLS
+#define sendmsg(s, msg, flags)			sys_Esendmsg(s, msg, flags)
+#else
+#define sendmsg(s, msg, flags)			sys_sendmsg(s, msg, flags)
+#endif  /* HAVE_EXTRA_OSF_SYMBOLS */
+
+#if HAVE_EXTRA_OSF_SYMBOLS
+#define recvmsg(s, msg, flags)			sys_Erecvmsg(s, msg, flags)
+#else
+#define recvmsg(s, msg, flags)			sys_recvmsg(s, msg, flags)
+#endif  /* HAVE_EXTRA_OSF_SYMBOLS */
+
+/* XXX needed on AIX apparently */
+#ifdef recvmsg_system
+#define recvmsg recvmsg_system
+#endif /* recvmsg_system */
+
+#ifdef sendmsg_system
+#define sendmsg sendmsg_system
+#endif /* sendmsg_system */
+
+#endif /* SOCKS_CLIENT && SOCKSLIBRARY_DYNAMIC */
+
+
 static const char rcsid[] =
-"$Id: Rcompat.c,v 1.17 2001/12/12 14:42:07 karls Exp $";
+"$Id: Rcompat.c,v 1.20 2003/07/01 13:21:22 michaels Exp $";
 
 int
 Rselect(nfds, readfds, writefds, exceptfds, timeout)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
  *
  */
 
-/* $Id: sockd.h,v 1.190 2001/12/12 13:56:44 karls Exp $ */
+/* $Id: sockd.h,v 1.195 2003/07/01 13:21:16 michaels Exp $ */
 
 #ifndef _SOCKD_H_
 #define _SOCKD_H_
@@ -244,7 +244,6 @@ struct option_t {
 	unsigned				daemon:1;		/* run as a daemon?								*/
 	int					debug;			/* debug level.									*/
 	unsigned				keepalive:1;	/* set SO_KEEPALIVE?								*/
-	unsigned				lbuf:1;			/* line buffered output?						*/
 	int					sleep;			/* sleep at misc. places. (debugging)		*/
 	int					serverc;			/* number of servers.							*/
 };
@@ -265,11 +264,6 @@ struct configstate_t {
 	/* allows us to optimize a few things a little based on configuration. */
 	unsigned						unfixedpamdata:1;		/* have rules with pamdata.	*/
 
-#ifdef HAVE_VOLATILE_SIG_ATOMIC_T
-	sig_atomic_t				addchild;				/* okay to do a addchild()?	*/
-#else
-	volatile sig_atomic_t   addchild;            /* okay to do a addchild()?   */
-#endif
 	uid_t							euid;						/* original euid.					*/
 	pid_t							*motherpidv;			/* pid of mothers.				*/
 	pid_t							pid;						/* pid of current process.		*/
@@ -310,6 +304,15 @@ struct statistic_t {
 	} io;
 };
 
+struct childstate_t {
+#ifdef HAVE_VOLATILE_SIG_ATOMIC_T
+	sig_atomic_t				addchild;				/* okay to do a addchild()?	*/
+#else
+	volatile sig_atomic_t   addchild;            /* okay to do a addchild()?   */
+#endif
+	
+	int							maxidlenumber;			/* how many can be idle.		*/
+};
 
 /* Make sure to keep in sync with clearconfig(). */
 struct config_t {
@@ -342,6 +345,7 @@ struct config_t {
 	struct configstate_t			state;
 	struct timeout_t				timeout;					/* timeout values.			*/
 	struct userid_t				uid;						/* userids.						*/
+	struct childstate_t			child;					/* childstate.					*/
 
 	int								clientmethodv[MAXMETHOD]; /* clientmethods.		*/
 	size_t							clientmethodc;				  /* methods in list.	*/
@@ -475,6 +479,8 @@ sockd_bind __P((int s, struct sockaddr *addr, size_t retries));
  * Binds the address "addr" to the socket "s".  The bind call will
  * be tried "retries" + 1 times if the error is EADDRINUSE, or until
  * successful, whatever comes first.
+ * If the portnumber is privileged, it will set and reset the euid
+ * as appropriate.
  *
  * If successful, "addr" is filled in with the bound address.
  * Returns:
@@ -526,11 +532,15 @@ descriptorisreserved __P((int d));
 int
 childcheck __P((int type));
 /*
- * Calculates the number of free slots every child of type "type" has
- * combined.  If "type" is negated, the function instead returns
- * the total number of slots in every child.
+ * Calculates the number of free slots every child of type "type" has,
+ * combined. 
+ * If "type" is negated, the function instead returns
+ * the total number of slots (free or not) in every child.
+ * Also adjusts the number of children of type "type" if needed.
+ *
  * If childcheck() is successful it also means there is at the minimum
  * one descriptor available.
+ *
  * Returns the total number of new objects children can accept.
  */
 
@@ -758,14 +768,16 @@ iolog __P((struct rule_t *rule, const struct connectionstate_t *state,
  * If "operation" is
  *    OPERATION_ACCEPT
  *		OPERATION_CONNECT
- *			"data" and "count" is ignored.
+ *			"count" is ignored.
+ *			If "data" is not NULL or NUL, it is a string giving additional
+ * 		information about the operation.
  *
  *		OPERATION_ABORT
  *		OPERATION_ERROR
  *			"count" is ignored.
- *			If "data" is not NULL, it is a string giving the reason for abort
- *			or error.
- *			If "data" is NULL, the reason is the errormessage affiliated
+ *			If "data" is not NULL or NUL, it is a string giving the reason for 
+ *			abort or error.
+ *			If "data" is NULL or NUL, the reason is the errormessage affiliated
  *			with the current errno.
  *
  *		OPERATION_IO

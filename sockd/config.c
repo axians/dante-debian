@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: config.c,v 1.150 2001/12/12 14:42:10 karls Exp $";
+"$Id: config.c,v 1.153 2003/07/01 13:21:26 michaels Exp $";
 
 void
 genericinit(void)
@@ -86,11 +86,9 @@ genericinit(void)
 			SERRX(sockscf.resolveprotocol);
 	}
 
-	if (!sockscf.state.init)
-		if (sockscf.option.lbuf)
-			for (i = 0; i < sockscf.log.fpc; ++i)
-				if (setvbuf(sockscf.log.fpv[i], NULL, _IOLBF, 0) != 0)
-					swarn("%s: setvbuf(_IOLBF)", function);
+	for (i = 0; i < sockscf.log.fpc; ++i)
+		if (setvbuf(sockscf.log.fpv[i], NULL, _IOLBF, 0) != 0)
+			swarn("%s: setvbuf(_IOLBF)", function);
 
 	sockscf.state.init = 1;
 

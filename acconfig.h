@@ -22,6 +22,10 @@
 /* send/recvmsg cmsg types */
 #undef HAVE_CMSGHDR
 
+/* CMSG_LEN/SPACE */
+#undef HAVE_CMSG_LEN
+#undef HAVE_CMSG_SPACE
+
 /* Solaris 2.5 name */
 #undef HAVE_OPTHDR
 
@@ -222,6 +226,9 @@
 /* module defines */
 #undef HAVE_MODULE_REDIRECT
 #undef HAVE_MODULE_BANDWIDTH
+
+/* more AIX bandaid */
+#undef HAVE_SYSTEM_XMSG_MAGIC
 
 /* interposition.c prototypes */
 #undef HAVE_PROT_CONNECT_0

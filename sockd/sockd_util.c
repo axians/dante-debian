@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: sockd_util.c,v 1.79 2001/12/11 14:31:36 karls Exp $";
+"$Id: sockd_util.c,v 1.80 2003/07/01 13:21:49 michaels Exp $";
 
 #define CM2IM(charmethodv, methodc, intmethodv) \
 	do { \
@@ -118,7 +118,7 @@ setsockoptions(s)
 	socklen_t len;
 	int type, val, bufsize;
 
-#ifdef SO_BSDCOMPAT
+#if 0  /* pointless since Linux 2.0.x http://www.cs.helsinki.fi/linux/linux-kernel/2003-10/1001.html */
 	val = 1;
 	if (setsockopt(s, SOL_SOCKET, SO_BSDCOMPAT, &val, sizeof(val)) != 0)
 		swarn("%s: setsockopt(SO_BSDCOMPAT)", function);
