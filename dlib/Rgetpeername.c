@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: Rgetpeername.c,v 1.24 1999/05/14 14:44:38 michaels Exp $";
+"$Id: Rgetpeername.c,v 1.31 2001/12/12 14:42:07 karls Exp $";
 
 int
 Rgetpeername(s, name, namelen)
@@ -52,8 +52,13 @@ Rgetpeername(s, name, namelen)
 	struct sockaddr *name;
 	socklen_t *namelen;
 {
+	const char *function = "Rgetpeername()";
 	struct socksfd_t *socksfd;
 	struct sockaddr *addr;
+
+	clientinit();
+
+	slog(LOG_DEBUG, "%s", function);
 
 	if (!socks_addrisok((unsigned int)s)) {
 		socks_rmaddr((unsigned int)s);
@@ -65,15 +70,15 @@ Rgetpeername(s, name, namelen)
 
 	switch (socksfd->state.command) {
 		case SOCKS_BIND:
-			addr = &socksfd->accepted;
+			addr = &socksfd->forus.accepted;
 			break;
 
 		case SOCKS_CONNECT:
-			if (socksfd->state.inprogress) {
-				errno = EINPROGRESS;
+			if (socksfd->state.err != 0) {
+				errno = ENOTCONN;
 				return -1;
 			}
-			addr = &socksfd->connected;
+			addr = &socksfd->forus.connected;
 			break;
 
 		case SOCKS_UDPASSOCIATE:
@@ -81,7 +86,7 @@ Rgetpeername(s, name, namelen)
 				errno = ENOTCONN;
 				return -1;
 			}
-			addr = &socksfd->connected;
+			addr = &socksfd->forus.connected;
 			break;
 
 		default:

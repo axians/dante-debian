@@ -1,6 +1,6 @@
-.\" $Id: sockd.8,v 1.17 1999/06/10 09:47:31 karls Exp $
+.\" $Id: sockd.8,v 1.26 2001/12/12 12:31:56 karls Exp $
 .\"
-.\" Copyright (c) 1997, 1998, 1999
+.\" Copyright (c) 1997, 1998, 1999, 2000, 2001
 .\"      Inferno Nettverk A/S, Norway.  All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
@@ -33,21 +33,21 @@
 .\"  Software Distribution Coordinator  or  sdc@inet.no
 .\"  Inferno Nettverk A/S
 .\"  Oslo Research Park
-.\"  Gaustadaléen 21
-.\"  N-0349 Oslo
+.\"  Gaustadalléen 21
+.\"  NO-0349 Oslo
 .\"  Norway
 .\"
 .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
 .\" the rights to redistribute these changes.
 .\"
-.Dd May 26, 1999
+.Dd Feb 17, 2001
 .Dt DANTED 8
 .Sh NAME
 .Nm danted
 .Nd network proxyserver
 .Sh SYNOPSIS
 .Nm danted
-.Op Fl DLdhlnv
+.Op Fl DLVdhlnv
 .Oo
 .Fl N Ar number
 .Oc
@@ -77,6 +77,8 @@ comes under.
 will fork of
 .Ar number
 copies of itself when starting.  Can be used for very busy servers.
+.It Fl V
+Verifies config file and exits.
 .It Fl d
 Enables debugging.
 .It Fl f Ar file
@@ -95,23 +97,31 @@ Disables TCP keep-alive messages.  Normally
 enables TCP keep-alive messages so that connections from machines that
 have crashed or for other reasons no longer can be reached time out.
 .It Fl v
-Displays versioninfo for
-.Nm Dante.
+Displays
+.Nm Dante
+version.
 .Sh ENVIRONMENT
 \fBTMPDIR\fP
-Use TMPDIR for temporary files.  Since
+Use \fBTMPDIR\fP for temporary files.  Since
 .Nm Dante
-uses lockfiles it is recommended that \fBTMPDIR\fP be set to a local
+uses lockfiles it is recommended that \fBTMPDIR\fP be set to a (local)
 filesystem with low latency.
 .Sh FILES
-.Pa /etc/danted.conf
+.nf
+.ta \w 1
+/etc/danted.conf \fBDante\fP server configuration file.
+.fi
 .Sh AUTHORS
 For Inferno Nettverk A/S, Norway:
-.Dl Michael Shuldman <michaels@inet.no>: Design and implementation.
-.Dl Karl-Andre' Skevik <karls@inet.no>: Autoconf and porting.
+ Michael Shuldman <michaels@inet.no>: Design and implementation.
+ Karl-Andre' Skevik <karls@inet.no>: Autoconf and porting.
 .Sh SEE ALSO
+dante.conf(5) danted.conf(5)
+.Pp
 Information about new releases and other related issues can be found
-on the Dante WWW home page at http://www.inet.no/dante.
+on the
+.Nm Dante
+WWW home page at http://www.inet.no/dante.
 .Sh BUGS
 See the accompanying BUGS file.  New ones should be reported to
 dante\-bugs@inet.no.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: Rgetsockname.c,v 1.31 1999/09/02 10:41:20 michaels Exp $";
+"$Id: Rgetsockname.c,v 1.41 2001/12/12 14:42:08 karls Exp $";
 
 int
 Rgetsockname(s, name, namelen)
@@ -56,6 +56,10 @@ Rgetsockname(s, name, namelen)
 	struct socksfd_t *socksfd;
 	struct sockaddr *addr;
 
+	clientinit();
+
+	slog(LOG_DEBUG, "%s", function);
+
 	if (!socks_addrisok((unsigned int)s)) {
 		socks_rmaddr((unsigned int)s);
 		return getsockname(s, name, namelen);
@@ -65,32 +69,59 @@ Rgetsockname(s, name, namelen)
 	SASSERTX(socksfd != NULL);
 
 	switch (socksfd->state.command) {
-		case SOCKS_CONNECT:
-			if (socksfd->state.inprogress) {
-				if (socksfd->state.err != 0) /* connect failed. */
-					errno = socksfd->state.err;
-				else
-					errno = EINPROGRESS;
+		case SOCKS_CONNECT: {
+			sigset_t set, oset;
+
+			/* for non-blocking connect, we get a SIGCHLD upon completion. */
+			sigemptyset(&set);
+			sigaddset(&set, SIGCHLD);
+			if (sigprocmask(SIG_BLOCK, &set, &oset) != 0) {
+				swarn("%s: sigprocmask()", function);
 				return -1;
 			}
 
+			if (socksfd->state.inprogress) { /* non-blocking connect. */
+				/*
+				 * this is bad.  We don't know what address the socksserver
+				 * will use on our behalf yet.  Lets wait for a SIGCHLD
+				 * and then retry, unless client is blocking that signal,
+				 * then we can only hope the client will retry on ENOBUFS,
+				 * but we are probably screwed anyway.
+				*/
+				if (sigismember(&oset, SIGCHLD)) {
+					slog(LOG_DEBUG, "%s: SIGCHLD blocked by client", function);
+
+					if (sigprocmask(SIG_BLOCK, &oset, NULL) != 0) {
+						swarn("%s: sigprocmask()", function);
+						return -1;
+					}
+
+					errno = ENOBUFS;
+					return -1;
+				}
+
+				sigsuspend(&oset);
+				if (sigprocmask(SIG_BLOCK, &oset, NULL) != 0) {
+					swarn("%s: sigprocmask()", function);
+					return -1;
+				}
+
+				return Rgetsockname(s, name, namelen);
+			}
+
+			if (sigprocmask(SIG_SETMASK, &oset, NULL) != 0)
+				swarn("%s: sigprocmask()", function);
 			addr = &socksfd->remote;
-
-			/* LINTED pointer casts may be troublesome */
-			if (!ADDRISBOUND(addr)) {
-				SWARNX(0);
-				errno = EADDRNOTAVAIL;
-				return -1;
-			}
 			break;
+		}
 
 		case SOCKS_BIND:
 			addr = &socksfd->remote;
 			break;
 
 		case SOCKS_UDPASSOCIATE:
-			swarnx("%s: getsockname() on udp sockets is not supported,\n"
-					 "contact Inferno Nettverk A/S for more information", function);
+			swarnx("%s: getsockname() on udp sockets is not supported by the "
+			"socks protocol, trying to fake it.", function);
 
 			/*
 			 * some clients might call this for no good reason, try to
@@ -100,11 +131,11 @@ Rgetsockname(s, name, namelen)
 
 			addr = &socksfd->remote;
 			/* LINTED pointer casts may be troublesome */
-			((struct sockaddr_in *)addr)->sin_family			= AF_INET;
+			TOIN(addr)->sin_family			= AF_INET;
 			/* LINTED pointer casts may be troublesome */
-			((struct sockaddr_in *)addr)->sin_addr.s_addr	= htonl(INADDR_ANY);
+			TOIN(addr)->sin_addr.s_addr	= htonl(INADDR_ANY);
 			/* LINTED pointer casts may be troublesome */
-			((struct sockaddr_in *)addr)->sin_port				= htons(0);
+			TOIN(addr)->sin_port				= htons(0);
 			break;
 
 		default:

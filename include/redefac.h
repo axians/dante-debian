@@ -1,44 +1,4 @@
-/* redefac.h generated from autoconf.h.in on Wed Dec 8 13:59:15 MET 1999  */
-
-#ifndef HAVE_DOPRNT
-#define HAVE_DOPRNT 0
-#endif
-
-
-#ifndef HAVE_ST_BLKSIZE
-#define HAVE_ST_BLKSIZE 0
-#endif
-
-
-#ifndef HAVE_STRFTIME
-#define HAVE_STRFTIME 0
-#endif
-
-
-#ifndef HAVE_SYS_WAIT_H
-#define HAVE_SYS_WAIT_H 0
-#endif
-
-
-#ifndef HAVE_TM_ZONE
-#define HAVE_TM_ZONE 0
-#endif
-
-
-#ifndef HAVE_TZNAME
-#define HAVE_TZNAME 0
-#endif
-
-
-#ifndef HAVE_UTIME_NULL
-#define HAVE_UTIME_NULL 0
-#endif
-
-
-#ifndef HAVE_VPRINTF
-#define HAVE_VPRINTF 0
-#endif
-
+/* Do not modify, generated from ../include/autoconf.h.in */
 
 #ifndef HAVE_OPENLOG_LOG_PERROR
 #define HAVE_OPENLOG_LOG_PERROR 0
@@ -47,6 +7,11 @@
 
 #ifndef HAVE_CMSGHDR
 #define HAVE_CMSGHDR 0
+#endif
+
+
+#ifndef HAVE_OPTHDR
+#define HAVE_OPTHDR 0
 #endif
 
 
@@ -160,6 +125,11 @@
 #endif
 
 
+#ifndef HAVE_LINUX_ECCENTRICITIES
+#define HAVE_LINUX_ECCENTRICITIES 0
+#endif
+
+
 #ifndef HAVE_BROKEN_VSPRINTF
 #define HAVE_BROKEN_VSPRINTF 0
 #endif
@@ -235,6 +205,11 @@
 #endif
 
 
+#ifndef HAVE_DISABLED_PIDFILE
+#define HAVE_DISABLED_PIDFILE 0
+#endif
+
+
 #ifndef HAVE_H_ERRNO
 #define HAVE_H_ERRNO 0
 #endif
@@ -247,6 +222,61 @@
 
 #ifndef HAVE_PROFILING
 #define HAVE_PROFILING 0
+#endif
+
+
+#ifndef HAVE_SOCKADDR_STORAGE
+#define HAVE_SOCKADDR_STORAGE 0
+#endif
+
+
+#ifndef HAVE_VOLATILE_SIG_ATOMIC_T
+#define HAVE_VOLATILE_SIG_ATOMIC_T 0
+#endif
+
+
+#ifndef HAVE_WORKING_GETPWNAM
+#define HAVE_WORKING_GETPWNAM 0
+#endif
+
+
+#ifndef HAVE_SOCKADDR_SA_LEN
+#define HAVE_SOCKADDR_SA_LEN 0
+#endif
+
+
+#ifndef HAVE_PAM
+#define HAVE_PAM 0
+#endif
+
+
+#ifndef HAVE_SOLARIS_PAM_BUG
+#define HAVE_SOLARIS_PAM_BUG 0
+#endif
+
+
+#ifndef HAVE_ROUTE_SOURCE
+#define HAVE_ROUTE_SOURCE 0
+#endif
+
+
+#ifndef HAVE_ROUTEINFO_BSD
+#define HAVE_ROUTEINFO_BSD 0
+#endif
+
+
+#ifndef HAVE_ROUTEINFO_LINUX
+#define HAVE_ROUTEINFO_LINUX 0
+#endif
+
+
+#ifndef HAVE_MODULE_REDIRECT
+#define HAVE_MODULE_REDIRECT 0
+#endif
+
+
+#ifndef HAVE_MODULE_BANDWIDTH
+#define HAVE_MODULE_BANDWIDTH 0
 #endif
 
 
@@ -590,8 +620,38 @@
 #endif
 
 
+#ifndef HAVE_PROT_GETHOSTBYADDR_0
+#define HAVE_PROT_GETHOSTBYADDR_0 0
+#endif
+
+
+#ifndef HAVE_PROT_GETHOSTBYADDR_1
+#define HAVE_PROT_GETHOSTBYADDR_1 0
+#endif
+
+
+#ifndef HAVE_PROT_GETHOSTBYADDR_2
+#define HAVE_PROT_GETHOSTBYADDR_2 0
+#endif
+
+
+#ifndef HAVE_PROT_GETHOSTBYADDR_3
+#define HAVE_PROT_GETHOSTBYADDR_3 0
+#endif
+
+
+#ifndef HAVE_ARPA_NAMESER_H
+#define HAVE_ARPA_NAMESER_H 0
+#endif
+
+
 #ifndef HAVE_BZERO
 #define HAVE_BZERO 0
+#endif
+
+
+#ifndef HAVE_CRYPT_H
+#define HAVE_CRYPT_H 0
 #endif
 
 
@@ -605,13 +665,58 @@
 #endif
 
 
+#ifndef HAVE_DLFCN_H
+#define HAVE_DLFCN_H 0
+#endif
+
+
+#ifndef HAVE_DOPRNT
+#define HAVE_DOPRNT 0
+#endif
+
+
+#ifndef HAVE_FCNTL_H
+#define HAVE_FCNTL_H 0
+#endif
+
+
+#ifndef HAVE_FREEIFADDRS
+#define HAVE_FREEIFADDRS 0
+#endif
+
+
 #ifndef HAVE_GETDTABLESIZE
 #define HAVE_GETDTABLESIZE 0
 #endif
 
 
+#ifndef HAVE_GETHOSTBYNAME2
+#define HAVE_GETHOSTBYNAME2 0
+#endif
+
+
+#ifndef HAVE_GETIFADDRS
+#define HAVE_GETIFADDRS 0
+#endif
+
+
+#ifndef HAVE_GETPRPWNAM
+#define HAVE_GETPRPWNAM 0
+#endif
+
+
+#ifndef HAVE_GETSPNAM
+#define HAVE_GETSPNAM 0
+#endif
+
+
 #ifndef HAVE_HSTRERROR
 #define HAVE_HSTRERROR 0
+#endif
+
+
+#ifndef HAVE_IFADDRS_H
+#define HAVE_IFADDRS_H 0
 #endif
 
 
@@ -625,88 +730,38 @@
 #endif
 
 
+#ifndef HAVE_INT16_T
+#define HAVE_INT16_T 0
+#endif
+
+
+#ifndef HAVE_INT32_T
+#define HAVE_INT32_T 0
+#endif
+
+
+#ifndef HAVE_INT8_T
+#define HAVE_INT8_T 0
+#endif
+
+
+#ifndef HAVE_INTTYPES_H
+#define HAVE_INTTYPES_H 0
+#endif
+
+
+#ifndef HAVE_IN_ADDR_T
+#define HAVE_IN_ADDR_T 0
+#endif
+
+
+#ifndef HAVE_IN_PORT_T
+#define HAVE_IN_PORT_T 0
+#endif
+
+
 #ifndef HAVE_ISSETUGID
 #define HAVE_ISSETUGID 0
-#endif
-
-
-#ifndef HAVE_MEMMOVE
-#define HAVE_MEMMOVE 0
-#endif
-
-
-#ifndef HAVE_SELECT
-#define HAVE_SELECT 0
-#endif
-
-
-#ifndef HAVE_SETEUID
-#define HAVE_SETEUID 0
-#endif
-
-
-#ifndef HAVE_SETPROCTITLE
-#define HAVE_SETPROCTITLE 0
-#endif
-
-
-#ifndef HAVE_SNPRINTF
-#define HAVE_SNPRINTF 0
-#endif
-
-
-#ifndef HAVE_SOCKATMARK
-#define HAVE_SOCKATMARK 0
-#endif
-
-
-#ifndef HAVE_SOCKET
-#define HAVE_SOCKET 0
-#endif
-
-
-#ifndef HAVE_STRCSPN
-#define HAVE_STRCSPN 0
-#endif
-
-
-#ifndef HAVE_STRDUP
-#define HAVE_STRDUP 0
-#endif
-
-
-#ifndef HAVE_STRERROR
-#define HAVE_STRERROR 0
-#endif
-
-
-#ifndef HAVE_STRSPN
-#define HAVE_STRSPN 0
-#endif
-
-
-#ifndef HAVE_STRVIS
-#define HAVE_STRVIS 0
-#endif
-
-
-#ifndef HAVE_SYSCONF
-#define HAVE_SYSCONF 0
-#endif
-
-
-#ifndef HAVE_VSYSLOG
-#define HAVE_VSYSLOG 0
-#endif
-
-
-#ifndef HAVE_CRYPT_H
-#define HAVE_CRYPT_H 0
-#endif
-
-
-#ifndef HAVE_FCNTL_H
-#define HAVE_FCNTL_H 0
 #endif
 
 
@@ -717,6 +772,16 @@
 
 #ifndef HAVE_MALLOC_H
 #define HAVE_MALLOC_H 0
+#endif
+
+
+#ifndef HAVE_MEMMOVE
+#define HAVE_MEMMOVE 0
+#endif
+
+
+#ifndef HAVE_MEMORY_H
+#define HAVE_MEMORY_H 0
 #endif
 
 
@@ -735,8 +800,103 @@
 #endif
 
 
+#ifndef HAVE_RESOLV_H
+#define HAVE_RESOLV_H 0
+#endif
+
+
+#ifndef HAVE_SECURITY_PAM_APPL_H
+#define HAVE_SECURITY_PAM_APPL_H 0
+#endif
+
+
+#ifndef HAVE_SELECT
+#define HAVE_SELECT 0
+#endif
+
+
+#ifndef HAVE_SETEUID
+#define HAVE_SETEUID 0
+#endif
+
+
+#ifndef HAVE_SETPROCTITLE
+#define HAVE_SETPROCTITLE 0
+#endif
+
+
+#ifndef HAVE_SHADOW_H
+#define HAVE_SHADOW_H 0
+#endif
+
+
+#ifndef HAVE_SOCKATMARK
+#define HAVE_SOCKATMARK 0
+#endif
+
+
+#ifndef HAVE_SOCKET
+#define HAVE_SOCKET 0
+#endif
+
+
+#ifndef HAVE_STDINT_H
+#define HAVE_STDINT_H 0
+#endif
+
+
+#ifndef HAVE_STDLIB_H
+#define HAVE_STDLIB_H 0
+#endif
+
+
+#ifndef HAVE_STRCSPN
+#define HAVE_STRCSPN 0
+#endif
+
+
+#ifndef HAVE_STRDUP
+#define HAVE_STRDUP 0
+#endif
+
+
+#ifndef HAVE_STRERROR
+#define HAVE_STRERROR 0
+#endif
+
+
+#ifndef HAVE_STRFTIME
+#define HAVE_STRFTIME 0
+#endif
+
+
 #ifndef HAVE_STRINGS_H
 #define HAVE_STRINGS_H 0
+#endif
+
+
+#ifndef HAVE_STRING_H
+#define HAVE_STRING_H 0
+#endif
+
+
+#ifndef HAVE_STRSPN
+#define HAVE_STRSPN 0
+#endif
+
+
+#ifndef HAVE_STRVIS
+#define HAVE_STRVIS 0
+#endif
+
+
+#ifndef HAVE_SYSCONF
+#define HAVE_SYSCONF 0
+#endif
+
+
+#ifndef HAVE_SYSLOG_H
+#define HAVE_SYSLOG_H 0
 #endif
 
 
@@ -750,13 +910,33 @@
 #endif
 
 
+#ifndef HAVE_SYS_IPC_H
+#define HAVE_SYS_IPC_H 0
+#endif
+
+
+#ifndef HAVE_SYS_SEM_H
+#define HAVE_SYS_SEM_H 0
+#endif
+
+
+#ifndef HAVE_SYS_STAT_H
+#define HAVE_SYS_STAT_H 0
+#endif
+
+
 #ifndef HAVE_SYS_TIME_H
 #define HAVE_SYS_TIME_H 0
 #endif
 
 
-#ifndef HAVE_SYSLOG_H
-#define HAVE_SYSLOG_H 0
+#ifndef HAVE_SYS_TYPES_H
+#define HAVE_SYS_TYPES_H 0
+#endif
+
+
+#ifndef HAVE_SYS_WAIT_H
+#define HAVE_SYS_WAIT_H 0
 #endif
 
 
@@ -765,8 +945,43 @@
 #endif
 
 
+#ifndef HAVE_UINT16_T
+#define HAVE_UINT16_T 0
+#endif
+
+
+#ifndef HAVE_UINT32_T
+#define HAVE_UINT32_T 0
+#endif
+
+
+#ifndef HAVE_UINT8_T
+#define HAVE_UINT8_T 0
+#endif
+
+
 #ifndef HAVE_UNISTD_H
 #define HAVE_UNISTD_H 0
+#endif
+
+
+#ifndef HAVE_UTIME_NULL
+#define HAVE_UTIME_NULL 0
+#endif
+
+
+#ifndef HAVE_VPRINTF
+#define HAVE_VPRINTF 0
+#endif
+
+
+#ifndef HAVE_VSNPRINTF
+#define HAVE_VSNPRINTF 0
+#endif
+
+
+#ifndef HAVE_VSYSLOG
+#define HAVE_VSYSLOG 0
 #endif
 
 

@@ -1,4 +1,4 @@
-$Id: README.usage,v 1.5 1999/12/22 09:29:17 karls Exp $
+$Id: README.usage,v 1.6 2001/01/02 09:59:31 michaels Exp $
 
 The socks package can be used in two ways.
 
@@ -26,28 +26,8 @@ Several systemcalls must be changed to use the socksified versions
 instead of the standard ones.  The application is then linked with
 the libsocksd library in the distribution (-lsocksd, not -ldsocksd).
 
-These system calls can be found in the socks library:
-
-Rconnect
-Rbind 
-Rgetsockname
-Rgetpeername
-Raccept
-Rrresvport
-Rbindresvport
-Rgethostbyname
-Rgethostbyname2
-Rsendto
-Rrecvfrom
-Rrecvfrom
-Rwrite
-Rwritev
-Rsend
-Rsendmsg
-Rread
-Rreadv
-Rrecv
-Rrecvmsg
+These system calls can be found in the socks include file "socks.h" which
+should be added to all relevant source files.
 
 These calls currently does nothing and are only provided for
 compatibility with programs which use them.
@@ -56,14 +36,6 @@ Rlisten
 Rselect
 SOCKSinit
 
-The source can either be modified directly, or by using defines to
-change the source during compilation.
-
-Either add this line to the command line:
-
--Dconnect=Rconnect -Dbind=Rbind -Dgetsockname=Rgetsockname -Dgetpeername=Rgetpeername -Daccept=Raccept -Drresvport=Rrresvport -Dbindresvport=Rbindresvport -Dgethostbyname=Rgethostbyname -Dgethostbyname2=Rgethostbyname2 -Dsendto=Rsendto -Drecvfrom=Rrecvfrom -Drecvfrom=Rrecvfrom -Dwrite=Rwrite -Dwritev=Rwritev -Dsend=Rsend -Dsendmsg=Rsendmsg -Dread=Rread -Dreadv=Rreadv -Drecv=Rrecv -Drecvmsg=Rrecvmsg
-
-or add "#include <socks.h>" to all relevant source files.
 
 Libraries
 
@@ -73,6 +45,4 @@ Libraries
 
  libsocksd.a   - static version of the above.
 
- libdsocksd.so - shared library which does socksification through the
-		runtime linker.  Contains wrappers for standard I/O
-		calls.
+ libdsocksd.so - shared library which does "on the fly" socksification.

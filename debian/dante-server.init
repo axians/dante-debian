@@ -7,21 +7,36 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/sbin/danted
 NAME=danted
 DESC="Dante SOCKS daemon"
+PIDFILE=/var/run/$NAME.pid
+CONFFILE=/etc/$NAME.conf
 
 test -f $DAEMON || exit 0
 
 set -e
 
+# This function makes sure that the Dante server can write to the pid-file.
+touch_pidfile ()
+{
+  if [ -r $CONFFILE ]; then
+    uid="`sed -n -e 's/[[:space:]]//g' -e 's/#.*//' -e '/^user\.privileged/{s/[^:]*://p;q;}' $CONFFILE`"
+    if [ -n "$uid" ]; then
+      touch $PIDFILE
+      chown $uid $PIDFILE
+    fi
+  fi
+}
+		
 case "$1" in
   start)
 	echo -n "Starting $DESC: "
-	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
+	touch_pidfile
+	start-stop-daemon --start --quiet --pidfile $PIDFILE \
 		--exec $DAEMON -- -D
 	echo "$NAME."
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-	start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/$NAME.pid \
+	start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
 		--exec $DAEMON
 	echo "$NAME."
 	;;
@@ -35,7 +50,7 @@ case "$1" in
 	#
 	 echo "Reloading $DESC configuration files."
 	 start-stop-daemon --stop --signal 1 --quiet --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON -- -D
+		$PIDFILE --exec $DAEMON -- -D
   ;;
   restart)
 	#
@@ -44,11 +59,11 @@ case "$1" in
 	#	just the same as "restart".
 	#
 	echo -n "Restarting $DESC: "
-	start-stop-daemon --stop --quiet --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON
+	start-stop-daemon --stop --quiet --pidfile $PIDFILE --exec $DAEMON
 	sleep 1
-	start-stop-daemon --start --quiet --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON -- -D
+	touch_pidfile
+	start-stop-daemon --start --quiet --pidfile $PIDFILE \
+	  --exec $DAEMON -- -D
 	echo "$NAME."
 	;;
   *)

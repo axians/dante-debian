@@ -1,3 +1,110 @@
+dante (1.1.11.12p1-4) unstable; urgency=low
+
+  * use Andreas Voegele's init.d script so that dante can write its pidfile
+    (closes: #72215, #121672). Thanks Andreas!
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sun,  7 Apr 2002 12:45:55 +0100
+
+dante (1.1.11.12p1-3) unstable; urgency=low
+
+  * apply fix for dynamic port forwarding - thanks to Peter Amstutz
+    (closes: 140730) 
+  * improve libsocksd package description (closes: #135755)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Mon,  1 Apr 2002 10:29:31 +0100
+
+dante (1.1.11.12p1-2) unstable; urgency=low
+
+  * socksify should use /usr/lib/libdsocksd.so.0 - thanks to Matt Taggart
+    (closes: #135417)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Mon, 25 Feb 2002 18:38:51 +0000
+
+dante (1.1.11.12p1-1) unstable; urgency=low
+
+  * updated to 1.1.12-pre1
+  * fixed references to socks and sockd in manpages (and I grepped for others)
+    (closes: #126428, #130070)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Wed, 20 Feb 2002 20:08:46 +0000
+
+dante (1.1.10-4) unstable; urgency=low
+
+  * (1.1.10-3 not released)
+  * add libpam0g-dev adn libwrap0-dev to build-depends so we link against
+    them (closes: #106655, #86100)
+  * Add pt_BR translations (thanks to Fernando Carreira, Luis Alberto Garcia
+    Cipriano
+
+ -- Adrian Bridgett <bridgett@debian.org>  Wed, 26 Sep 2001 20:48:55 +0100
+
+dante (1.1.10-3) unstable; urgency=low
+
+  * better fix for 100375 from Philip Kendall <pak21@srcf.ucam.org>
+    - run clientinit() before log message so it goes to the right place
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sun, 12 Aug 2001 21:44:42 +0100
+
+dante (1.1.10-2) unstable; urgency=low
+
+  * patch from dme@dme.org for memory overrun
+  * kill off debug message since I think it's confusing ssh (see #100375)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Wed, 25 Jul 2001 23:46:41 +0100
+
+dante (1.1.10-1) unstable; urgency=low
+
+  * new upstream
+  * always use config.{sub,guess} provided by autotools-dev (closes: #94953)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sun,  3 Jun 2001 23:19:19 +0100
+
+dante (1.1.9-1) unstable; urgency=low
+
+  * new upstream
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sun, 22 Apr 2001 23:14:18 +0100
+
+dante (1.1.8-1) unstable; urgency=low
+
+  * new upstream
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sun,  4 Mar 2001 22:23:31 +0000
+
+dante (1.1.6-1) unstable; urgency=low
+
+  * new upstream
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sat, 23 Dec 2000 19:39:38 +0000
+
+dante (1.1.5-1) unstable; urgency=low
+
+  * new upstream
+
+ -- Adrian Bridgett <bridgett@debian.org>  Wed, 18 Oct 2000 11:42:27 +0100
+
+dante (1.1.4-1) unstable; urgency=low
+
+  * new upstream
+  * fix faq's reference to libdsocksd.so (should be libdsocksd.so.0) and add
+    a BIG warning that this is dangerous and not the way to do it
+    (closes: #69017)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Thu, 12 Oct 2000 15:09:27 +0100
+
+dante (1.1.2-2) unstable; urgency=low
+
+  * added two builddeps (closes: #66782, #66865)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Tue, 11 Jul 2000 18:44:44 +0100
+
+dante (1.1.2-1) unstable; urgency=low
+
+  * new upstream
+  * fix typo in description (closes: #66250)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Mon, 26 Jun 2000 20:56:21 +0100
+
 dante (1.1.1-4) frozen unstable; urgency=low
 
   * hard code libdl.so to /lib/libdl.so.2 to prevent it from finding
@@ -107,8 +214,3 @@ dante (0.92.0-pre3-1) unstable; urgency=low
   * Initial release.
 
  -- Adrian Bridgett <bridgett@debian.org>  Sun, 21 Mar 1999 16:45:45 +0000
-
-Local variables:
-mode: debian-changelog
-add-log-mailing-address: "bridgett@debian.org"
-End:

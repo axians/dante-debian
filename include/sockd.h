@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -41,21 +41,23 @@
  *
  */
 
-/* $Id: sockd.h,v 1.136 1999/12/22 09:29:20 karls Exp $ */
+/* $Id: sockd.h,v 1.190 2001/12/12 13:56:44 karls Exp $ */
 
 #ifndef _SOCKD_H_
 #define _SOCKD_H_
 #endif
-
-/* use caching version in server. */
-#define gethostbyname(name)				cgethostbyname(name)
-#define gethostbyaddr(addr, len, type)	cgethostbyaddr(addr, len, type)
 
 #ifdef lint
 extern const int lintnoloop_sockd_h;
 #else
 #define lintnoloop_sockd_h 0
 #endif
+
+/* use caching versions directly, avoid overhead. */
+#undef gethostbyname
+#define gethostbyname(name)				cgethostbyname(name)
+#undef gethostbyaddr
+#define gethostbyaddr(addr, len, type)	cgethostbyaddr(addr, len, type)
 
 
 #define INIT(length)									\
@@ -70,7 +72,8 @@ extern const int lintnoloop_sockd_h;
  * Returns the number of bytes left to read.
  */
 
-#define READ(s, length)	(readn((s), &state->mem[state->reqread], (length)))
+#define READ(s, length, auth)	\
+	(readn((s), &state->mem[state->reqread], (length), auth))
 /*
  * "s" is the descriptor to read from.
  * "length" is how much to read.
@@ -84,7 +87,7 @@ extern const int lintnoloop_sockd_h;
  * Fills "object" with data.
  */
 
-#define CHECK(object, nextfunction)									\
+#define CHECK(object, auth, nextfunction)							\
 do {																			\
 	int p;																	\
 																				\
@@ -96,7 +99,7 @@ do {																			\
 			SERRX(MEMLEFT());												\
 																				\
 		errno = 0;															\
-		if ((p = READ(s, LEFT())) <= 0)								\
+		if ((p = READ(s, LEFT(), auth)) <= 0)						\
 			return p;														\
 		state->reqread += p;												\
 																				\
@@ -111,8 +114,12 @@ do {																			\
 			return state->rcurrent(s, request, state);			\
 	}																			\
 } while (lintnoloop_sockd_h)
-
-
+/*
+ * Checks whether "object" has been filled with all data requested and
+ * if so calls "function", if function is not NULL.
+ * If "object" has not been filled it returns the number of bytes
+ * that was added to object on this call, or error.
+*/
 
 #define SOCKD_NEWREQUEST	1	/* sending a new request	*/
 #define SOCKD_FREESLOT		2	/* free'd a slot.				*/
@@ -140,11 +147,14 @@ do {																			\
 
 	/*
 	 * config stuff
-	*/
+	 */
 
 #define VERDICT_BLOCKs		"block"
 #define VERDICT_PASSs		"pass"
 
+/* how to rotate addresses. */
+#define ROTATION_NONE		0
+#define ROTATION_ROUTE		1
 
 #define LOG_CONNECTs			"connect"
 #define LOG_DISCONNECTs		"disconnect"
@@ -156,10 +166,15 @@ do {																			\
 #define OPERATION_ACCEPT		1
 #define OPERATION_CONNECT		(OPERATION_ACCEPT + 1)
 #define OPERATION_IO				(OPERATION_CONNECT + 1)
-#define OPERATION_DISCONNECT	(OPERATION_IO + 1)
-#define OPERATION_ABORT			(OPERATION_DISCONNECT + 1)
+#define OPERATION_ABORT			(OPERATION_IO + 1)
 #define OPERATION_ERROR			(OPERATION_ABORT + 1)
 
+
+struct compat_t {
+	unsigned reuseaddr:1;				/* set SO_REUSEADDR?								*/
+	unsigned sameport:1;					/* always try to use same port as client?	*/
+	unsigned :0;
+};
 
 
 struct log_t {
@@ -183,12 +198,21 @@ struct linkedname_t {
 	struct linkedname_t	*next;	/* next name in list.								*/
 };
 
+typedef struct {
+	unsigned int			expired:1;			/* the rule has expired.				*/
+	int						clients;				/* clients using this bw_t.			*/
+	struct timeval			time;					/* time of last i/o operation.		*/
+	long						bytes;				/* amount of bytes done at time.		*/
+	long						maxbps;				/* maximal b/s allowed.					*/
+} bw_t;
+
 /* linked list over current rules. */
 struct rule_t {
+	struct ruleaddress_t		src;				/* src.										*/
 	struct ruleaddress_t		dst;				/* dst.										*/
 	struct log_t				log;				/* type of logging to do.				*/
-	int							number;			/* rulenumber, info/debugging only.	*/
-	struct ruleaddress_t		src;				/* src.										*/
+	unsigned int				number;			/* rulenumber.								*/
+	unsigned long				linenumber;		/* linenumber; info/debugging only.	*/
 	struct serverstate_t		state;
 	struct linkedname_t		*user;			/* name of users allowed.				*/
 	int							verdict;			/* verdict for this rule.				*/
@@ -196,6 +220,15 @@ struct rule_t {
 #if HAVE_LIBWRAP
 	char							libwrap[LIBWRAPBUF];	/* libwrapline.					*/
 #endif  /* HAVE_LIBWRAP */
+
+#if HAVE_PAM
+	char							pamservicename[MAXNAMELEN];/* name for pamservice.	*/
+#endif /* HAVE_PAM */
+
+	struct ruleaddress_t		rdr_from;
+	struct ruleaddress_t		rdr_to;
+
+	bw_t							*bw;				/* pointer since shared.				*/
 
 	struct rule_t				*next;			/* next rule in list.					*/
 };
@@ -228,7 +261,15 @@ struct userid_t {
 
 struct configstate_t {
 	unsigned						init:1;
-	volatile sig_atomic_t	addchild;				/* okay to do a addchild()?	*/
+
+	/* allows us to optimize a few things a little based on configuration. */
+	unsigned						unfixedpamdata:1;		/* have rules with pamdata.	*/
+
+#ifdef HAVE_VOLATILE_SIG_ATOMIC_T
+	sig_atomic_t				addchild;				/* okay to do a addchild()?	*/
+#else
+	volatile sig_atomic_t   addchild;            /* okay to do a addchild()?   */
+#endif
 	uid_t							euid;						/* original euid.					*/
 	pid_t							*motherpidv;			/* pid of mothers.				*/
 	pid_t							pid;						/* pid of current process.		*/
@@ -236,11 +277,17 @@ struct configstate_t {
 };
 
 struct listenaddress_t {
-	struct sockaddr_in	addr;							/* bound address.					*/
+	struct sockaddr		addr;							/* bound address.					*/
 	int						s;								/* bound socket.					*/
 #if NEED_ACCEPTLOCK
 	int						lock;							/* lock on structure.			*/
 #endif
+};
+
+struct externaladdress_t {
+	struct ruleaddress_t			*addrv;				/*	address'.						*/
+	int								addrc;
+	int								rotation;			/* how to rotate, if at all.	*/
 };
 
 struct statistic_t {
@@ -269,12 +316,21 @@ struct config_t {
 	struct listenaddress_t		*internalv;				/* internal address'.		*/
 	int								internalc;
 
-	struct sockaddr_in			*externalv;				/*	external address'.		*/
-	int								externalc;
+	struct externaladdress_t	external;				/*	external address'.		*/
 
 	struct rule_t					*crule;					/* clientrules, list.		*/
 	struct rule_t					*srule;					/* socksrules, list.			*/
 	struct route_t					*route;					/* not in use yet.			*/
+
+	bw_t								*bwv;						/* bw for rules.				*/
+	int								bwc;
+
+	/*
+	 * should have one for each rule instead, but sadly some systems seem to
+	 * have trouble with sysv-style shared memory/semaphores so we use
+	 * the older/better supported filelock, and a global to at that.
+	 */
+	int								bwlock;					/* lock for modifying bw.	*/
 
 	struct compat_t				compat;					/* compatibility options.  */
 	struct extension_t			extension;				/* extensions set.			*/
@@ -287,14 +343,16 @@ struct config_t {
 	struct timeout_t				timeout;					/* timeout values.			*/
 	struct userid_t				uid;						/* userids.						*/
 
-	int								methodv[AUTHMETHOD_MAX];/* methods by priority.	*/
-	int								methodc;					/* methods in list.			*/
+	int								clientmethodv[MAXMETHOD]; /* clientmethods.		*/
+	size_t							clientmethodc;				  /* methods in list.	*/
 
+	int								methodv[MAXMETHOD];  /* methods by priority.		*/
+	size_t							methodc;					/* methods in list.			*/
 };
 
 
 struct connectionstate_t {
-	struct authmethod_t	auth;
+	struct authmethod_t	auth;					/* XXX should probably not be here. */
 	int						command;
 	struct extension_t	extension;			/* extensions set.						*/
 	int						protocol;
@@ -308,9 +366,18 @@ struct connectionstate_t {
 
 struct sockd_io_direction_t {
 	int								s;				/* socket connection.					*/
-	struct sockaddr_in			laddr;		/* local address of s.					*/
-	struct sockaddr_in			raddr;		/* address of remote peer for s.		*/
-	struct connectionstate_t	state;
+	struct sockaddr				laddr;		/* local address of s.					*/
+	struct sockaddr				raddr;		/* address of remote peer for s.		*/
+
+	/*
+	 * Varies according to context.
+	 * src:		as laddr but on sockshost_t form.
+	 * dst:		name as given by client.
+	 * control: as laddr
+	*/
+	struct sockshost_t			host;
+
+	struct authmethod_t			auth;			/* authentication used.					*/
 
 	size_t							sndlowat;	/* low-water mark for send.			*/
 
@@ -327,17 +394,14 @@ struct sockd_io_t {
 
 	struct connectionstate_t		state;
 
-	struct sockd_io_direction_t	in;			/* client we receive data from.	*/
-	struct sockd_io_direction_t	out;			/* remote peer.						*/
-	struct sockd_io_direction_t	control;		/* control connection to client.	*/
+	struct sockd_io_direction_t	control;		/* clients controlconnection.		*/
+	struct sockd_io_direction_t	src;			/* client we receive data from.	*/
+	struct sockd_io_direction_t	dst;			/* remote peer.						*/
 
 	struct rule_t						acceptrule;	/* rule matched for accept().		*/
 	struct rule_t						rule;			/* matched rule for i/o.			*/
 
-	struct sockshost_t				src;			/* our client.							*/
-	struct sockshost_t				dst;			/* it's desired peer.				*/
-
-	time_t								time;			/* time of last i/o operation.	*/
+	struct timeval						time;			/* time of last i/o operation.	*/
 	struct sockd_io_t					*next;		/* for some special cases.			*/
 };
 
@@ -371,12 +435,12 @@ struct sockd_negotiate_t {
 
 
 struct sockd_request_t {
-	struct sockaddr_in			from;			/* client's control address.			*/
+	struct sockaddr				from;			/* client's control address.			*/
+	struct sockaddr				to;			/* address client was accepted on.	*/
 	struct request_t				req;			/* request to perform.					*/
 	struct rule_t					rule;			/* rule matched for accept().			*/
 	int								s;				/* clients control connection.		*/
 	struct connectionstate_t	state;		/* state of connection.					*/
-	struct sockaddr_in			to;			/* address client was accepted on.	*/
 };
 
 struct sockd_mother_t {
@@ -406,11 +470,13 @@ __BEGIN_DECLS
 
 
 int
-sockd_bind __P((int s, const struct sockaddr *addr, size_t retries));
+sockd_bind __P((int s, struct sockaddr *addr, size_t retries));
 /*
  * Binds the address "addr" to the socket "s".  The bind call will
  * be tried "retries" + 1 times if the error is EADDRINUSE, or until
  * successful, whatever comes first.
+ *
+ * If successful, "addr" is filled in with the bound address.
  * Returns:
  *		On success: 0.
  *		On failure:	-1
@@ -450,7 +516,13 @@ pidismother __P((pid_t pid));
  * IF "pid" is no mother, 0 is returned.
  */
 
-
+int
+descriptorisreserved __P((int d));
+/*
+ * If "d" is a descriptor reserved for use globally, the function
+ * returns true.
+ * Otherwise, false.
+*/
 int
 childcheck __P((int type));
 /*
@@ -466,12 +538,6 @@ int
 childtype __P((pid_t pid));
 /*
  * Returns the type of child the child with pid "pid" is.
- */
-
-const char *
-childtype2string __P((int type));
-/*
- * returns the string representation of "type".
  */
 
 int
@@ -496,6 +562,28 @@ addsocksrule __P((const struct rule_t *rule));
  * Appends a copy of "rule" to our list of socks rules.
  * Returns a pointer to the added rule (not "rule").
  */
+
+void
+addinternal __P((const struct ruleaddress_t *addr));
+/*
+ * Adds "addr" to the list of external addresses.
+*/
+
+void
+addexternal __P((const struct ruleaddress_t *addr));
+/*
+ * Adds "addr" to the list of internal addresses (to listen on).
+*/
+
+int
+addressisbindable __P((const struct ruleaddress_t *addr));
+/*
+ * Checks whether "addr" is bindable.
+ * Returns:
+ *		On success: true.
+ *		On failure: false.
+ */
+
 
 struct linkedname_t *
 adduser __P((struct linkedname_t **ruleuser, const char *name));
@@ -526,15 +614,27 @@ showconfig __P((const struct config_t *config));
  */
 
 
+const char *
+authinfo __P((const struct authmethod_t *auth, char *info, size_t infolen));
+/*
+ * Fills in "info" with a printable representation of the "auth".
+ * Returns a pointer to "info".
+*/
+
 
 int
-rulespermit __P((int s, struct rule_t *rule,
-					  struct connectionstate_t *state,
-					  const struct sockshost_t *src, const struct sockshost_t *dst));
+rulespermit __P((int s,
+						const struct sockaddr *peer, const struct sockaddr *local,
+					  struct rule_t *rule, struct connectionstate_t *state,
+					  const struct sockshost_t *src, const struct sockshost_t *dst,
+					  char *msg, size_t msgsize));
 /*
  * Checks whether the rules permit data from "src" to "dst".
- * "s" is the socket the connection is on.  "state" is the current
- * state of the connection and may be updated.
+ * "s" is the socket the connection is on, from the address "peer", accepted
+ * on the address "local".
+ * "state" is the current state of the connection and may be updated.
+ * "msg" is filled in with any message/information provided when checking
+ * access, "msgsize" is the size of "msg".
  *
  * Wildcard fields are supported for the following fields;
  *		ipv4:			INADDR_ANY
@@ -609,11 +709,13 @@ send_client __P((int s, int client));
  */
 
 int
-selectmethod __P((const unsigned char *methodv, size_t methodc));
+selectmethod __P((const int *methodv, size_t methodc,
+					   const unsigned char *offeredv, size_t offeredc));
 /*
  * Selects the best method based on available methods and given
- * priority.  "methodv" is a list over available methods, methodc
- * in length.
+ * priority.
+ * "methodv" is a list over available methods, methodc in length.
+ * "offerdv" is a list over offered methods, offeredc in length.
  * The function returns the value of the method that should be selected,
  * AUTMETHOD_NOACCEPT if none is acceptable.
  */
@@ -623,9 +725,10 @@ method_uname __P((int s, struct request_t *request,
 						struct negotiate_state_t *state));
 /*
  * Enters username/password subnegotiation.  If successful,
- * "uname" is filled in with values read from client, if unsuccessful,
- * the contents of "uname" is indeterminate.  After negotiation has
- * finished and response to client is sent the function returns.
+ * "request->auth.mdata.uname" is filled in with values read from client.
+ * If unsuccessful, the contents of "uname" is indeterminate.
+ * After negotiation has finished and the response to client has been sent
+ * the function returns.
  * Returns:
  *		On success: 0 (user/password accepted)
  *		On failure: -1  (user/password not accepted, communication failure,
@@ -637,7 +740,8 @@ method_uname __P((int s, struct request_t *request,
 void
 iolog __P((struct rule_t *rule, const struct connectionstate_t *state,
 		int operation,
-		const struct sockshost_t *src, const struct sockshost_t *dst,
+		const struct sockshost_t *src, const struct authmethod_t *srcauth,
+		const struct sockshost_t *dst, const struct authmethod_t *dstauth,
 		const char *data, size_t count));
 /*
  * Called after each each complete io operation
@@ -654,7 +758,6 @@ iolog __P((struct rule_t *rule, const struct connectionstate_t *state,
  * If "operation" is
  *    OPERATION_ACCEPT
  *		OPERATION_CONNECT
- *    OPERATION_DISCONNECT
  *			"data" and "count" is ignored.
  *
  *		OPERATION_ABORT
@@ -668,19 +771,6 @@ iolog __P((struct rule_t *rule, const struct connectionstate_t *state,
  *		OPERATION_IO
  *			"data" is the data that was read and written.
  *			"count" is the number of bytes that was read/written.
- */
-
-
-int
-serverchild __P((int s, const struct sockaddr_in *local,
-					  const struct sockaddr_in *remote));
-/*
- * Forked off by the server after a connection has come in on "s" but
- * before any data has been read.  "local" is the address "remote"
- * connected to.
- * Returns:
- *		On success: 0
- *		On failure : -1
  */
 
 
@@ -886,7 +976,31 @@ socks_reseteuid __P((uid_t current, uid_t new));
  */
 
 int
-passwordcheck __P((const char *name, const char *cleartextpassword));
+accessmatch __P((int s, struct authmethod_t *auth,
+					  const struct sockaddr *src, const struct sockaddr *dst,
+					  const struct linkedname_t *userlist, char *emsg,
+					  size_t emsgsize));
+/*
+ * Checks whether access matches according to supplied arguments.
+ * "auth" is the authentication to be matched against,
+ * "s" is the socket the client is connected to,
+ * "src" is address client connected from, "dst" is address client
+ * connected to.
+ * "userlist", if not NULL, is a list of names that restricts access
+ * further, the authentication must in this case also result in a
+ * username present in "userlist".
+ * "emsg" is a buffer that information can be written into, "emsgsize"
+ * is the size of that buffer.
+ *
+ * Returns:
+ *		If access is ok: true.
+ *		Otherwise: false.  Writes the reason into "emsg".
+ */
+
+
+int
+passwordcheck __P((const char *name, const char *cleartextpassword,
+						 char *emsg, size_t emsglen));
 /*
  * Checks whether "name" is in the passwordfile.
  * If "cleartextpassword" is not NULL, also checks if "name"'s
@@ -894,8 +1008,109 @@ passwordcheck __P((const char *name, const char *cleartextpassword));
  *
  * Returns:
  *		If "name" and "cleartextpassword" is matched: 0
- *		If "name" is unknown: 1
- *		If "cleartextpassword" does not match: 2
+ *		Otherwise: -1.  "emsg" is filled in with the errormessage.
+ */
+
+int
+pam_passwordcheck __P((int s,
+							  const struct sockaddr *src, const struct sockaddr *dst,
+							  const struct authmethod_pam_t *auth, char *emsg,
+							  size_t emsglen));
+/*
+ * Checks whether pam grants access to the client connected to the socket "s".
+ * "src" is the clients sourceaddress, "dst" is address we accepted the
+ * clients connection on.
+ *
+ * Returns:
+ *		If "name" and "cleartextpassword" is matched: 0
+ *		Otherwise: -1.  "emsg" is filled in with the errormessage.
+ */
+
+void
+redirectsetup __P((void));
+/*
+ * sets up things for using the redirect module.
+ * Must be called at start and after sighup by main mother.
+ */
+
+int
+redirect __P((int s, struct sockaddr *addr, struct sockshost_t *host,
+				  int command, const struct ruleaddress_t *from,
+				  const struct ruleaddress_t *to));
+/*
+ * "s" is the socket to use for performing "command".
+ * The meaning of "addr" and "host" varies depending on what "command" is:
+ *		SOCKS_BIND:
+ *			"addr" is local address of "s", to accept connection on.
+ *			"host" is ignored.
+ *
+ *		SOCKS_BINDREPLY:
+ *			"addr" is the address to say connection is from.
+ *			"host" is the address to send reply to.
+ *
+ *		SOCKS_CONNECT:
+ *			"addr" is local address of "s".
+ *			"host" is host to connect to.
+ *
+ *		case SOCKS_UDPASSOCIATE:
+ *			"addr" is local address of "s", to send udp packet from.
+ *			"host" is address to send packet to.
+ *
+ *		case SOCKS_UDPREPLY:
+ *			"addr" is the address to say reply is from.
+ *			"host" is the address to send reply to.
+ *
+ * "host", "addr", and the address of "s" will be changed if needed.
+ * Returns:
+ *		On success: 0.
+ *		On failure: -1.
+ */
+
+void
+bwsetup __P((void));
+/*
+ * sets up bw structures, must be called at start and after sighup by
+ * main mother, but only main mother.
+ */
+
+void
+bwuse __P((bw_t *bw));
+/*
+ * Marks "bw" as in use.
+ */
+
+void
+bwfree __P((bw_t *bw));
+/*
+ * Says we are no longer using "bw".
+ */
+
+ssize_t
+bwleft __P((const bw_t *bw));
+/*
+ * Returns how many bytes we should read if the client is restricted
+ * by "bw".
+ */
+
+void
+bwupdate __P((bw_t *bw, size_t bwused, const struct timeval *bwusedtime));
+/*
+ * Updates "bw".  "bwused" is the bandwidth used (in bytes) at time
+ * "bwusedtime".
+ */
+
+struct timeval *
+isbwoverflow __P((bw_t *bw, const struct timeval *timenow,
+						struct timeval *overflow));
+/*
+ * Checks whether "bw" would overflow if we transfered more data through it.
+ * "timenow" is the time now.
+ * Returns:
+ *		If "bw" would overflow: til what time we have to wait until we can
+ *		again transfer data through it.  The memory used for those values is
+ *		"overflow".
+ *
+ *		If "bw" would not overflow: NULL.  "overflow" is not touched.
  */
 
 
@@ -908,4 +1123,11 @@ printfd __P((const struct sockd_io_t *io, const char *prefix));
  */
 #endif
 
+struct in_addr
+getifa __P((struct in_addr addr));
+/*
+ * Returns the address the system would chose to use for connecting
+ * to the IP address "addr".
+ * Returns INADDR_NONE on error.
+ */
 __END_DECLS

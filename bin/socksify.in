@@ -33,14 +33,14 @@
 #  Software Distribution Coordinator  or  sdc@inet.no
 #  Inferno Nettverk A/S
 #  Oslo Research Park
-#  Gaustadaléen 21
-#  N-0349 Oslo
+#  Gaustadalléen 21
+#  NO-0349 Oslo
 #  Norway
 #
 # any improvements or extensions that they make and grant Inferno Nettverk A/S
 # the rights to redistribute these changes.
 #
-# $Id: socksify.in,v 1.20 1999/11/19 09:55:10 karls Exp $
+# $Id: socksify.in,v 1.22 2001/12/04 11:57:18 karls Exp $
 
 #On systems where a supported preloading mechanism is used, you can
 #do "socksify <program>" and <program> will use socks without having
@@ -52,7 +52,7 @@ SOCKSIFY_PRELOAD_LIBS="@SOCKSIFY_PRELOAD_LIBS@"
 LIBDIR="@LIBRARY_PREFIX@"
 
 #XXX shared library name should be generated too (possibly including version)
-LIBRARY="${SOCKS_LIBRARY-${LIBDIR}/libdsocksd.so.0}"
+LIBRARY="${SOCKS_LIBRARY-${LIBDIR}/libdsocksd.@SOLIB_POSTFIX@}.0"
 
 PRELOAD_SEPERATOR="@PRELOAD_SEPERATOR@"
 PRELOAD_POSTFIX="@PRELOAD_POSTFIX@"

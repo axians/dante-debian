@@ -12,6 +12,7 @@ build:	build-stamp
 build-stamp:
 	dh_testdir
 	# build package here
+	cp /usr/share/misc/config.guess /usr/share/misc/config.sub . 
 	CFLAGS="-O2 -D_REENTRANT" ./configure --prefix=/usr \
 	  --with-socks-conf=/etc/dante.conf \
 	  --with-sockd-conf=/etc/danted.conf \
@@ -37,7 +38,7 @@ clean:
 	-rm example/dante.conf example/danted.conf
 	-rm config.log config.status config.cache libtool \
 	  include/autoconf.h include/stamp-h bin/socksify confdefs.h \
-	  dlib/util.c sockd/util.c
+	  dlib/util.c sockd/util.c config.guess config.sub
 
 binary-indep:	build
 
@@ -69,20 +70,20 @@ binary-arch:	build
 	cp example/socks.conf example/dante.conf
 	cp example/sockd.conf example/danted.conf
 	dh_installexamples -pdante-client example/dante.conf
-	dh_installexamples -pdante-server example/danted.conf
+	dh_installexamples -pdante-server example/danted.conf contrib/sockd-stat.awk
 	-mkdir -p $(CLIENT)/etc $(SERVER)/etc
 	install -D -m0664 example/socks.conf $(CLIENT)/etc/dante.conf
 	install -D -m0664 example/sockd.conf $(SERVER)/etc/danted.conf
 	## move files around
 	dh_movefiles -a
-	install -D -m0644 debian/socks.h debian/libsocksd-dev/usr/include/socks.h
+#	install -D -m0644 debian/socks.h debian/libsocksd-dev/usr/include/socks.h
 	cat debian/copyright.top LICENSE > debian/copyright
-	dh_installdocs -A README doc/FAQ doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
+	dh_installdocs -A README doc/faq.tex doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
 	dh_installdocs -pdante-client doc/README.socksify
 	dh_installdocs -pdante-client -pdante-server doc/README.msproxy
 	dh_installdocs -pdante-server doc/SOCKS4.protocol
 	dh_installchangelogs -plibsocksd -pdante-server -pdante-client NEWS
-	rmdir $(DEB)/usr/bin $(DEB)/usr/sbin $(DEB)/usr/man/man? $(DEB)/usr/man
+	rmdir $(DEB)/usr/bin $(DEB)/usr/sbin $(DEB)/usr/man/man? $(DEB)/usr/man $(DEB)/usr/include
 	## now make the library symlinks
 	# destroy and remake directory (and contents)
 	mv $(DEB)/usr/lib/libsocksd.so* $(DEB)/usr
