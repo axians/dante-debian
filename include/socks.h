@@ -231,7 +231,7 @@ struct childpacket_t {
 __BEGIN_DECLS
 
 /*
- * libsocks function declarations
+ * libsocksd function declarations
  */
 
 void

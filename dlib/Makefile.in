@@ -79,7 +79,7 @@ SOCKSIFY_PRELOAD_LIBS = @SOCKSIFY_PRELOAD_LIBS@
 VERSION = @VERSION@
 YACC = @YACC@
 
-lib_LTLIBRARIES = libdsocks.la
+lib_LTLIBRARIES = libdsocksd.la
 libdsocks_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c   	config_parse.y io.c debug.c Rgetpeername.c Rgetsockname.c udp.c   	Rrresvport.c Rbind.c config_scan.l address.c authneg.c client.c   	clientconfig.c clientprotocol.c Raccept.c userio.c method_uname.c 	connectchild.c config.c log.c protocol.c socket.c udp_util.c      	Rbindresvport.c Rconnect.c util.c Rgethostbyname.c Rcompat.c      	msproxy_clientprotocol.c hostcache.c
 
 
@@ -209,7 +209,7 @@ distclean-libtool:
 
 maintainer-clean-libtool:
 
-libdsocks.la: $(libdsocks_la_OBJECTS) $(libdsocks_la_DEPENDENCIES)
+libdsocksd.la: $(libdsocks_la_OBJECTS) $(libdsocks_la_DEPENDENCIES)
 	$(LINK) -rpath $(libdir) $(libdsocks_la_LDFLAGS) $(libdsocks_la_OBJECTS) $(libdsocks_la_LIBADD) $(LIBS)
 .l.c:
 	$(LEX) $(AM_LFLAGS) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@

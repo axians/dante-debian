@@ -1290,8 +1290,8 @@ else
   echo "$ac_t""no" 1>&6
 fi
 
-# Always use our own libtool.
-LIBTOOL='$(SHELL) $(top_builddir)/libtool'
+# Always use Debian's libtool.
+LIBTOOL='/usr/bin/libtool'
 
 # Check for any special flags to pass to ltconfig.
 libtool_flags=
@@ -8246,7 +8246,7 @@ if test "x${ac_cv_search_dlopen}" = "x-ldl"; then
 		fi
 	    ;;
 	    *)
-		LIBRARY_DLOPEN="${base_library_path}libdl.so"
+		LIBRARY_DLOPEN="/lib/libdl.so.2"
 	    ;;
 	esac
 	SOCKSIFY_PRELOAD_LIBS="${SOCKSIFY_PRELOAD_LIBS}${LIBRARY_DLOPEN:+${PRELOAD_SEPERATOR}}${LIBRARY_DLOPEN}"

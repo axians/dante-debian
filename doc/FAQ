@@ -131,5 +131,5 @@ It does work.  A problem however is that cvs usually ends up calling
 a setuid program (rsh, ssh, whatever) which will ignore what
 "socksify" sets up.
 Solution: strip off the suid bit if possible or recompile the (rsh,
-ssh, whatever) binary with explicit socks support (adding "-ldsocks"
+ssh, whatever) binary with explicit socks support (adding "-ldsocksd"
 to the linkoptions is usually enough.)

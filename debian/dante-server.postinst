@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#DEBHELPER#
+
+# The default configuration file fails, however the installation 
+# was succesfull so exit 0
+exit 0

@@ -1,0 +1,35 @@
+Source: dante
+Section: net
+Priority: optional
+Maintainer: Adrian Bridgett <bridgett@debian.org>
+Build-Depends: flex
+Standards-Version: 3.0.1.1
+
+Package: libsocksd
+Architecture: any
+Section: libs
+Depends: ${shlibs:Depends}
+Description: SOCKS library for dante-client.
+ This package is useless by itself - have a look at dante-client.
+
+Package: libsocksd-dev
+Architecture: any
+Section: devel
+Depends: libsocksd
+Description: Development files for compiling programs with SOCKS support.
+ Provides header files and instructions for compiling programs with SOCKS
+ support.
+
+Package: dante-client
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Provides a SOCKS wrapper for users behing a firewall.
+ Dante provides "socksify" - a program which forwards network requests from
+ any program to the SOCKS server (v4 or v5) which then performs them on your
+ behalf. 
+
+Package: dante-server
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: SOCKS server.
+ dante-server provides "danted" - a SOCKS (v4 and v5) server
