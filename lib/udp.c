@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: udp.c,v 1.127 2003/07/01 13:21:32 michaels Exp $";
+"$Id: udp.c,v 1.131 2005/05/28 17:13:25 michaels Exp $";
 
 /* ARGSUSED */
 ssize_t
@@ -88,7 +88,8 @@ Rsendto(s, msg, len, flags, to, tolen)
 			slog(LOG_DEBUG, "%s: %s: %s -> %s (%lu)",
 			function, protocol2string(SOCKS_TCP),
 			sockaddr2string(&socksfd->local, dststring, sizeof(dststring)),
-			sockaddr2string(&socksfd->server, srcstring, sizeof(srcstring)), n);
+			sockaddr2string(&socksfd->server, srcstring, sizeof(srcstring)),
+			(unsigned long)n);
 
 			return n;
 		}
@@ -96,8 +97,8 @@ Rsendto(s, msg, len, flags, to, tolen)
 	/* prefix a UDP header to the msg */
 	nlen = len;
 	/* LINTED warning: cast discards 'const' from pointer target type */
-	if ((nmsg = udpheader_add(fakesockaddr2sockshost(to, &host), (char *)msg,
-	&nlen, 0)) == NULL) {
+	if ((nmsg = udpheader_add(fakesockaddr2sockshost(to, &host),
+	(const char *)msg, &nlen, 0)) == NULL) {
 		errno = ENOBUFS;
 		return -1;
 	}
@@ -112,7 +113,8 @@ Rsendto(s, msg, len, flags, to, tolen)
 	slog(LOG_DEBUG, "%s: %s: %s -> %s (%lu)",
 	function, protocol2string(SOCKS_TCP),
 	sockaddr2string(&socksfd->local, dststring, sizeof(dststring)),
-	sockaddr2string(&socksfd->reply, srcstring, sizeof(srcstring)), n);
+	sockaddr2string(&socksfd->reply, srcstring, sizeof(srcstring)),
+	(unsigned long)n);
 
 	return MAX(-1, n);
 }
@@ -178,7 +180,8 @@ Rrecvfrom(s, buf, len, flags, from, fromlen)
 		slog(LOG_DEBUG, "%s: %s: %s -> %s (%lu)",
 		function, protocol2string(SOCKS_TCP),
 		sockaddr2string(forus, srcstring, sizeof(srcstring)),
-		sockaddr2string(&socksfd->local, dststring, sizeof(dststring)), n);
+		sockaddr2string(&socksfd->local, dststring, sizeof(dststring)),
+		(unsigned long)n);
 
 		return n;
 	}
@@ -280,7 +283,8 @@ Rrecvfrom(s, buf, len, flags, from, fromlen)
 	slog(LOG_DEBUG, "%s: %s: %s -> %s (%lu)",
 	function, protocol2string(SOCKS_UDP),
 	sockaddr2string(&newfrom, srcstring, sizeof(srcstring)),
-	sockaddr2string(&socksfd->local, dststring, sizeof(dststring)), n);
+	sockaddr2string(&socksfd->local, dststring, sizeof(dststring)), 
+	(unsigned long)n);
 
 	if (from != NULL) {
 		*fromlen = MIN(*fromlen, newfromlen);
@@ -297,12 +301,15 @@ udpsetup(s, to, type)
 	const struct sockaddr *to;
 	int type;
 {
+	const char *function = "udpsetup()";
 	struct socks_t packet;
 	struct socksfd_t socksfd;
 	struct sockaddr_in newto;
 	struct sockshost_t src, dst;
 	socklen_t len;
 	int p;
+
+	slog(LOG_DEBUG, "%s: s = %d", function, s);
 
 	if (!socks_addrisok((unsigned int)s))
 		socks_rmaddr((unsigned int)s);

@@ -31,7 +31,7 @@
 #define USER_LIBWRAP 287
 #define LOGOUTPUT 288
 #define LOGFILE 289
-#define CHILD_MAXIDLENUMBER 290
+#define CHILD_MAXIDLE 290
 #define ROUTE 291
 #define VIA 292
 #define VERDICT_BLOCK 293
@@ -75,8 +75,11 @@
 #define TO 331
 #define REDIRECT 332
 #define BANDWIDTH 333
+#ifndef YYSTYPE_DEFINED
+#define YYSTYPE_DEFINED
 typedef union {
 	char	*string;
 	uid_t	uid;
 } YYSTYPE;
+#endif /* YYSTYPE_DEFINED */
 extern YYSTYPE socks_yylval;

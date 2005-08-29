@@ -41,7 +41,7 @@
  *
  */
 
-/* $Id: socks.h,v 1.167 2003/07/01 13:21:17 michaels Exp $ */
+/* $Id: socks.h,v 1.169 2005/05/28 17:07:59 michaels Exp $ */
 
 #ifndef _SOCKS_H_
 #define _SOCKS_H_
@@ -100,6 +100,23 @@ extern const int lintnoloop_socks_h;
 #undef gethostbyname2
 #endif  /* gethostbyname2 */
 #define gethostbyname2(name, af)			sys_gethostbyname2(name, af)
+
+#ifdef getaddrinfo
+#undef getaddrinfo
+#endif /* getaddrinfo */
+#define getaddrinfo(nodename, servname, hints, res)	\
+			sys_getaddrinfo(nodename, servname, hints, res)
+
+#ifdef getipnodebyname
+#undef getipnodebyname
+#endif /* getipnodebyname */
+#define getipnodebyname(name, af, flags, error_num)	\
+			sys_getipnodebyname(name, af, flags, error_num)
+
+#ifdef freehostent
+#undef freehostent
+#endif  /* freehostent */
+#define freehostent(ptr)				sys_freehostent(ptr)
 
 #ifdef getpeername
 #undef getpeername
@@ -210,9 +227,10 @@ struct config_t {
 };
 
 struct childpacket_t {
-   struct sockshost_t   src;
-   struct sockshost_t   dst;
-   struct socks_t       packet;
+	int						s;				/* filedescriptor number.						*/
+   struct sockshost_t   src;			/* local address of control-connection. 	*/
+   struct sockshost_t   dst;			/* remote address of control-connection. 	*/
+   struct socks_t       packet;		/* socks packet exchanged with server.		*/
 };
 
 
@@ -245,6 +263,14 @@ int Rbindresvport __P((int, struct sockaddr_in *));
 int Rrresvport __P((int *));
 struct hostent *Rgethostbyname __P((const char *));
 struct hostent *Rgethostbyname2 __P((const char *, int af));
+#if HAVE_GETADDRINFO
+int Rgetaddrinfo __P((const char *nodename, const char *servname,
+		      		const struct addrinfo *hints, struct addrinfo **res));
+#endif /* HAVE_GETADDRINFO */
+#if HAVE_GETIPNODEBYNAME
+struct hostent *Rgetipnodebyname __P((const char *, int, int, int *));
+void Rfreehostent __P((struct hostent *));
+#endif /* HAVE_GETIPNODEBYNAME */
 ssize_t Rwrite __P((int d, const void *buf, size_t nbytes));
 ssize_t Rwritev __P((int d, const struct iovec *iov, int iovcnt));
 ssize_t Rsend __P((int s, const void *msg, size_t len, int flags));
@@ -602,6 +628,7 @@ cc_socksfdv(int sig);
 
 int sys_rresvport __P((int *));
 int sys_bindresvport __P((int, struct sockaddr_in *));
+void sys_freehostent __P((struct hostent *));
 
 HAVE_PROT_READ_0 sys_read
 __P((HAVE_PROT_READ_1, HAVE_PROT_READ_2, HAVE_PROT_READ_3));

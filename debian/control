@@ -2,8 +2,8 @@ Source: dante
 Section: net
 Priority: optional
 Maintainer: Adrian Bridgett <bridgett@debian.org>
-Build-Depends: flex,debhelper,libtool,autotools-dev,libwrap0-dev,libpam0g-dev
-Standards-Version: 3.5.2.0
+Build-Depends: flex,debhelper(>=4),libtool,autotools-dev,libwrap0-dev,libpam0g-dev
+Standards-Version: 3.6.2.1
 
 Package: libsocksd
 Architecture: any

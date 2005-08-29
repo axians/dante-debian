@@ -2,7 +2,9 @@
 
 # This script uses debhelper by Joey Hess
 export DH_VERBOSE=1
-DEB=`pwd`/debian/tmp
+export DH_COMPAT=4
+DEB=`pwd`/debian/libsocksd
+DEV=debian/libsocksd-dev
 CLIENT=debian/dante-client
 SERVER=debian/dante-server
 
@@ -49,7 +51,7 @@ binary-arch:	build
 	dh_testroot -a
 	dh_clean -a
 	dh_installdirs -A usr/share/doc
-	# move files into debian/tmp
+	# move files into $(DEB)
 	$(MAKE) DESTDIR=$(DEB) install
 	## remove any libraries we don't want
 	rm $(DEB)/usr/lib/*.la
@@ -64,6 +66,8 @@ binary-arch:	build
 	mv $(DEB)/usr/man/man5/socks.conf.5  $(CLIENT)/usr/share/man/man5/dante.conf.5
 	mv $(DEB)/usr/man/man5/sockd.conf.5  $(SERVER)/usr/share/man/man5/danted.conf.5
 	dh_installdirs -pdante-server usr/sbin usr/share/man/man8
+	dh_installdirs -pdante-client usr/bin usr/lib
+	dh_installdirs -plibsocksd-dev usr/include usr/lib
 	mv $(DEB)/usr/man/man8/sockd.8 $(SERVER)/usr/share/man/man8/danted.8
 	mv $(DEB)/usr/sbin/sockd $(SERVER)/usr/sbin/danted
 	cp doc/socksify.1 $(CLIENT)/usr/share/man/man1/socksify.1
@@ -75,8 +79,11 @@ binary-arch:	build
 	install -D -m0664 example/socks.conf $(CLIENT)/etc/dante.conf
 	install -D -m0664 example/sockd.conf $(SERVER)/etc/danted.conf
 	## move files around
-	dh_movefiles -a
-#	install -D -m0644 debian/socks.h debian/libsocksd-dev/usr/include/socks.h
+	mv $(DEB)/usr/bin/socksify $(CLIENT)/usr/bin/
+	mv $(DEB)/usr/lib/libdsocksd* $(CLIENT)/usr/lib/
+	mv $(DEB)/usr/lib/libsocksd.a $(DEV)/usr/lib/
+	mv $(DEB)/usr/include/socks.h $(DEV)/usr/include/
+#	install -D -m0644 debian/socks.h $(DEV)/usr/include/socks.h
 	cat debian/copyright.top LICENSE > debian/copyright
 	dh_installdocs -A README doc/faq.tex doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
 	dh_installdocs -pdante-client doc/README.socksify
@@ -93,8 +100,8 @@ binary-arch:	build
 	# I know we remove them above, but the symlinks _must_ be made after
 	# the library (see that packaging manual)
 	ln -sf libsocksd.so.0.1.0 $(DEB)/usr/lib/libsocksd.so.0
-	mkdir -p debian/libsocksd-dev/usr/lib
-	ln -sf libsocksd.so.0.1.0 debian/libsocksd-dev/usr/lib/libsocksd.so
+	mkdir -p $(DEV)/usr/lib
+	ln -sf libsocksd.so.0.1.0 $(DEV)/usr/lib/libsocksd.so
 	ln -sf libdsocksd.so.0.1.0 $(CLIENT)/usr/lib/libdsocksd.so.0
 	rm $(CLIENT)/usr/lib/libdsocksd.a
 	# done messing with libraries

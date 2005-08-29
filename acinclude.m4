@@ -1,13 +1,15 @@
 # -- acinclude start --
 
-AC_DEFUN(L_UNCON_SELECT,
-[AC_MSG_CHECKING(for correct select behaviour on unconnected sockets)
-AC_TRY_RUN([
+AC_DEFUN([L_UNCON_SELECT],
+[AC_MSG_CHECKING(for expected select behaviour)
+AC_RUN_IFELSE([[
 /*
- * ftp.inet.no:/pub/home/michaels/stuff/unconnectedsocket-select.c
- * $ cc unconnectedsocket-select.c && uname -a && ./a.out
- * Modified by Eric Anderson <anderse@hpl.hp.com>
- */
+ * ftp.inet.no:/pub/home/michaels/stuff/socket-select.c
+ * $ cc socket-select.c && uname -a && ./a.out
+ * 
+ * Thanks to Eric Anderson <anderse@hpl.hp.com>.
+ *
+*/
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -22,53 +24,85 @@ AC_TRY_RUN([
 #include <unistd.h>
 #include <fcntl.h>
 
-static int
-selectcheck(int s);
+#define BLOCKING(b)	(b ? ("blocking") : ("non-blocking"))
+
+static int selectcheck(int s);
+static int dotests(int s, int blocking);
 
 int
 main(void)
 {
-        char foo[5];
 	int s, p;
-	struct sigaction act;
-	int res;
-	
-	act.sa_handler = SIG_IGN;
-	sigaction(SIGPIPE,&act,NULL);
-	fprintf(stderr, "testing with a normal, unconnected socket:\n");
-	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		perror("socket()");
-		exit(1);
-	}
-	fprintf(stderr, "  created socket, select() returned %d\n",
-	       selectcheck(s));
-	p = read(s, NULL, 0);
-	fprintf(stderr, "  read() returned %d, errno = %d (%s)\n", p, errno, (strerror(errno)));
-	p = write(s, foo, 5);
-	fprintf(stderr, "  write() returned %d, errno = %d (%s)\n", p, errno, (strerror(errno)));
+	struct sigaction sigact;
 
-	fprintf(stderr, "testing with a non-blocking, unconnected socket:\n");
+	sigemptyset(&sigact.sa_mask);
+	sigact.sa_handler = SIG_IGN;
+	sigact.sa_flags 	= 0;
+	if (sigaction(SIGPIPE, &sigact, NULL) != 0) {
+		perror("sigaction()");
+		exit(1);
+	}
+
 	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("socket()");
 		exit(1);
 	}
+
 	if ((p = fcntl(s, F_GETFL, 0)) == -1
-	    || fcntl(s, F_SETFL, p | O_NONBLOCK) == -1) {
-	        perror("fcntl()");
-	        exit(1);
+	|| fcntl(s, F_SETFL, p | O_NONBLOCK) == -1) {
+		perror("fcntl()");
+	   exit(1);
 	}
-	res = selectcheck(s);
-	fprintf(stderr, "  socket nonblocking, select() returned %d\n", res);
 
+	p = dotests(s, 0);
+	close(s);
+
+	return p;
+}
+
+
+static int
+dotests(s, blocking)
+	int s;
+	int blocking;
+{
+	int p, rc;
+	struct sockaddr_in addr;
+
+	fprintf(stderr, "testing with %s, bound, socket:\n", BLOCKING(blocking));
+	bzero(&addr, sizeof(addr));
+	addr.sin_family 		= AF_INET;
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	addr.sin_port			= htons(0);
+
+	/* LINTED pointer casts may be troublesome */
+	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
+		perror("bind(), running linux?");
+		exit(1);
+	}
+
+	fprintf(stderr, "\tselect() returned %d\n", selectcheck(s));
 	p = read(s, NULL, 0);
-	fprintf(stderr, "  read() returned %d, errno = %d (%s)\n", p, errno, (strerror(errno)));
-	p = write(s, &foo, 5);
-	fprintf(stderr, "  write() returned %d, errno = %d (%s)\n", p, errno, (strerror(errno)));
+	fprintf(stderr, "\tread() returned %d, errno = %d (%s)\n",
+	p, errno, (strerror(errno)));
+	p = write(s, &s, sizeof(s));
+	fprintf(stderr, "\twrite() returned %d, errno = %d (%s)\n",
+	p, errno, (strerror(errno)));
 
-	if (res == 0)
-		return 0; /* correct behaviour */
-	else
-		return 1; /* incorrect behaviour */
+	fprintf(stderr, "testing with %s, bound, listening, socket:\n", BLOCKING(blocking));
+	if (listen(s, 1) != 0) {
+		perror("listen()");
+		exit(1);
+	}
+	fprintf(stderr, "\tselect() returned %d\n", rc = selectcheck(s));
+	p = read(s, NULL, 0);
+	fprintf(stderr, "\tread() returned %d, errno = %d (%s)\n",
+	p, errno, (strerror(errno)));
+	p = write(s, &s, sizeof(s));
+	fprintf(stderr, "\twrite() returned %d, errno = %d (%s)\n",
+	p, errno, (strerror(errno)));
+
+	return rc;
 }
 
 static int 
@@ -77,7 +111,7 @@ selectcheck(s)
 {
 	fd_set rset, wset, xset;
 	struct timeval timeout;
-	int ret,i;
+	int ret;
 
 	FD_ZERO(&rset);
 	FD_SET(s, &rset);
@@ -88,25 +122,27 @@ selectcheck(s)
 
 	errno = 0;
 	ret = select(s + 1, &rset, &wset, &xset, &timeout);
-	if (FD_ISSET(s,&rset)) {
-	    fprintf(stderr, "  socket is readable\n");
-	}
-	if (FD_ISSET(s,&wset)) {
-	    fprintf(stderr, "  socket is writeable\n");
-	}
-	if (FD_ISSET(s,&xset)) {
-	    fprintf(stderr, "  socket has an exception\n");
-	}
+
+	if (FD_ISSET(s, &rset))
+	    fprintf(stderr, "\tsocket is readable\n");
+
+	if (FD_ISSET(s, &wset))
+	    fprintf(stderr, "\tsocket is writeable\n");
+	
+	if (FD_ISSET(s, &xset))
+	    fprintf(stderr, "\tsocket has an exception pending\n");
+	
 	return ret;
-}], [AC_MSG_RESULT(yes)
+}]], [AC_MSG_RESULT(yes)
      [$1]],
     [AC_MSG_RESULT(no)
      [$2]])])
 
 #can it really be this simple?
 #nope, doesn't handle coff files which also have no underscore
-AC_DEFUN(L_SYMBOL_UNDERSCORE,
+AC_DEFUN([L_SYMBOL_UNDERSCORE],
 [AC_MSG_CHECKING(for object file type)
+AH_TEMPLATE([HAVE_NO_SYMBOL_UNDERSCORE], [platform symbol type])
 AC_TRY_RUN([
 /* look for ELF identification header at the start of argv[0] */
 
@@ -161,162 +197,35 @@ main (argc, argv)
 	esac])])
 
 
-define(testparam,[
-_arg=[$2]
-_param=[$3]
-_func=[$4]
-_ucfunc=[$5]
+dnl addproto - generate AC_DEFINE statements
+define([addproto],
+[AC_DEFINE_UNQUOTED(HAVE_PROT_$1_$2, [$3], [proto])dnl
+ifelse([$4], , , [addproto($1, m4_incr($2), m4_shiftn(3, $@))])])
 
-unset _nofunc
-
-for val in [$1]
-do
-	cat ${_param} | egrep "^${val}" > /dev/null
-	test $? -eq 0 && _nofunc="" && break
-	_nofunc=t
-done
-if test "x${_nofunc}" = xt; then
-	if test "x[$$6]" != x; then
-		[$6]="$$6|"
-	fi
-	[$6]="[$$6] ${_func} (${_arg}): (`cat ${_param}`)"
-else
-	AC_DEFINE_UNQUOTED(HAVE_PROT_${_ucfunc}_${_arg}, ${val})
-fi
-])dnl
-
-dnl #XXXugly
-dnl #attempt to speed up runtime by avoiding subshells
-AC_DEFUN(L_SOCKPROTO,
-[
-dnl this function is not very generic, and only supports nine arguments
-syscmd(if test $# -gt 9; then exit 1;fi) dnl
-ifelse(sysval, 0, , [errprint(__file__:__line__: error in acinclude.m4: too many arguments to function [$0]
-) m4exit(1)])dnl
-
-nargs=[$#]
-
-paramcnt=decr(decr([$#]))
-
-dnl XXX
-dnl func=translit([$1], ` ')
-dnl ucfunc=translit(translit([$1], ` '), `a-z', `A-Z')
-
-syscmd(echo '$1' | grep "\." > /dev/null)dnl
-func=ifelse(sysval, 0, [esyscmd(echo '$1' | cut -d. -f1)dnl], translit([$1], ` '))
-syscmd(echo '$1' | grep "\." > /dev/null)dnl
-dnl ucfunc=ifelse(sysval, 0, esyscmd(echo '$1' | cut -d. -f2), translit(translit([$1], ` '), `a-z', `A-Z'))
-ucfunc=translit(ifelse(sysval, 0, esyscmd(echo '$1' | cut -d. -f2), translit([$1], ` ')), `a-z', `A-Z')
-
-dnl func=translit([$SYS_NAME], ` ')
-dnl ucfunc=translit(translit([$REAL_NAME], ` '), `a-z', `A-Z')
-
-AC_MSG_CHECKING([prototypes for $func])
-
-unset failure
-
-cat > conftest.$ac_ext <<EOF
-#include "confdefs.h"
+dnl tproto - generate statements for running AC_COMPILE_IFELSE
+define([tproto],
+[AC_COMPILE_IFELSE([
+ AC_LANG_PROGRAM([
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <netdb.h>
 #include <unistd.h>
-EOF
 
-changequote(<<, >>)dnl
-${CPP} ${CPPFLAGS} ${CPPFLAG_STDC} conftest.$ac_ext | $AWK "{ if (/[^a-z0-9_]${func}[^a-z0-9_]/) { s=10 }; if ( s > 0 ) { s -= 1; print; } }" | egrep -v '^#' | tr '\n' ' ' | tr -s '/' |  tr ';' '\n'  | grep -v "__${func}" | egrep "[^a-z0-9_]${func}[^a-z0-9_]" | tr -s '[:blank:]' | sed -e 's/extern//' > conftest.out_proto
+m4_esyscmd([echo "$3" | cut -d, -f 1])dnl
+$1(m4_esyscmd([echo "$3" | cut -d, -f 2-]));], [])],
+ [addproto(m4_toupper($1), 0, $3)
+  AC_MSG_RESULT(ok)],
+ [ifelse([$4], ,
+  [AC_MSG_RESULT(failure)
+  $2],
+ [tproto([$1], [$2], m4_shiftn(3, $@))])])])
 
-cnt=0
-while test $cnt -lt $paramcnt; do
-	if test $cnt -eq 0; then
-		cat conftest.out_proto | sed -e "s/${func}.*//" | sed -e 's/^[ 	]*//' | sed -e 's/[ 	]*$//g' > conftest.out_param
-	else
-		cat conftest.out_proto | sed -e "s/.*${func}//" | sed -e "s/[\(\)]//g" | cut -d, -f $cnt | sed -e 's/^[ 	]*//' | sed -e 's/[ 	]*$//g' > conftest.out_param
-	fi
-dnl	XXXstrip whatever's behind any *?
+dnl L_NSOCKPROTO - determine function prototypes by compilation
+AC_DEFUN([L_NSOCKPROTO],[
+AC_REQUIRE([AC_COMPILE_IFELSE])dnl
+AC_MSG_CHECKING([prototypes for $1])dnl
 
-	cat conftest.out_param | tr -s '[:blank:]' > conftest.out_nospace
-	if test -s conftest.out_nospace; then
-		cp -f conftest.out_param conftest.out_param_${cnt}
-	else
-dnl		#XXX
-		echo "not found" > conftest.out_param_${cnt}
-		echo "warning: found no argument"
-	fi
+tproto($@)])
 
-	#XXX avoid subshell
-	case $cnt in
-		0) cnt=1;;
-		1) cnt=2;;
-		2) cnt=3;;
-		3) cnt=4;;
-		4) cnt=5;;
-		5) cnt=6;;
-		6) cnt=7;;
-		7) cnt=8;;
-		8) cnt=9;;
-		9) cnt=10;;
-		10) cnt=11;;
-	esac
-
-done
-
-changequote([, ])dnl
-
-ifelse([$3], , ,
-[	#return value
-	testparam([$3], 0, conftest.out_param_0, $func, $ucfunc, failure)dnl
-])dnl
-
-ifelse([$4], , ,
-[	#first argument
-	testparam([$4], 1, conftest.out_param_1, $func, $ucfunc, failure)dnl
-])dnl
-
-ifelse([$5], , ,
-[	#second argument
-	testparam([$5], 2, conftest.out_param_2, $func, $ucfunc, failure)dnl
-])dnl
-
-ifelse([$6], , ,
-[	#third argument
-	testparam([$6], 3, conftest.out_param_3, $func, $ucfunc, failure)dnl
-])dnl
-
-ifelse([$7], , ,
-[	#fourth argument
-	testparam([$7], 4, conftest.out_param_4, $func, $ucfunc, failure)dnl
-])dnl
-
-ifelse([$8], , ,
-[	#fifth argument
-	testparam([$8], 5, conftest.out_param_5, $func, $ucfunc, failure)dnl
-])dnl
-
-ifelse([$9], , ,
-[	#sixth argument
-	testparam([$9], 6, conftest.out_param_6, $func, $ucfunc, failure)dnl
-])dnl
-
-ifelse([$10], , ,
-[	#seventh argument
-	testparam([$10], 7, conftest.out_param_7, $func, $ucfunc, failure)dnl
-])dnl
-
-#failure
-if test "x$failure" != x; then
-AC_MSG_RESULT(failure)
-
-echo "$failure" | tr '|' '\n'
-
-ifelse([$2], , ,
-[ $2
-])dnl
-else
-	AC_MSG_RESULT(ok)
-fi
-
-rm -f conftest.*
-])dnl
 # -- acinclude end --

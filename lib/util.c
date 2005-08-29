@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@
 #endif  /* HAVE_STRVIS */
 
 static const char rcsid[] =
-"$Id: util.c,v 1.134 2003/07/01 13:21:34 michaels Exp $";
+"$Id: util.c,v 1.137 2005/01/24 10:24:22 karls Exp $";
 
 /* fake "ip address", for clients without DNS access. */
 static char **ipv;
@@ -420,6 +420,8 @@ socks_addfakeip(host)
 	char **tmpmem;
 	struct in_addr addr;
 
+ 	/* XXX mutex_lock */
+
 	if (socks_getfakeip(host, &addr) == 1)
 		return addr.s_addr;
 
@@ -442,6 +444,8 @@ error "\"FAKEIP_END\" can't be smaller than \"FAKEIP_START\""
 	ipv = tmpmem;
 
 	strcpy(ipv[ipc], host);
+
+	/* XXX mutex_unlock */
 
 	return htonl(ipc++ + FAKEIP_START);
 }
@@ -694,13 +698,17 @@ socketoptdup(s)
 		{ SOL_SOCKET,	SO_SNDBUF			},
 #endif
 
+#if HAVE_SO_SNDLOWAT
 #ifdef SO_RCVLOWAT
 		{ SOL_SOCKET,	SO_RCVLOWAT			},
 #endif
+#endif /* HAVE_SO_SNDLOWAT */
 
+#if HAVE_SO_SNDLOWAT
 #ifdef SO_SNDLOWAT
 		{ SOL_SOCKET,	SO_SNDLOWAT			},
 #endif
+#endif /* HAVE_SO_SNDLOWAT */
 
 #ifdef SO_RCVTIMEO
 		{ SOL_SOCKET,	SO_RCVTIMEO			},

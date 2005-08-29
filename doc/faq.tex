@@ -1,6 +1,6 @@
-%@(#)$Id: faq.tex,v 1.50 2003/07/15 15:45:55 karls Exp $
+%@(#)$Id: faq.tex,v 1.57 2005/06/06 10:20:17 michaels Exp $
 %/*
-% * Copyright (c) 1997, 1998, 1999, 2000, 2001
+% * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
 % *      Inferno Nettverk A/S, Norway.  All rights reserved.
 % *
 % * Redistribution and use in source and binary forms, with or without
@@ -56,7 +56,7 @@
 	Gaustadalléen 21   \\
 	NO-0349 Oslo          \\
 	Norway}
-\date{$$$$Date: 2003/07/15 15:45:55 $$$$}
+\date{$$$$Date: 2005/06/06 10:20:17 $$$$}
 
 \makeindex
 
@@ -540,14 +540,16 @@ command).
 
   \emph{Thanks to: albert chin (china@thewrittenword.com)}
 
+ \subsection{Why doesn't socksify work on AIX?}
+  AIX does not support \emph{LD\_PRELOAD}, which is required for
+  socksify to work. The alternative is static compilation, as
+  specified in the
+  \url{ftp://ftp.inet.no/pub/socks/extracted/doc/README.usage} file.
+
  \subsection{Why do I get undefined references to \_\_bswap\_32 during
    compilation on Linux?}
   This is likely due to a bug in one of the system header files. A
   workaround has been added in version 1.1.14.
-
- \subsection{How do I setup a password file for authenticating users?}
-  The Dante server uses the standard system passwordfile.
-  Put the server in a chroot jail to manage a separate passwordfile.
 
  \subsection{How can I more easily get the Dante server to work when the
 		  external interface is using dynamic IP addresses?}
@@ -586,13 +588,11 @@ command).
    \emph{Thanks to: Tin Yu Mak <makty@usa.net>.}
 
  \subsection{I have problems rotating Dante's logfiles.  What can I do
-	     except log via syslog?}
+  except log via syslog?}
 
-   Making Dante reopen the logfiles on SIGHUP would be a way to
-   provide support for this.  That however involves adding more
-   code to Dante, code that in practice duplicates code that
-   already exists in syslog.  Since Dante opens the logfiles in
-   appendmode the below may work.
+   Dante now reopens the logfiles on SIGHUP, so you should not have
+	any problems, just rename the file and send the Dante server
+	a SIGHUP signal.
 
    A quick and dirty solution for dealing with most daemons that
    don't like having their logs rotated. Copy them instead of moving
@@ -636,6 +636,13 @@ exec setuidgid logging multilog t /var/log/dante
 
 
 \section{Authentication}
+ \subsection{How do I setup a password file for authenticating users?}
+  The Dante server uses the standard system passwordfile.  On many
+  systems, the Dante "user.privileged" id must be set to root
+  or somebody with special access to read the encrypted passwordfile.
+
+  Put the server in a chroot jail to manage a separate passwordfile.
+
  \subsection{How do I use LDAP authentication with Dante?}
 
   First, make sure that you compile Dante with support for PAM.  The
@@ -717,7 +724,44 @@ exec setuidgid logging multilog t /var/log/dante
    With the password for the Administrator user in the file
    /etc/ldap.secret and chowned to 0600.
 
-
    \emph{Thanks to: Alexander Cohen <A.Cohen@latrobe.edu.au>.}
+ \subsection{Technical details}
+  \subsubsection{Why do I always get an initial success to
+	my erroneous username/password with Dante?}
+
+   If username/password authentication is used, the socks client will
+   always get a successful response at first.  The username/password
+   is not checked until the full socks request has been received
+   from the client, at which point the request will fail if
+   the username/password is incorrect in the same way it would if
+   there was no "pass" rule for the request.
+
+   The reason for this is that due to the generality of the
+   Dante socks-rules, we do not know what authentication we will
+	be using for this particular clients request, until we have
+	read the request.  That means, the same client address could
+	in theory use one type of authentication for connections
+	to one address, and another authentication type for 
+	connections to another address.
+   
+   As of version 1.1.16, this has been changed a little.  If you
+   are using only one type of username/password-based authentication
+   scheme, the username/password will be checked at an point early
+   enough to tell the client the username/password was wrong.
+
+\section{For programmers}
+ \subsection{What does a socksified application need to care about?}
+  A socksified application will normaly work without any
+  extra steps needing to be done, within the limits of the socks
+  standard.  The exception to this is the following:
+
+  \begin{description}
+	\item[select(2)/poll(2)] applications combining non-blocking sockets
+	 with select(2)/poll(2) need to make sure they can handle
+	 the select(2)/poll(2) call being interrupted.  This is due
+	 to how the Dante clientlibrary implements support for non-blocking
+	 connect(2).
+  \end{description}
+
 
 \end{document}

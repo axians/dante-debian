@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, 2003
+ * Copyright (c) 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@
 #if HAVE_PAM
 
 static const char rcsid[] =
-"$Id: auth_pam.c,v 1.18 2003/07/01 13:21:39 michaels Exp $";
+"$Id: auth_pam.c,v 1.21 2005/06/06 11:26:59 michaels Exp $";
 
 __BEGIN_DECLS
 
@@ -86,7 +86,8 @@ pam_passwordcheck(s, src, dst, auth, emsg, emsgsize)
 	int rc;
 	uid_t	euid;
 	struct pam_conv _pam_conv = {
-		&_pam_conversation,
+		(int (*)(int,struct pam_message **,struct pam_response **,void *))
+			&_pam_conversation,
 		NULL
 	};
 
@@ -126,8 +127,8 @@ pam_passwordcheck(s, src, dst, auth, emsg, emsgsize)
 		return -1;
 	}
 
-	pw.user		= auth->name;
-	pw.password = auth->password;
+	pw.user		= (const char *)(auth->name);
+	pw.password = (const char *)(auth->password);
 	_pam_conv.appdata_ptr = (char *)&pw;
 #ifdef HAVE_SOLARIS_PAM_BUG
 	_pam_priv_data = &pw;
@@ -150,7 +151,7 @@ pam_passwordcheck(s, src, dst, auth, emsg, emsgsize)
 
 		default:
 			socks_reseteuid(sockscf.uid.privileged, euid);
-			snprintf(emsg, emsgsize, "pam %s", pam_strerror(pamh, rc));
+			snprintf(emsg, emsgsize, "%s %s", function, pam_strerror(pamh, rc));
 			return -1;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: sockd.c,v 1.296 2003/07/01 13:21:42 michaels Exp $";
+"$Id: sockd.c,v 1.304 2005/06/10 11:04:04 michaels Exp $";
 
 	/*
 	 * signal handlers
@@ -53,7 +53,7 @@ static const char rcsid[] =
 __BEGIN_DECLS
 
 static void
-fixsettings __P((void));
+modulesetup __P((void));
 
 static void
 siginfo __P((int sig));
@@ -221,12 +221,12 @@ main(argc, argv, envp)
 	if (dforchild < maxfd) {
 		struct rlimit rlimit;
 
-		rlimit.rlim_cur = maxfd;
-		rlimit.rlim_max = maxfd;
+		rlimit.rlim_cur = rlimit.rlim_max = MIN(maxfd, FD_SETSIZE);
 
 		if (setrlimit(RLIMIT_OFILE, &rlimit) != 0) {
 			if (errno != EPERM)
-				serr(EXIT_FAILURE, "setrlimit(RLIMIT_OFILE, %d)", rlimit.rlim_max);
+				serr(EXIT_FAILURE, "setrlimit(RLIMIT_OFILE, %d)",
+				(int)rlimit.rlim_max);
 			else if (getdtablesize() < SOCKD_NEGOTIATEMAX + 2)
 				serr(EXIT_FAILURE,
 				"%d descriptors configured for negotiation, %d available",
@@ -438,7 +438,7 @@ main(argc, argv, envp)
 					/* set descriptor to blocking for request... */
 					if ((flags = fcntl(req.s, F_GETFL, 0)) == -1
 					||  fcntl(req.s, F_SETFL, flags & ~O_NONBLOCK) == -1)
-						swarn("%s: fcntl()");
+						swarn("fcntl()");
 
 					/* and send it to a request child. */
 					if ((p = send_req(reqchild->s, &req)) == 0) {
@@ -572,6 +572,7 @@ main(argc, argv, envp)
 							socks_unlock(negchild->lock);
 #endif /* HAVE_SENDMSG_DEADLOCK */
 
+							slog(LOG_DEBUG, "accept(): %s", strerror(errno));
 							continue; /* connection aborted/failed. */
 
 						case ENFILE:
@@ -741,6 +742,7 @@ serverinit(argc, argv, envp)
 	uid_t euid;
 	int ch, i;
 	int verifyonly = 0;
+	struct rlimit rlimit;
 
 #if !HAVE_PROGNAME
 	if (argv[0] != NULL)
@@ -833,10 +835,8 @@ serverinit(argc, argv, envp)
 		sockscf.option.configfile = SOCKD_CONFIGFILE;
 
 	optioninit();
-
 	genericinit();
-	
-	fixsettings();
+	modulesetup();
 
 	if (verifyonly) {
 		showconfig(&sockscf);
@@ -882,70 +882,19 @@ serverinit(argc, argv, envp)
 				serr(EXIT_FAILURE, "%s: socks_mklock()", function);
 #endif
 	}
-}
 
-static void
-fixsettings(void)
-{
-	const char *function = "fixsettings()";
-	int i;
-	uid_t euid;
+	/* avoid potentioal overflow of fd_set. */
+	if (getrlimit(RLIMIT_OFILE, &rlimit) != 0)
+			serr(EXIT_FAILURE, "getrlimit(RLIMIT_OFILE)");
+	if (rlimit.rlim_cur > FD_SETSIZE) {
+		rlimit.rlim_cur = rlimit.rlim_max = FD_SETSIZE;
 
-	/*
-	 * Check arguments and settings, do they make sense?
-	 */
-
-	if (sockscf.clientmethodc == 0)
-		sockscf.clientmethodv[sockscf.clientmethodc++] = AUTHMETHOD_NONE;
-
-	if (!sockscf.uid.privileged_isset)
-		sockscf.uid.privileged = sockscf.state.euid;
-	else {
-		socks_seteuid(&euid, sockscf.uid.privileged);
-		socks_reseteuid(sockscf.uid.privileged, euid);
+		if (setrlimit(RLIMIT_OFILE, &rlimit) != 0)
+			serr(EXIT_FAILURE, "setrlimit(RLIMIT_OFILE, %d)",
+			(int)rlimit.rlim_cur);
+		slog(LOG_DEBUG, "%s: reduced max descriptors to %d",
+		function, (int)rlimit.rlim_cur);
 	}
-
-	if (!sockscf.uid.unprivileged_isset)
-		sockscf.uid.unprivileged = sockscf.state.euid;
-	else {
-		socks_seteuid(&euid, sockscf.uid.unprivileged);
-		socks_reseteuid(sockscf.uid.unprivileged, euid);
-	}
-
-#if HAVE_LIBWRAP
-	if (!sockscf.uid.libwrap_isset)
-		sockscf.uid.libwrap = sockscf.state.euid;
-	else {
-		socks_seteuid(&euid, sockscf.uid.libwrap);
-		socks_reseteuid(sockscf.uid.libwrap, euid);
-	}
-#endif /* HAVE_LIBWRAP */
-
-	if (sockscf.internalc == 0)
-		serrx(EXIT_FAILURE, "%s: no internal address given", function);
-	/* values will be used once and checked there. */
-
-	if (sockscf.external.addrc == 0)
-		serrx(EXIT_FAILURE, "%s: no external address given", function);
-	for (i = 0; i < sockscf.external.addrc; ++i)
-		if (!addressisbindable(&sockscf.external.addrv[i]))
-			serrx(EXIT_FAILURE, NULL);
-
-	if (sockscf.methodc == 0)
-		swarnx("%s: no methods enabled (total block)", function);
-
-	if (sockscf.uid.unprivileged == 0)
-		swarnx("%s: setting the unprivileged uid to %d is not recommended",
-		function, sockscf.uid.unprivileged);
-
-#if HAVE_LIBWRAP
-	if (sockscf.uid.libwrap == 0)
-		swarnx("%s: setting the libwrap uid to %d is not recommended",
-		function, sockscf.uid.libwrap);
-#endif /* HAVE_LIBWRAP */
-
-	bwsetup();
-	redirectsetup();
 }
 
 /* ARGSUSED */
@@ -1033,7 +982,7 @@ sighup(sig)
 	socks_seteuid(&euid, sockscf.state.euid);
 	genericinit();
 	socks_reseteuid(sockscf.state.euid, euid);
-	fixsettings();
+	modulesetup();
 
 	/* LINTED assignment in conditional context */
 	if ((p = pidismother(sockscf.state.pid))) {
@@ -1121,5 +1070,16 @@ optioninit(void)
 	sockscf.timeout.negotiate	= SOCKD_NEGOTIATETIMEOUT;
 	sockscf.timeout.io			= SOCKD_IOTIMEOUT;
 	sockscf.external.rotation	= ROTATION_NONE;
+#if DEBUG
+	sockscf.child.maxidle 		= SOCKD_FREESLOTS;
+#else
+	sockscf.child.maxidle 		= 0;
+#endif
+}
 
+static void
+modulesetup(void)
+{
+	bwsetup();
+	redirectsetup();
 }

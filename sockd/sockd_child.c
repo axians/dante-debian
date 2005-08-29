@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: sockd_child.c,v 1.139 2003/07/01 13:21:44 michaels Exp $";
+"$Id: sockd_child.c,v 1.144 2005/06/10 11:04:07 michaels Exp $";
 
 #define MOTHER	0	/* descriptor mother reads/writes on.	*/
 #define CHILD	1	/* descriptor child reads/writes on.	*/
@@ -452,15 +452,18 @@ childcheck(type)
 		SASSERTX((*childv)[child].freec <= max);
 		proxyc += type < 0 ? max : (*childv)[child].freec;
 
-#if 0 /* supposedly doesn't work. */
 		if ((*childv)[child].freec == max) {
 			++idle;
 
-			if (sockscf.child.maxidlenumber > 0
-			&& idle > sockscf.child.maxidlenumber)
-				removechild((*childv)[child].pid);	
+			if (sockscf.child.maxidle > 0 && idle > sockscf.child.maxidle) {
+				/* will remove this next, no longer part of free slots pool. */
+				proxyc -= type < 0 ? max : (*childv)[child].freec;
+
+				removechild((*childv)[child].pid);
+				--idle;
+				--child; /* everything was shifted once to the left. */
+			}
 		}
-#endif
 	}
 
 	if (type >= 0)
@@ -501,6 +504,8 @@ fillset(set)
 			FD_SET(sockscf.internalv[i].s, set);
 			dbits = MAX(dbits, sockscf.internalv[i].s);
 		}
+	else
+		swarn("can't accept new clients, no free negotiate slots");
 
 	/* negotiator children. */
 	for (i = 0; i < negchildc; ++i) {
@@ -510,7 +515,7 @@ fillset(set)
 			dbits = MAX(dbits, negchildv[i].s);
 		}
 
-		/* we can always accept a ack ofcourse. */
+		/* we can always accept an ack ofcourse. */
 		SASSERTX(negchildv[i].ack >= 0);
 		FD_SET(negchildv[i].ack, set);
 		dbits = MAX(dbits, negchildv[i].ack);
@@ -524,7 +529,7 @@ fillset(set)
 			dbits = MAX(dbits, reqchildv[i].s);
 		}
 
-		/* we can always accept a ack ofcourse. */
+		/* we can always accept an ack ofcourse. */
 		SASSERTX(reqchildv[i].ack >= 0);
 		FD_SET(reqchildv[i].ack, set);
 		dbits = MAX(dbits, reqchildv[i].ack);
@@ -827,7 +832,7 @@ send_io(s, io)
 
 	length = 0;
 	/* LINTED operands have incompatible pointer types */
-	iovec[0].iov_base		= (const void *)io;
+	iovec[0].iov_base		= (void *)io;
 	iovec[0].iov_len		= sizeof(*io);
 	length				  += iovec[0].iov_len;
 
@@ -886,7 +891,7 @@ send_client(s, client)
 	int fdsent;
 
 	/* LINTED operands have incompatible pointer types */
-	iovec[0].iov_base		= (const void *)&command;
+	iovec[0].iov_base		= (void *)&command;
 	iovec[0].iov_len		= sizeof(command);
 
 	fdsent = 0;
@@ -919,7 +924,7 @@ send_req(s, req)
 	CMSG_AALLOC(cmsg, sizeof(int));
 
 	/* LINTED operands have incompatible pointer types */
-	iovec[0].iov_base		= (const void *)req;
+	iovec[0].iov_base		= (void *)req;
 	iovec[0].iov_len		= sizeof(*req);
 
 	fdsent = 0;

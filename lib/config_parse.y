@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2004, 2005
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 #include "yacconfig.h"
 
 static const char rcsid[] =
-"$Id: config_parse.y,v 1.183 2002/05/01 12:35:14 michaels Exp $";
+"$Id: config_parse.y,v 1.191 2005/06/10 11:14:48 michaels Exp $";
 
 __BEGIN_DECLS
 
@@ -62,6 +62,10 @@ addressinit __P((struct ruleaddress_t *address));
 #if SOCKS_SERVER
 static void
 ruleinit __P((struct rule_t *rule));
+
+static void
+fixconfig __P((void));
+
 #endif
 
 __END_DECLS
@@ -156,7 +160,7 @@ static const struct {
 			yywarn("duplicate method: %s", method2string(method)); \
 		else { \
 			if (*methodc >= MAXMETHOD)	\
-				yyerror("internal error");	\
+				yyerror("internal error, (%d >= %d)", *methodc, MAXMETHOD);	\
 			methodv[(*methodc)++] = method; \
 		} \
 	} while (0)
@@ -215,7 +219,7 @@ static const struct {
 %token	<string> USERNAME
 %token	<string> USER_PRIVILEGED USER_UNPRIVILEGED USER_LIBWRAP
 %token	<string> LOGOUTPUT LOGFILE
-%token	<string> CHILD_MAXIDLENUMBER
+%token	<string> CHILD_MAXIDLE
 
 	/* route */
 %type	<string> route
@@ -572,13 +576,12 @@ logoutputdevices:	logoutputdevice
 	;
 
 childstate:
-	CHILD_MAXIDLENUMBER ':' NUMBER {
+	CHILD_MAXIDLE ':' NUMBER {
 #if SOCKS_SERVER
 		if (atoi($3) < SOCKD_FREESLOTS)
-			yyerror("child.maxidlenumber can't be less than SOCKD_FREESLOTS (%d)",
-			SOCKD_FREESLOTS);
-
-		sockscf.child.maxidlenumber = atoi($3);
+			yyerror("%s (%s) can't be less than SOCKD_FREESLOTS (%d)",
+			$1, $3, SOCKD_FREESLOTS);
+		sockscf.child.maxidle = atoi($3);
 #endif
 	}
 	;
@@ -1051,7 +1054,7 @@ ipaddress:	IPADDRESS {
 
 netmask:	NUMBER {
 		if (atoi($1) < 0 || atoi($1) > 32)
-			yyerror("bad netmask: %d", $1);
+			yyerror("bad netmask: %s", $1);
 
 		netmask->s_addr
 		= atoi($1) == 0 ? 0 : htonl(0xffffffff << (32 - atoi($1)));
@@ -1185,7 +1188,6 @@ readconfig(filename)
 	const char *filename;
 {
 	const char *function = "readconfig()";
-	const int errno_s = errno;
 
 /*	yydebug				= 1;          */
 	yylineno				= 1;
@@ -1196,10 +1198,15 @@ readconfig(filename)
 		return -1;
 	}
 
+	errno = 0;	/* don't report old errors in yyparse(). */
 	yyparse();
 	fclose(yyin);
 
-	errno = errno_s; /* some buggy yacc's alter errno sometimes. */
+#if SOCKS_SERVER
+	fixconfig();
+#endif /* SOCKS_SERVER */
+
+	errno = 0;
 
 	return 0;
 }
@@ -1315,4 +1322,72 @@ ruleinit(rule)
 
 	dst = rdr_from = rdr_to = src;
 }
-#endif
+
+static void
+fixconfig(void)
+{
+	const char *function = "fixsettings()";
+	int i;
+	uid_t euid;
+
+	/*
+	 * Check arguments and settings, do they make sense?
+	 */
+
+	if (sockscf.clientmethodc == 0)
+		sockscf.clientmethodv[sockscf.clientmethodc++] = AUTHMETHOD_NONE;
+
+#if !HAVE_DUMPCONF
+	if (!sockscf.uid.privileged_isset)
+		sockscf.uid.privileged = sockscf.state.euid;
+	else {
+		socks_seteuid(&euid, sockscf.uid.privileged);
+		socks_reseteuid(sockscf.uid.privileged, euid);
+	}
+
+	if (!sockscf.uid.unprivileged_isset)
+		sockscf.uid.unprivileged = sockscf.state.euid;
+	else {
+		socks_seteuid(&euid, sockscf.uid.unprivileged);
+		socks_reseteuid(sockscf.uid.unprivileged, euid);
+	}
+
+#if HAVE_LIBWRAP
+	if (!sockscf.uid.libwrap_isset)
+		sockscf.uid.libwrap = sockscf.state.euid;
+	else {
+		socks_seteuid(&euid, sockscf.uid.libwrap);
+		socks_reseteuid(sockscf.uid.libwrap, euid);
+	}
+#endif /* HAVE_LIBWRAP */
+#endif /* !HAVE_DUMPCONF */
+
+	if (sockscf.internalc == 0)
+		serrx(EXIT_FAILURE, "%s: no internal address given", function);
+	/* values will be used once and checked there. */
+
+	if (sockscf.external.addrc == 0)
+		serrx(EXIT_FAILURE, "%s: no external address given", function);
+#if !HAVE_DUMPCONF
+	for (i = 0; i < sockscf.external.addrc; ++i)
+		if (!addressisbindable(&sockscf.external.addrv[i]))
+			serrx(EXIT_FAILURE, NULL);
+#endif /* !HAVE_DUMPCONF */
+
+#if !HAVE_DUMPCONF 
+	if (sockscf.methodc == 0)
+		swarnx("%s: no methods enabled (total block)", function);
+
+	if (sockscf.uid.unprivileged == 0)
+		swarnx("%s: setting the unprivileged uid to %d is not recommended",
+		function, sockscf.uid.unprivileged);
+
+#if HAVE_LIBWRAP
+	if (sockscf.uid.libwrap == 0)
+		swarnx("%s: setting the libwrap uid to %d is not recommended",
+		function, sockscf.uid.libwrap);
+#endif /* HAVE_LIBWRAP */
+#endif /* !HAVE_DUMPCONF */
+}
+
+#endif /* SOCKS_SERVER */

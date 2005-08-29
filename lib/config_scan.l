@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,12 @@ extern int socks_parseinit;
 extern const int socks_configtype;
 
 static const char rcsid[] =
-"$Id: config_scan.l,v 1.70 2002/03/25 10:33:15 michaels Exp $";
+"$Id: config_scan.l,v 1.73 2005/01/24 10:24:22 karls Exp $";
+
+#define YY_STACK_USED 0
+#define YY_ALWAYS_INTERACTIVE 0
+#define YY_NEVER_INTERACTIVE 1
+#define YY_MAIN 0
 
 %}
 
@@ -405,9 +410,9 @@ external {
 	return EXTERNAL;
 }
 
-child\.maxidlenumber {
+child\.maxidle {
 	yylval.string = yytext;
-	return CHILD_MAXIDLENUMBER;
+	return CHILD_MAXIDLE;
 }
 
 user {

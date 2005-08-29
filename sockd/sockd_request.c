@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 #include "config_parse.h"
 
 static const char rcsid[] =
-"$Id: sockd_request.c,v 1.153 2003/07/01 13:21:48 michaels Exp $";
+"$Id: sockd_request.c,v 1.156 2005/05/13 13:48:44 michaels Exp $";
 
 /*
  * Since it only handles one client at a time there is no possibility
@@ -219,7 +219,7 @@ dorequest(mother, request)
 	struct sockaddr bound;
 	struct sockd_io_t io;
 	struct response_t response;
-	char a[MAXSOCKSHOSTSTRING], b[MAXSOCKSHOSTSTRING];
+	char a[MAXSOCKSHOSTSTRING];
 	char msg[256];
 	int p, permit, out;
 
@@ -1236,8 +1236,6 @@ static void
 proctitleupdate(from)
 	const struct sockaddr *from;
 {
-	char fromstring[MAXSOCKADDRSTRING];
-
 	setproctitle("requestcompleter: %s", from == NULL ?  "0/1" : "1/1");
 }
 

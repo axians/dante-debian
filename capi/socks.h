@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,10 +41,19 @@
  *
  */
 
-/* $Id: socks.h,v 1.7 2003/07/01 13:21:10 michaels Exp $ */
+/* $Id: socks.h,v 1.12 2005/06/01 13:46:35 karls Exp $ */
 
 #include <sys/types.h>
 #include <sys/socket.h>
+
+/*
+ * The definition of bindresvport below might conflict with
+ * <netinet/in.h> ... best workaround seems to be to make sure the
+ * file is included prior to the #define
+ */
+#include <netinet/in.h>
+
+#include <netdb.h>
 
 
 #define accept Raccept
@@ -53,6 +62,8 @@
 #define connect Rconnect
 #define gethostbyname Rgethostbyname
 #define gethostbyname2 Rgethostbyname2
+#define getaddrinfo Rgetaddrinfo
+#define getipnodebyname Rgetipnodebyname
 #define getpeername Rgetpeername
 #define getsockname Rgetsockname
 #define read Rread
@@ -100,6 +111,9 @@ int Rbindresvport __P((int, struct sockaddr_in *));
 int Rrresvport __P((int *));
 struct hostent *Rgethostbyname __P((const char *));
 struct hostent *Rgethostbyname2 __P((const char *, int af));
+int Rgetaddrinfo __P((const char *nodename, const char *servname,
+					      const struct addrinfo *hints, struct addrinfo **res));
+struct hostent *Rgetipnodebyname __P((const char *name, int af, int flags, int *error_num));
 ssize_t Rwrite __P((int d, const void *buf, size_t nbytes));
 ssize_t Rwritev __P((int d, const struct iovec *iov, int iovcnt));
 ssize_t Rsend __P((int s, const void *msg, size_t len, int flags));
