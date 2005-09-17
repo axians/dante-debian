@@ -1,3 +1,9 @@
+dante (1.1.18-1) unstable; urgency=low
+
+  * new upstream (fixes logging to syslog)
+
+ -- Adrian Bridgett <bridgett@debian.org>  Sat, 17 Sep 2005 15:50:50 +0100
+
 dante (1.1.17-1) unstable; urgency=low
 
   * new upstream release (closes: #304037)
