@@ -1,3 +1,10 @@
+dante (1.1.18-2.1) unstable; urgency=high
+
+  * Non-maintainer upload for RC bug.
+  * Make sure changelogs are installed into all packages (Closes: #393568).
+
+ -- Thijs Kinkhorst <thijs@debian.org>  Thu, 19 Oct 2006 12:09:39 +0200
+
 dante (1.1.18-2) unstable; urgency=low
 
   * applied patch from upstream (same as patch sent by Nicolas Leonard)

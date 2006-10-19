@@ -89,7 +89,7 @@ binary-arch:	build
 	dh_installdocs -pdante-client doc/README.socksify
 	dh_installdocs -pdante-client -pdante-server doc/README.msproxy
 	dh_installdocs -pdante-server doc/SOCKS4.protocol
-	dh_installchangelogs -plibsocksd -pdante-server -pdante-client NEWS
+	dh_installchangelogs NEWS
 	rmdir $(DEB)/usr/bin $(DEB)/usr/sbin $(DEB)/usr/man/man? $(DEB)/usr/man $(DEB)/usr/include
 	## now make the library symlinks
 	# destroy and remake directory (and contents)
