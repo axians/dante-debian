@@ -1,3 +1,11 @@
+dante (1.1.18.dfsg-0.1) unstable; urgency=low
+
+  * Non-maintainer upload with maintainer approval.
+  * Remove non-free RFC 1928 and 1929 from the upstream tarball
+    (closes: #393361).
+
+ -- Julien Cristau <jcristau@debian.org>  Tue, 04 Sep 2007 04:11:23 +0200
+
 dante (1.1.18-2.1) unstable; urgency=high
 
   * Non-maintainer upload for RC bug.
