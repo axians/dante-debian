@@ -1,3 +1,12 @@
+dante (1.1.18.dfsg-0.2) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Added LSB formatted dependency info in init.d script (closes: #469750)
+  * Removed *.conffiles files, obsoleted by debhelper 3
+  * Changed section of libsocksd-dev to libdevel
+
+ -- Peter Eisentraut <petere@debian.org>  Fri, 04 Apr 2008 14:09:07 +0200
+
 dante (1.1.18.dfsg-0.1) unstable; urgency=low
 
   * Non-maintainer upload with maintainer approval.

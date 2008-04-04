@@ -1,4 +1,11 @@
 #! /bin/sh
+### BEGIN INIT INFO
+# Provides:          danted
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+### END INIT INFO
 #
 # dante SOCKS server init.d file. Based on /etc/init.d/skeleton:
 # Version:	@(#)skeleton  1.8  03-Mar-1998  miquels@cistron.nl
