@@ -216,7 +216,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-lib_LTLIBRARIES = libsocksd.la
+lib_LTLIBRARIES = libsocks.la
 libsocks_la_SOURCES = config_parse.y config_scan.l Raccept.c Rbind.c \
 	Rgetpeername.c Rgetsockname.c Rrresvport.c io.c    \
 	address.c authneg.c client.c clientconfig.c clientprotocol.c \
@@ -305,7 +305,7 @@ config_parse.h: config_parse.c
 	  rm -f config_parse.c; \
 	  $(MAKE) config_parse.c; \
 	else :; fi
-libsocksd.la: $(libsocks_la_OBJECTS) $(libsocks_la_DEPENDENCIES) 
+libsocks.la: $(libsocks_la_OBJECTS) $(libsocks_la_DEPENDENCIES) 
 	$(LINK) -rpath $(libdir) $(libsocks_la_LDFLAGS) $(libsocks_la_OBJECTS) $(libsocks_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:

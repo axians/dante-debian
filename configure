@@ -19153,8 +19153,8 @@ fi
 # This can be used to rebuild libtool when needed
 LIBTOOL_DEPS="$ac_aux_dir/ltmain.sh"
 
-# Always use Debian's libtool.
-LIBTOOL='/usr/bin/libtool'
+# Always use our own libtool.
+LIBTOOL='$(SHELL) $(top_builddir)/libtool'
 
 # Prevent multiple expansion
 
@@ -29830,7 +29830,7 @@ echo "$as_me: WARNING: hardcoding libdl to $LIBRARY_DLOPEN" >&2;}
 		    fi
 		;;
 		*)
-		    LIBRARY_DLOPEN="/lib/libdl.so.2"
+		    LIBRARY_DLOPEN="${base_library_path}libdl.${SOLIB_POSTFIX}"
 		;;
 	    esac
 	    SOCKSIFY_PRELOAD_LIBS="${SOCKSIFY_PRELOAD_LIBS}${LIBRARY_DLOPEN:+${PRELOAD_SEPERATOR}}${LIBRARY_DLOPEN}"

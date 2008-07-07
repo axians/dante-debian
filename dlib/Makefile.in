@@ -217,7 +217,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-lib_LTLIBRARIES = libdsocksd.la
+lib_LTLIBRARIES = libdsocks.la
 libdsocks_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c \
 	../lib/config_parse.y ../lib/io.c ../lib/debug.c ../lib/udp.c \
 	../lib/Rgetpeername.c ../lib/Rgetsockname.c \
@@ -307,7 +307,7 @@ config_parse.h: config_parse.c
 	  rm -f config_parse.c; \
 	  $(MAKE) config_parse.c; \
 	else :; fi
-libdsocksd.la: $(libdsocks_la_OBJECTS) $(libdsocks_la_DEPENDENCIES) 
+libdsocks.la: $(libdsocks_la_OBJECTS) $(libdsocks_la_DEPENDENCIES) 
 	$(LINK) -rpath $(libdir) $(libdsocks_la_LDFLAGS) $(libdsocks_la_OBJECTS) $(libdsocks_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:

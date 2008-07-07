@@ -75,10 +75,6 @@ Rconnect(s, name, namelen)
 		return connect(s, name, namelen);
 	}
 
-#if SOCKS_CLIENT /* may be called before normal init, log to right place */
-	clientinit();
-#endif     
-   
 	slog(LOG_DEBUG, "%s: %s",
 	function, sockaddr2string(name, namestring, sizeof(namestring)));
 

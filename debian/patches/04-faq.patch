@@ -1,0 +1,14 @@
+--- a/doc/faq.tex	2008-07-07 18:16:35.000000000 +0300
++++ b/doc/faq.tex	2008-07-07 18:16:39.000000000 +0300
+@@ -477,7 +477,10 @@
+       libdl.so
+       libdsocksd.so
+   \end{verbatim}
+- \emph{Thanks to: Dag Wieers <dag@wieers.com>.}
++ \emph{Thanks to: Dag Wieers <dag@wieers.com>.}   However I \emph{strongly}
++ suggest that you do not do it as if things go wrong you may need to use a
++ rescue disk to recover. Please use the method below instead.
++
+ 
+  Dag Wieers also has a (RedHat) SPEC file which contains scripts for
+  doing this automatically. It can be found at:

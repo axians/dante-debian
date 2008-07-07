@@ -68,8 +68,7 @@
 #define __attribute__(a)
 #endif
 
-/*#if HAVE_LINUX_ECCENTRICITIES*/
-#if 0
+#if HAVE_LINUX_ECCENTRICITIES
 /*
  * XXX This is a hack. Avoid transparent sockaddr union used in Linux
  *  to avoid the use of the union in the code. Mainly used in

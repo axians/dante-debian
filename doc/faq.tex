@@ -475,12 +475,9 @@ command).
    edit the file /etc/ld.so.preload
    and add two lines saying:
       libdl.so
-      libdsocksd.so
+      libdsocks.so
   \end{verbatim}
- \emph{Thanks to: Dag Wieers <dag@wieers.com>.}   However I \emph{strongly}
- suggest that you do not do it as if things go wrong you may need to use a
- rescue disk to recover. Please use the method below instead.
-
+ \emph{Thanks to: Dag Wieers <dag@wieers.com>.}
 
  Dag Wieers also has a (RedHat) SPEC file which contains scripts for
  doing this automatically. It can be found at:
@@ -492,7 +489,7 @@ command).
   you could add
 
   \begin{verbatim}
-   LD_PRELOAD="libdl.so libdsocksd.so.0"
+   LD_PRELOAD="libdl.so libdsocks.so"
    export LD_PRELOAD
   \end{verbatim}
   to the environment. (/etc/profile ~/.profile ~/.bashrc)
@@ -531,7 +528,7 @@ command).
   the result becomes the the same as not using socksify on them.
 
   Solution: strip off the suid bit if possible or recompile the binary
-  (rsh, ssh, etc) with explicit socks support (adding "-ldsocksd"
+  (rsh, ssh, etc) with explicit socks support (adding "-ldsocks"
   to the linkoptions is usually enough.)
 
  \subsection{Why doesn't socksify work on HP-UX 11.00?}

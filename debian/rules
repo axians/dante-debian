@@ -8,10 +8,11 @@ DEV=debian/libsocksd-dev
 CLIENT=debian/dante-client
 SERVER=debian/dante-server
 
+include /usr/share/quilt/quilt.make
 
 build:	build-stamp
 
-build-stamp:
+build-stamp: ${QUILT_STAMPFN}
 	dh_testdir
 	# build package here
 	cp /usr/share/misc/config.guess /usr/share/misc/config.sub . 
@@ -41,6 +42,7 @@ clean:
 	-rm config.log config.status config.cache libtool \
 	  include/autoconf.h include/stamp-h bin/socksify confdefs.h \
 	  dlib/util.c sockd/util.c config.guess config.sub
+	$(MAKE) -f debian/rules unpatch
 
 binary-indep:	build
 

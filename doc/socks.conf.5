@@ -40,9 +40,9 @@
 .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
 .\" the rights to redistribute these changes.
 .\"
-.TH DANTE.CONF 5 "February 17, 2001"
+.TH SOCKS.CONF 5 "February 17, 2001"
 .SH NAME
-dante.conf \- socks client configuration file syntax
+socks.conf \- socks client configuration file syntax
 .SH DESCRIPTION
 The configuration file for the socks client library allow control over
 logging and server selection.  It is divided into two parts,
@@ -113,13 +113,13 @@ See the example directory in the distribution.
 Use \fBSOCKS_USERNAME\fP as the username when doing username
 authentication.
 .SH FILES
-.I /etc/dante.conf
+.I /etc/socks.conf
 .SH AUTHORS
 For Inferno Nettverk A/S, Norway:
  Michael Shuldman <michaels@inet.no>: Design and implementation.
  Karl-Andre' Skevik <karls@inet.no>: Autoconf and porting.
 .SH SEE ALSO
-danted(8) danted.conf(5)
+sockd(8) sockd.conf(5)
 .Pp
 Information about new releases and other related issues can be found
 on the

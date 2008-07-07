@@ -1,0 +1,24 @@
+Always use Debian's libtool and libdl.so.2.
+
+--- a/configure	2008-07-07 18:14:55.000000000 +0300
++++ b/configure	2008-07-07 18:15:08.000000000 +0300
+@@ -19153,8 +19153,8 @@
+ # This can be used to rebuild libtool when needed
+ LIBTOOL_DEPS="$ac_aux_dir/ltmain.sh"
+ 
+-# Always use our own libtool.
+-LIBTOOL='$(SHELL) $(top_builddir)/libtool'
++# Always use Debian's libtool.
++LIBTOOL='/usr/bin/libtool'
+ 
+ # Prevent multiple expansion
+ 
+@@ -29830,7 +29830,7 @@
+ 		    fi
+ 		;;
+ 		*)
+-		    LIBRARY_DLOPEN="${base_library_path}libdl.${SOLIB_POSTFIX}"
++		    LIBRARY_DLOPEN="/lib/libdl.so.2"
+ 		;;
+ 	    esac
+ 	    SOCKSIFY_PRELOAD_LIBS="${SOCKSIFY_PRELOAD_LIBS}${LIBRARY_DLOPEN:+${PRELOAD_SEPERATOR}}${LIBRARY_DLOPEN}"

@@ -1,0 +1,11 @@
+01-rename-library
+02-rename-programs.patch
+03-configure
+04-faq.patch
+05-readme-functions.patch
+06-socksify-manpage.patch
+07-rconnect.patch
+08-serverconfig-copy.patch
+09-getifa-address.patch
+10-config-users.patch
+11-linux-eccentricities.patch

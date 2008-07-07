@@ -45,7 +45,7 @@
 #include "config_parse.h"
 
 static const char rcsid[] =
-"$Id: serverconfig.c,v 1.201 2005/09/14 10:37:24 michaels Exp $";
+"$Id: serverconfig.c,v 1.200 2005/07/12 13:06:09 michaels Exp $";
 
 __BEGIN_DECLS
 
@@ -932,32 +932,33 @@ rulespermit(s, peer, local, match, state, src, dst, msg, msgsize)
 
 							switch (state->auth.method) {
 								case AUTHMETHOD_UNAME: {
-                          	/* it's a union, make a copy first. */
-                          	const struct authmethod_uname_t uname
-                          	= state->auth.mdata.uname;
+									/*
+									 * Got uname/passowrd, which is similar enough.
+									 * Just need to copy name/password from the
+									 * uname object into the pam object.
+									 */
 
-                          	/* similar enough, just copy name/password. */
-                          	strcpy((char *)state->auth.mdata.pam.name,
-                          	(const char *)uname.name);
-                          	strcpy((char *)state->auth.mdata.pam.password,
-                          	(const char *)uname.password);
+									memmove(state->auth.mdata.pam.name,
+									state->auth.mdata.uname.name,
+									strlen(state->auth.mdata.uname.name) + 1);
+
+									memmove(state->auth.mdata.pam.password,
+									state->auth.mdata.uname.password,
+									strlen(state->auth.mdata.uname.password) + 1);
 
 									methodischeckable = 1;
 									break;
 								}
 
 								case AUTHMETHOD_RFC931: {
-                          	/* it's a union, make a copy first. */
-                          	const struct authmethod_rfc931_t rfc931
-                          	= state->auth.mdata.rfc931;
-
 									/*
 									 * no password, but we can check for the username 
 									 * we got from ident, with an empty password.
 									 */
 
-                          	strcpy((char *)state->auth.mdata.pam.name,
-                          	(const char *)rfc931.name);
+									memmove(state->auth.mdata.pam.name,
+									state->auth.mdata.rfc931.name,
+									strlen(state->auth.mdata.rfc931.name) + 1);
 
 									*state->auth.mdata.pam.password = NUL;
 

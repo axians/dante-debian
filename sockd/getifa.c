@@ -120,7 +120,8 @@ getifa(destaddr)
 
 	if (rtnetlink_sk == -1) {
 		swarn("%s: socket(NETLINK_ROUTE)", function);
-		return getdefaultexternal();
+		close(rtnetlink_sk);
+		return inaddr_none;
 	}
 
 	/*===================================================================

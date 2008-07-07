@@ -81,7 +81,7 @@ static const char rcsid[] =
 #undef sendto
 
 /* XXX Attempt to support old library calls, which use old version of
-   sockaddr and msghdr struct. Other parts of libdsocksd are compiled
+   sockaddr and msghdr struct. Other parts of libdsocks are compiled
    using the new versions. */
 
 /* sockaddr struct, with sa_len */

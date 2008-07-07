@@ -2,7 +2,7 @@ $Id: README.socksify,v 1.4 1999/04/26 13:52:33 michaels Exp $
 
 The shell script socksify in the bin directory is meant to aid in
 using socks with already compiled dynamic binaries.  This works by
-setting the LD_PRELOAD environment variable to libdsocksd.  It will
+setting the LD_PRELOAD environment variable to libdsocks.  It will
 then wrap all networking-related system calls.
 
 When used the script can socksify a program by simply giving it as a
