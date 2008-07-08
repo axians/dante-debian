@@ -35,6 +35,13 @@ touch_pidfile ()
 		
 case "$1" in
   start)
+	if ! egrep -cve '^ *(#|$)' \
+	    -e '^(logoutput|user\.((not)?privileged|libwrap)):' \
+	    $CONFFILE > /dev/null
+	then
+		echo "Not starting $DESC: not configured."
+		exit 0
+	fi
 	echo -n "Starting $DESC: "
 	touch_pidfile
 	start-stop-daemon --start --quiet --pidfile $PIDFILE \

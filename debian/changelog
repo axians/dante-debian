@@ -1,10 +1,15 @@
 dante (1.1.18.dfsg-0.3) unstable; urgency=low
 
   * Non-maintainer upload.
+  * Do not start danted if the config file contains nothing but
+    the default settings.  Closes: #232574, #368322, #466082.
   * Use quilt to manage the patches, converting all existing ones.
 
   * debian/control
     - add a build-dependency on quilt >= 0.40 for quilt.make
+  * debian/dante-server.init
+    - do not start danted if the only uncommented settins in
+      the config file are the ones placed there by default
   * debian/patches
     - convert the existing Debian source patch to patches 01 through 11
   * debian/rules
