@@ -109,12 +109,12 @@ binary-arch:	build
 	dh_installinit -pdante-server -r --init-script=danted
 #	dh_installcron -a 
 #	dh_installmanpages -a
-	dh_strip -a
 	dh_compress -a
 	dh_fixperms -a
-	dh_installdeb -a
+	dh_strip -a
 	dh_makeshlibs -plibsocksd -pdante-client
 	dh_shlibdeps -a
+	dh_installdeb -a
 	dh_gencontrol -a
 	dh_md5sums -a
 	dh_builddeb -a
