@@ -26,7 +26,7 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
-	-$(MAKE) -i distclean
+	[ ! -f Makefile ] || $(MAKE) distclean
 	-rm debian/copyright
 	dh_clean
 	for d in sockd dlib; do \
