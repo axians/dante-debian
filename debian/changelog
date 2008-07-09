@@ -8,9 +8,10 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
   * Add a watch file
 
   * debian/compat
-    - create this file, setting the compatibility level to 4
+    - create this file, setting the compatibility level to 7
   * debian/control
     - add a build-dependency on quilt >= 0.40 for quilt.make
+    - change the debhelper build-dependency to version 7
   * debian/dante-server.init
     - do not start danted if the only uncommented settins in
       the config file are the ones placed there by default
