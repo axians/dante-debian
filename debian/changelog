@@ -5,6 +5,8 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
     the default settings.  Closes: #232574, #368322, #466082.
   * Use quilt to manage the patches, converting all existing ones.
 
+  * debian/compat
+    - create this file, setting the compatibility level to 4
   * debian/control
     - add a build-dependency on quilt >= 0.40 for quilt.make
   * debian/dante-server.init
@@ -14,6 +16,7 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
     - convert the existing Debian source patch to patches 01 through 11
   * debian/rules
     - use quilt.make to apply and deapply patches
+    - remove the DH_COMPAT setting, moved to debian/compat
 
  -- Peter Pentchev <roam@ringlet.net>  Mon, 07 Jul 2008 16:12:43 +0300
 

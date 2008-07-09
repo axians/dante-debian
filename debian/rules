@@ -2,7 +2,6 @@
 
 # This script uses debhelper by Joey Hess
 export DH_VERBOSE=1
-export DH_COMPAT=4
 DEB=`pwd`/debian/libsocksd
 DEV=debian/libsocksd-dev
 CLIENT=debian/dante-client
