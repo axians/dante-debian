@@ -6,7 +6,7 @@ Build-Depends: flex,debhelper(>=7),quilt(>=0.40),libtool,autotools-dev,libwrap0-
 Homepage: http://www.inet.no/dante/
 Standards-Version: 3.8.0
 
-Package: libsocksd
+Package: libsocksd0
 Architecture: any
 Section: libs
 Depends: ${shlibs:Depends}
@@ -14,7 +14,7 @@ Description: SOCKS library for packages built using libsocksd-dev
  This library is used for running programs built using libsocksd-dev
  and will generally be automatically selected if you require it.
   
-Package: libsocksd-dev
+Package: libsocksd0-dev
 Architecture: any
 Section: libdevel
 Depends: libsocksd

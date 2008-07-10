@@ -2,8 +2,8 @@
 
 # This script uses debhelper by Joey Hess
 export DH_VERBOSE=1
-DEB=`pwd`/debian/libsocksd
-DEV=debian/libsocksd-dev
+DEB=`pwd`/debian/libsocksd0
+DEV=debian/libsocksd0-dev
 CLIENT=debian/dante-client
 SERVER=debian/dante-server
 
@@ -69,7 +69,7 @@ binary-arch:	build
 	mv $(DEB)/usr/man/man5/sockd.conf.5  $(SERVER)/usr/share/man/man5/danted.conf.5
 	dh_installdirs -pdante-server usr/sbin usr/share/man/man8
 	dh_installdirs -pdante-client usr/bin usr/lib
-	dh_installdirs -plibsocksd-dev usr/include usr/lib
+	dh_installdirs -plibsocksd0-dev usr/include usr/lib
 	mv $(DEB)/usr/man/man8/sockd.8 $(SERVER)/usr/share/man/man8/danted.8
 	mv $(DEB)/usr/sbin/sockd $(SERVER)/usr/sbin/danted
 	cp doc/socksify.1 $(CLIENT)/usr/share/man/man1/socksify.1
@@ -112,7 +112,7 @@ binary-arch:	build
 	dh_compress -a
 	dh_fixperms -a
 	dh_strip -a
-	dh_makeshlibs -plibsocksd -pdante-client
+	dh_makeshlibs -plibsocksd0 -pdante-client
 	dh_shlibdeps -a
 	dh_installdeb -a
 	dh_gencontrol -a
