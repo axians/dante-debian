@@ -6,6 +6,7 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
   * Use quilt to manage the patches, converting all existing ones.
   * Fix some lintian warnings
   * Add a watch file and README.source
+  * Honor DEB_BUILD_OPTIONS
 
   * debian/README.source
     - create this file with some information about quilt
@@ -16,17 +17,24 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
     - change the debhelper build-dependency to version 7
     - update to standards version 3.8.0
       - README.source
+      - honor DEB_BUILD_OPTIONS
   * debian/dante-server.init
     - do not start danted if the only uncommented settins in
       the config file are the ones placed there by default
   * debian/patches
     - convert the existing Debian source patch to patches 01 through 11
+  * debian/patches/03-configure
+    - inherit the libtool and libdl fixes from the existing diff.gz
+    - honor DEB_BUILD_OPTIONS by not adding "-g -O2" to the CFLAGS that
+      have already been set up by dpkg-buildpackage and debian/rules
   * debian/rules
     - use quilt.make to apply and deapply patches
     - remove the DH_COMPAT setting, moved to debian/compat
     - reoder the dh_* calls to add an ldconfig postrm invocation and
       fix a lintian warning
     - do not ignore the "make distclean" exit code
+    - honor DEB_BUILD_OPTIONS by appending to the CFLAGS already set up by
+      dpkg-buildpackage, not overriding them
   * debian/watch
     - create this file
 

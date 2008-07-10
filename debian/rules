@@ -9,13 +9,15 @@ SERVER=debian/dante-server
 
 include /usr/share/quilt/quilt.make
 
+CFLAGS+=	-D_REENTRANT
+
 build:	build-stamp
 
 build-stamp: ${QUILT_STAMPFN}
 	dh_testdir
 	# build package here
 	cp /usr/share/misc/config.guess /usr/share/misc/config.sub . 
-	CFLAGS="-O2 -D_REENTRANT" ./configure --prefix=/usr \
+	CFLAGS="${CFLAGS}" ./configure --prefix=/usr \
 	  --with-socks-conf=/etc/dante.conf \
 	  --with-sockd-conf=/etc/danted.conf \
 	  --with-pidfile=/var/run/danted.pid
