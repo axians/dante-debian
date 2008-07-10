@@ -18,6 +18,8 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
     - update to standards version 3.8.0
       - README.source
       - honor DEB_BUILD_OPTIONS
+      - Homepage
+    - add the Homepage field to the source stanza
   * debian/dante-server.init
     - do not start danted if the only uncommented settins in
       the config file are the ones placed there by default

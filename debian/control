@@ -3,6 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Adrian Bridgett <bridgett@debian.org>
 Build-Depends: flex,debhelper(>=7),quilt(>=0.40),libtool,autotools-dev,libwrap0-dev,libpam0g-dev
+Homepage: http://www.inet.no/dante/
 Standards-Version: 3.8.0
 
 Package: libsocksd
