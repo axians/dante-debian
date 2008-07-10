@@ -5,14 +5,17 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
     the default settings.  Closes: #232574, #368322, #466082.
   * Use quilt to manage the patches, converting all existing ones.
   * Fix some lintian warnings
-  * Add a watch file
+  * Add a watch file and README.source
 
+  * debian/README.source
+    - create this file with some information about quilt
   * debian/compat
     - create this file, setting the compatibility level to 7
   * debian/control
     - add a build-dependency on quilt >= 0.40 for quilt.make
     - change the debhelper build-dependency to version 7
-    - update to standards version 3.7.3 (no changes)
+    - update to standards version 3.8.0
+      - README.source
   * debian/dante-server.init
     - do not start danted if the only uncommented settins in
       the config file are the ones placed there by default
