@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Adrian Bridgett <bridgett@debian.org>
 Build-Depends: flex,debhelper(>=7),quilt(>=0.40),libtool,autotools-dev,libwrap0-dev,libpam0g-dev
-Standards-Version: 3.6.2.1
+Standards-Version: 3.7.3
 
 Package: libsocksd
 Architecture: any

@@ -12,6 +12,7 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
   * debian/control
     - add a build-dependency on quilt >= 0.40 for quilt.make
     - change the debhelper build-dependency to version 7
+    - update to standards version 3.7.3 (no changes)
   * debian/dante-server.init
     - do not start danted if the only uncommented settins in
       the config file are the ones placed there by default
