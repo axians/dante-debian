@@ -20,6 +20,9 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
       - honor DEB_BUILD_OPTIONS
       - Homepage
     - add the Homepage field to the source stanza
+  * debian/copyright
+    - rename this file from copyright.top
+    - add the LICENSE file converted to UTF-8
   * debian/dante-server.init
     - do not start danted if the only uncommented settins in
       the config file are the ones placed there by default
@@ -37,6 +40,7 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
     - do not ignore the "make distclean" exit code
     - honor DEB_BUILD_OPTIONS by appending to the CFLAGS already set up by
       dpkg-buildpackage, not overriding them
+    - no longer build debian/copyright dynamically
   * debian/watch
     - create this file
 

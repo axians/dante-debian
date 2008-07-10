@@ -29,7 +29,6 @@ clean:
 	dh_testroot
 	rm -f build-stamp
 	[ ! -f Makefile ] || $(MAKE) distclean
-	-rm debian/copyright
 	dh_clean
 	for d in sockd dlib; do \
 	  cd $$d; \
@@ -87,7 +86,6 @@ binary-arch:	build
 	mv $(DEB)/usr/lib/libsocksd.a $(DEV)/usr/lib/
 	mv $(DEB)/usr/include/socks.h $(DEV)/usr/include/
 #	install -D -m0644 debian/socks.h $(DEV)/usr/include/socks.h
-	cat debian/copyright.top LICENSE > debian/copyright
 	dh_installdocs -A README doc/faq.tex doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
 	dh_installdocs -pdante-client doc/README.socksify
 	dh_installdocs -pdante-client -pdante-server doc/README.msproxy
