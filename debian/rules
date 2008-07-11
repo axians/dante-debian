@@ -4,6 +4,7 @@
 #export DH_VERBOSE=1
 DEB=`pwd`/debian/libsocksd0
 DEV=debian/libsocksd0-dev
+CLIENTLIB=debian/libdsocksd0
 CLIENT=debian/dante-client
 SERVER=debian/dante-server
 
@@ -68,7 +69,8 @@ binary-arch:	build
 	mv $(DEB)/usr/man/man5/socks.conf.5  $(CLIENT)/usr/share/man/man5/dante.conf.5
 	mv $(DEB)/usr/man/man5/sockd.conf.5  $(SERVER)/usr/share/man/man5/danted.conf.5
 	dh_installdirs -pdante-server usr/sbin usr/share/man/man8
-	dh_installdirs -pdante-client usr/bin usr/lib
+	dh_installdirs -pdante-client usr/bin
+	dh_installdirs -plibdsocksd0 usr/lib
 	dh_installdirs -plibsocksd0-dev usr/include usr/lib
 	mv $(DEB)/usr/man/man8/sockd.8 $(SERVER)/usr/share/man/man8/danted.8
 	mv $(DEB)/usr/sbin/sockd $(SERVER)/usr/sbin/danted
@@ -82,7 +84,7 @@ binary-arch:	build
 	install -D -m0664 example/sockd.conf $(SERVER)/etc/danted.conf
 	## move files around
 	mv $(DEB)/usr/bin/socksify $(CLIENT)/usr/bin/
-	mv $(DEB)/usr/lib/libdsocksd* $(CLIENT)/usr/lib/
+	mv $(DEB)/usr/lib/libdsocksd* $(CLIENTLIB)/usr/lib/
 	mv $(DEB)/usr/lib/libsocksd.a $(DEV)/usr/lib/
 	mv $(DEB)/usr/include/socks.h $(DEV)/usr/include/
 #	install -D -m0644 debian/socks.h $(DEV)/usr/include/socks.h
@@ -103,8 +105,8 @@ binary-arch:	build
 	ln -sf libsocksd.so.0.1.0 $(DEB)/usr/lib/libsocksd.so.0
 	mkdir -p $(DEV)/usr/lib
 	ln -sf libsocksd.so.0.1.0 $(DEV)/usr/lib/libsocksd.so
-	ln -sf libdsocksd.so.0.1.0 $(CLIENT)/usr/lib/libdsocksd.so.0
-	rm $(CLIENT)/usr/lib/libdsocksd.a
+	ln -sf libdsocksd.so.0.1.0 $(CLIENTLIB)/usr/lib/libdsocksd.so.0
+	rm $(CLIENTLIB)/usr/lib/libdsocksd.a
 	# done messing with libraries
 	dh_installinit -pdante-server -r --init-script=danted
 #	dh_installcron -a 
@@ -112,7 +114,7 @@ binary-arch:	build
 	dh_compress -a
 	dh_fixperms -a
 	dh_strip -a
-	dh_makeshlibs -plibsocksd0 -pdante-client
+	dh_makeshlibs -plibsocksd0 -plibdsocksd0
 	dh_shlibdeps -a
 	dh_installdeb -a
 	dh_gencontrol -a

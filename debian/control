@@ -6,6 +6,14 @@ Build-Depends: flex,debhelper(>=7),quilt(>=0.40),libtool,autotools-dev,libwrap0-
 Homepage: http://www.inet.no/dante/
 Standards-Version: 3.8.0
 
+Package: libdsocksd0
+Architecture: any
+Section: libs
+Depends: ${shlibs:Depends}
+Description: SOCKS library for internal use by the dante client
+ The actual SOCKS wrapper library, which should only be used via
+ the dante-client package's socksify(1) executable.
+
 Package: libsocksd0
 Architecture: any
 Section: libs
@@ -24,7 +32,7 @@ Description: Development files for compiling programs with SOCKS support
 
 Package: dante-client
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, libdsocksd0 (= ${binary:Version})
 Description: SOCKS wrapper for users behind a firewall
  Dante provides "socksify" - a program which forwards network requests from
  any program to a SOCKS server (v4 or v5) which then performs them on your
