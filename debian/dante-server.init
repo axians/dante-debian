@@ -5,6 +5,7 @@
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
+# Short-Description: SOCKS (v4 and v5) proxy daemon (danted)
 ### END INIT INFO
 #
 # dante SOCKS server init.d file. Based on /etc/init.d/skeleton:
