@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 # This script uses debhelper by Joey Hess
-export DH_VERBOSE=1
+#export DH_VERBOSE=1
 DEB=`pwd`/debian/libsocksd0
 DEV=debian/libsocksd0-dev
 CLIENT=debian/dante-client

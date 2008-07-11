@@ -40,6 +40,7 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
     - honor DEB_BUILD_OPTIONS by not adding "-g -O2" to the CFLAGS that
       have already been set up by dpkg-buildpackage and debian/rules
   * debian/rules
+    - FIXME: temporarily remove DH_VERBOSE :)
     - use quilt.make to apply and deapply patches
     - remove the DH_COMPAT setting, moved to debian/compat
     - reoder the dh_* calls to add an ldconfig postrm invocation and
