@@ -15,22 +15,17 @@ CFLAGS+=	-D_REENTRANT
 build:	build-stamp
 
 build-stamp: ${QUILT_STAMPFN}
-	dh_testdir
-	# build package here
+	dh build --before dh_auto_configure
 	cp /usr/share/misc/config.guess /usr/share/misc/config.sub . 
-	CFLAGS="${CFLAGS}" ./configure --prefix=/usr \
+	dh_auto_configure -- CFLAGS="${CFLAGS}" --prefix=/usr \
 	  --with-socks-conf=/etc/dante.conf \
 	  --with-sockd-conf=/etc/danted.conf \
 	  --with-pidfile=/var/run/danted.pid
-	$(MAKE)
+	dh build --remaining
 	touch build-stamp
 
 clean:
-	dh_testdir
-	dh_testroot
-	rm -f build-stamp
-	[ ! -f Makefile ] || $(MAKE) distclean
-	dh_clean
+	dh "$@" --before dh_clean
 	for d in sockd dlib; do \
 	  cd $$d; \
 	  for i in *; do \
@@ -38,12 +33,10 @@ clean:
 	  done; \
 	  cd ..; \
 	done
-	find . -name Makefile |xargs -r rm
-	-rm example/dante.conf example/danted.conf
-	-rm config.log config.status config.cache libtool \
-	  include/autoconf.h include/stamp-h bin/socksify confdefs.h \
-	  dlib/util.c sockd/util.c config.guess config.sub
 	$(MAKE) -f debian/rules unpatch
+	dh_clean example/dante.conf example/danted.conf \
+	  config.guess config.sub
+	dh clean --remaining
 
 binary-indep:	build
 
@@ -66,13 +59,13 @@ binary-arch:	build
 # documented feature!
 #	dh_installdirs -pdante-server -pdante-client usr/share/man/man5
 	mkdir -p $(SERVER)/usr/share/man/man5 $(CLIENT)/usr/share/man/man5 $(CLIENT)/usr/share/man/man1
-	mv $(DEB)/usr/man/man5/socks.conf.5  $(CLIENT)/usr/share/man/man5/dante.conf.5
-	mv $(DEB)/usr/man/man5/sockd.conf.5  $(SERVER)/usr/share/man/man5/danted.conf.5
+	mv $(DEB)/usr/share/man/man5/socks.conf.5  $(CLIENT)/usr/share/man/man5/dante.conf.5
+	mv $(DEB)/usr/share/man/man5/sockd.conf.5  $(SERVER)/usr/share/man/man5/danted.conf.5
 	dh_installdirs -pdante-server usr/sbin usr/share/man/man8
 	dh_installdirs -pdante-client usr/bin
 	dh_installdirs -plibdsocksd0 usr/lib
 	dh_installdirs -plibsocksd0-dev usr/include usr/lib
-	mv $(DEB)/usr/man/man8/sockd.8 $(SERVER)/usr/share/man/man8/danted.8
+	mv $(DEB)/usr/share/man/man8/sockd.8 $(SERVER)/usr/share/man/man8/danted.8
 	mv $(DEB)/usr/sbin/sockd $(SERVER)/usr/sbin/danted
 	cp doc/socksify.1 $(CLIENT)/usr/share/man/man1/socksify.1
 	cp example/socks.conf example/dante.conf
@@ -93,7 +86,7 @@ binary-arch:	build
 	dh_installdocs -pdante-client -pdante-server doc/README.msproxy
 	dh_installdocs -pdante-server doc/SOCKS4.protocol
 	dh_installchangelogs NEWS
-	rmdir $(DEB)/usr/bin $(DEB)/usr/sbin $(DEB)/usr/man/man? $(DEB)/usr/man $(DEB)/usr/include
+	rmdir $(DEB)/usr/bin $(DEB)/usr/sbin $(DEB)/usr/share/man/man? $(DEB)/usr/share/man $(DEB)/usr/include
 	## now make the library symlinks
 	# destroy and remake directory (and contents)
 	mv $(DEB)/usr/lib/libsocksd.so* $(DEB)/usr
