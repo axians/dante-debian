@@ -10,3 +10,4 @@
 10-config-users.patch
 11-linux-eccentricities.patch
 12-man-errors.patch
+13-c-warnings.patch

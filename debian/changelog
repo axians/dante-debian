@@ -12,6 +12,8 @@ dante (1.1.18.dfsg-1) unstable; urgency=low
   * Add the Vcs-Svn and Vcs-Browser source control fields
   * Add symbols files for the libraries
   * Convert the copyright file the machine-parseable format
+  * Fix some C compiler warnings, mainly related to printf format strings
+  * Enable build hardening unless DEB_BUILD_OPTIONS contains "nohardening"
 
   * debian/README.source
     - create this file with some information about quilt
@@ -57,6 +59,8 @@ dante (1.1.18.dfsg-1) unstable; urgency=low
   * debian/patches/12-man-errors.patch
     - replace some mdoc macros that have somehow crept up into the manual
       pages with man (an.tmac) ones
+  * debian/patches/13-c-warnings.patch
+    - fix some C compiler warnings, mainly related to printf format strings
   * debian/rules
     - comment out DH_VERBOSE
     - use quilt.make to apply and deapply patches
@@ -70,6 +74,7 @@ dante (1.1.18.dfsg-1) unstable; urgency=low
     - change "libsocksd" to "libsocksd0" in the package names
     - separate the client library into its own libdsocksd0 package
     - simplify most targets by using debhelper 7's "dh" wrapper
+    - enable build hardening unless DEB_BUILD_OPTIONS contains "nohardening"
   * debian/watch
     - create this file
 

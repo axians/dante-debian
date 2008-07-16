@@ -7,6 +7,11 @@ DEV=debian/libsocksd0-dev
 
 include /usr/share/quilt/quilt.make
 
+ifeq (,$(filter nohardening,$(DEB_BUILD_OPTIONS)))
+export DEB_BUILD_HARDENING=1
+else
+export DEB_BUILD_HARDENING=0
+endif
 CFLAGS+=	-D_REENTRANT
 
 build:	build-stamp
@@ -18,6 +23,8 @@ build-stamp: ${QUILT_STAMPFN}
 	  --with-socks-conf=/etc/dante.conf \
 	  --with-sockd-conf=/etc/danted.conf \
 	  --with-pidfile=/var/run/danted.pid
+	cp lib/config_parse.c lib/config_scan.c dlib/
+	cp lib/config_parse.c lib/config_scan.c sockd/
 	dh build --remaining
 	touch build-stamp
 
@@ -32,7 +39,8 @@ clean:
 	done
 	$(MAKE) -f debian/rules unpatch
 	dh_clean example/dante.conf example/danted.conf \
-	  config.guess config.sub
+	  config.guess config.sub dlib/config_parse.c dlib/config_scan.c \
+	  sockd/config_parse.c sockd/config_scan.c
 	dh clean --remaining
 
 install:	build
