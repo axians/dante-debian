@@ -43,6 +43,14 @@ dante (1.1.18.dfsg-1) unstable; urgency=low
     - do not start danted if the only uncommented settins in
       the config file are the ones placed there by default
     - provide a Short-Description LSB line
+  * debian/dante-client.lintian-overrides
+    debian/dante-server.lintian-overrides
+    debian/libdsocksd0.lintian-overrides
+    debian/libsocksd0.lintian-overrides
+    debian/libsocksd0-dev.lintian-overrides
+    - create these files and override the "copyright line too long"
+      warning for the first line, the machine-readable copyright's
+      format specification
   * debian/dante-client.postinst
     debian/dante-server.postinst
     debian/libsocksd.postinst
