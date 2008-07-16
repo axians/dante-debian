@@ -55,7 +55,7 @@ dante (1.1.18.dfsg-1) unstable; urgency=low
     - replace some mdoc macros that have somehow crept up into the manual
       pages with man (an.tmac) ones
   * debian/rules
-    - FIXME: temporarily remove DH_VERBOSE :)
+    - comment out DH_VERBOSE
     - use quilt.make to apply and deapply patches
     - remove the DH_COMPAT setting, moved to debian/compat
     - reoder the dh_* calls to add an ldconfig postrm invocation and
