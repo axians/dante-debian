@@ -1,6 +1,6 @@
-dante (1.1.18.dfsg-0.3) unstable; urgency=low
+dante (1.1.18.dfsg-1) unstable; urgency=low
 
-  * Non-maintainer upload.
+  * New maintainer.  Closes: #486756
   * Do not start danted if the config file contains nothing but
     the default settings.  Closes: #232574, #368322, #466082.
   * Use quilt to manage the patches, converting all existing ones.
@@ -9,12 +9,14 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
   * Honor DEB_BUILD_OPTIONS
   * Separate the dante client library into a package of its own
   * Minimize the rules file by using debhelper 7
+  * Add the Vcs-Svn and Vcs-Browser source control fields
 
   * debian/README.source
     - create this file with some information about quilt
   * debian/compat
     - create this file, setting the compatibility level to 7
   * debian/control
+    - record myself as maintainer
     - add a build-dependency on quilt >= 0.40 for quilt.make
     - change the debhelper build-dependency to version 7
     - add the Homepage field to the source stanza
@@ -27,6 +29,7 @@ dante (1.1.18.dfsg-0.3) unstable; urgency=low
       - Homepage
       - libsocksd -> libsocksd0
       - libdsocksd0
+    - add the Vcs-Svn and Vcs-Browser fields to the source stanza
   * debian/copyright
     - rename this file from copyright.top
     - add the LICENSE file converted to UTF-8
