@@ -1,4 +1,4 @@
-dante (1.1.18.dfsg-1) unstable; urgency=low
+dante (1.1.19.dfsg-1) unstable; urgency=low
 
   * New maintainer.  Closes: #486756
   * Do not start danted if the config file contains nothing but
@@ -14,6 +14,7 @@ dante (1.1.18.dfsg-1) unstable; urgency=low
   * Convert the copyright file the machine-parseable format
   * Fix some C compiler warnings, mainly related to printf format strings
   * Enable build hardening unless DEB_BUILD_OPTIONS contains "nohardening"
+  * New upstream version
 
   * debian/README.source
     - create this file with some information about quilt
@@ -86,7 +87,7 @@ dante (1.1.18.dfsg-1) unstable; urgency=low
   * debian/watch
     - create this file
 
- -- Peter Pentchev <roam@ringlet.net>  Wed, 16 Jul 2008 16:32:24 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Wed, 16 Jul 2008 17:16:06 +0300
 
 dante (1.1.18.dfsg-0.2) unstable; urgency=low
 
