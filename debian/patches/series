@@ -1,6 +1,6 @@
-01-rename-library
+01-rename-library.patch
 02-rename-programs.patch
-03-configure
+03-configure.patch
 04-faq.patch
 05-readme-functions.patch
 06-socksify-manpage.patch
