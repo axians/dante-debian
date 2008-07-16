@@ -2,7 +2,7 @@
 
 # This script uses debhelper by Joey Hess
 #export DH_VERBOSE=1
-DEB=`pwd`/debian/libsocksd0
+DEB=$(CURDIR)/debian/tmp
 DEV=debian/libsocksd0-dev
 CLIENTLIB=debian/libdsocksd0
 CLIENT=debian/dante-client
@@ -38,81 +38,28 @@ clean:
 	  config.guess config.sub
 	dh clean --remaining
 
-binary-indep:	build
-
-
-# is it arch or indep?
-binary-arch:	build
-	dh_testdir -a
-	dh_testroot -a
-	dh_clean -a
-	dh_installdirs -A usr/share/doc
-	# move files into $(DEB)
-	$(MAKE) DESTDIR=$(DEB) install
-	## remove any libraries we don't want
-	rm $(DEB)/usr/lib/*.la
-	cd $(DEB)/usr/lib; for i in *; do \
-	  if [ -L $$i ]; then rm $$i; fi \
-	done
-	exit
-	## we call these different names
-# documented feature!
-#	dh_installdirs -pdante-server -pdante-client usr/share/man/man5
-	mkdir -p $(SERVER)/usr/share/man/man5 $(CLIENT)/usr/share/man/man5 $(CLIENT)/usr/share/man/man1
-	mv $(DEB)/usr/share/man/man5/socks.conf.5  $(CLIENT)/usr/share/man/man5/dante.conf.5
-	mv $(DEB)/usr/share/man/man5/sockd.conf.5  $(SERVER)/usr/share/man/man5/danted.conf.5
-	dh_installdirs -pdante-server usr/sbin usr/share/man/man8
-	dh_installdirs -pdante-client usr/bin
-	dh_installdirs -plibdsocksd0 usr/lib
-	dh_installdirs -plibsocksd0-dev usr/include usr/lib
-	mv $(DEB)/usr/share/man/man8/sockd.8 $(SERVER)/usr/share/man/man8/danted.8
-	mv $(DEB)/usr/sbin/sockd $(SERVER)/usr/sbin/danted
-	cp doc/socksify.1 $(CLIENT)/usr/share/man/man1/socksify.1
+install:	build
+	dh "$@" --before dh_install
+	mv $(DEB)/usr/share/man/man5/socks.conf.5  $(DEB)/usr/share/man/man5/dante.conf.5
+	mv $(DEB)/usr/share/man/man5/sockd.conf.5  $(DEB)/usr/share/man/man5/danted.conf.5
+	mv $(DEB)/usr/share/man/man8/sockd.8 $(DEB)/usr/share/man/man8/danted.8
+	mv $(DEB)/usr/sbin/sockd $(DEB)/usr/sbin/danted
 	cp example/socks.conf example/dante.conf
 	cp example/sockd.conf example/danted.conf
-	dh_installexamples -pdante-client example/dante.conf
-	dh_installexamples -pdante-server example/danted.conf contrib/sockd-stat.awk
-	-mkdir -p $(CLIENT)/etc $(SERVER)/etc
-	install -D -m0664 example/socks.conf $(CLIENT)/etc/dante.conf
-	install -D -m0664 example/sockd.conf $(SERVER)/etc/danted.conf
-	## move files around
-	mv $(DEB)/usr/bin/socksify $(CLIENT)/usr/bin/
-	mv $(DEB)/usr/lib/libdsocksd* $(CLIENTLIB)/usr/lib/
-	mv $(DEB)/usr/lib/libsocksd.a $(DEV)/usr/lib/
-	mv $(DEB)/usr/include/socks.h $(DEV)/usr/include/
-#	install -D -m0644 debian/socks.h $(DEV)/usr/include/socks.h
 	dh_installdocs -A README doc/faq.tex doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
 	dh_installdocs -pdante-client doc/README.socksify
 	dh_installdocs -pdante-client -pdante-server doc/README.msproxy
 	dh_installdocs -pdante-server doc/SOCKS4.protocol
 	dh_installchangelogs NEWS
-	rmdir $(DEB)/usr/bin $(DEB)/usr/sbin $(DEB)/usr/share/man/man? $(DEB)/usr/share/man $(DEB)/usr/include
-	## now make the library symlinks
-	# destroy and remake directory (and contents)
-	mv $(DEB)/usr/lib/libsocksd.so* $(DEB)/usr
-	rmdir $(DEB)/usr/lib
-	mkdir $(DEB)/usr/lib
-	mv $(DEB)/usr/libsocksd.so* $(DEB)/usr/lib
-	# I know we remove them above, but the symlinks _must_ be made after
-	# the library (see that packaging manual)
-	ln -sf libsocksd.so.0.1.0 $(DEB)/usr/lib/libsocksd.so.0
-	mkdir -p $(DEV)/usr/lib
-	ln -sf libsocksd.so.0.1.0 $(DEV)/usr/lib/libsocksd.so
-	ln -sf libdsocksd.so.0.1.0 $(CLIENTLIB)/usr/lib/libdsocksd.so.0
-	rm $(CLIENTLIB)/usr/lib/libdsocksd.a
-	# done messing with libraries
 	dh_installinit -pdante-server -r --init-script=danted
-#	dh_installcron -a 
-#	dh_installmanpages -a
-	dh_compress -a
-	dh_fixperms -a
-	dh_strip -a
-	dh_makeshlibs -plibsocksd0 -plibdsocksd0
-	dh_shlibdeps -a
-	dh_installdeb -a
-	dh_gencontrol -a
-	dh_md5sums -a
-	dh_builddeb -a
+	dh_link -plibsocksd0-dev /usr/lib/libsocksd0.so.0 /usr/lib/libsocksd.so
+	dh "$@" --remaining
+
+binary-indep:	build install
+	# Nothing to do here
+
+binary-arch:	build install
+	dh "$@"
 
 binary:	binary-indep binary-arch
 .PHONY: build clean binary-indep binary-arch binary
