@@ -11,6 +11,7 @@ dante (1.1.18.dfsg-1) unstable; urgency=low
   * Minimize the rules file by using debhelper 7
   * Add the Vcs-Svn and Vcs-Browser source control fields
   * Add symbols files for the libraries
+  * Convert the copyright file the machine-parseable format
 
   * debian/README.source
     - create this file with some information about quilt
@@ -34,6 +35,8 @@ dante (1.1.18.dfsg-1) unstable; urgency=low
   * debian/copyright
     - rename this file from copyright.top
     - add the LICENSE file converted to UTF-8
+    - convert the whole thing to the machine-parseable format and add
+      the copyright information for the debian/* files
   * debian/dante-server.init
     - do not start danted if the only uncommented settins in
       the config file are the ones placed there by default
