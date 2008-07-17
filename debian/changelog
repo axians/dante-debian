@@ -17,6 +17,7 @@ dante (1.1.19.dfsg-1) unstable; urgency=low
   * New upstream version
     - remove the sockd/serverconfig.c upstream patch
     - doc/README.msproxy was removed
+  * Install all sample configuration files
 
   * debian/README.source
     - create this file with some information about quilt
@@ -89,6 +90,7 @@ dante (1.1.19.dfsg-1) unstable; urgency=low
     - separate the client library into its own libdsocksd0 package
     - simplify most targets by using debhelper 7's "dh" wrapper
     - enable build hardening unless DEB_BUILD_OPTIONS contains "nohardening"
+    - install all sample configuration files
   * debian/watch
     - create this file
 
