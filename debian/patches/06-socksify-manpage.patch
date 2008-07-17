@@ -1,5 +1,5 @@
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ b/doc/socksify.1	2008-07-07 18:19:37.000000000 +0300
+--- /dev/null
++++ b/doc/socksify.1
 @@ -0,0 +1,35 @@
 +.TH SOCKSIFY 1
 +.\" NAME should be all caps, SECTION should be 1-8, maybe w/ subsection

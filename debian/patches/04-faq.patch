@@ -1,5 +1,5 @@
---- a/doc/faq.tex	2008-07-07 18:16:35.000000000 +0300
-+++ b/doc/faq.tex	2008-07-07 18:16:39.000000000 +0300
+--- a/doc/faq.tex
++++ b/doc/faq.tex
 @@ -477,7 +477,10 @@
        libdl.so
        libdsocksd.so

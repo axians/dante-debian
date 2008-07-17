@@ -1,5 +1,5 @@
---- a/doc/README.usage	2008-07-07 18:17:14.000000000 +0300
-+++ b/doc/README.usage	2008-07-07 18:17:34.000000000 +0300
+--- a/doc/README.usage
++++ b/doc/README.usage
 @@ -27,29 +27,8 @@
  is then linked with the libsocks library in the distribution (-lsocksd,
  not -ldsocksd).

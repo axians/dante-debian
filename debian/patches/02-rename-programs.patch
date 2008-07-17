@@ -1,5 +1,5 @@
---- a/INSTALL	2008-07-07 18:10:39.000000000 +0300
-+++ b/INSTALL	2008-07-07 18:10:42.000000000 +0300
+--- a/INSTALL
++++ b/INSTALL
 @@ -264,8 +264,8 @@
  
  No configuration-files are installed, these must be installed
@@ -11,8 +11,8 @@
  
  The file bin/socksify.sh contains a shell script that allows one
  to dynamically socksify a dynamicly linked application at runtime.
---- a/doc/sockd.8	2008-07-07 18:11:35.000000000 +0300
-+++ b/doc/sockd.8	2008-07-07 18:11:47.000000000 +0300
+--- a/doc/sockd.8
++++ b/doc/sockd.8
 @@ -40,11 +40,11 @@
  .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
  .\" the rights to redistribute these changes.
@@ -46,8 +46,8 @@
  .PP
  Information about new releases and other related issues can be found
  on the
---- a/doc/sockd.conf.5	2008-07-07 18:11:35.000000000 +0300
-+++ b/doc/sockd.conf.5	2008-07-07 18:11:40.000000000 +0300
+--- a/doc/sockd.conf.5
++++ b/doc/sockd.conf.5
 @@ -40,9 +40,9 @@
  .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
  .\" the rights to redistribute these changes.
@@ -87,8 +87,8 @@
  .Pp
  Information about new releases and other related issues can be found
  on the
---- a/doc/socks.conf.5	2008-07-07 18:11:35.000000000 +0300
-+++ b/doc/socks.conf.5	2008-07-07 18:11:44.000000000 +0300
+--- a/doc/socks.conf.5
++++ b/doc/socks.conf.5
 @@ -40,9 +40,9 @@
  .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
  .\" the rights to redistribute these changes.

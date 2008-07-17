@@ -1,5 +1,5 @@
---- a/include/common.h	2008-07-07 18:25:25.000000000 +0300
-+++ b/include/common.h	2008-07-07 18:25:29.000000000 +0300
+--- a/include/common.h
++++ b/include/common.h
 @@ -68,7 +68,8 @@
  #define __attribute__(a)
  #endif

@@ -1,5 +1,5 @@
---- a/bin/socksify.in	2008-07-07 17:57:57.000000000 +0300
-+++ b/bin/socksify.in	2008-07-07 17:58:04.000000000 +0300
+--- a/bin/socksify.in
++++ b/bin/socksify.in
 @@ -52,7 +52,7 @@
  LIBDIR="@LIBRARY_PREFIX@"
  
@@ -9,8 +9,8 @@
  
  PRELOAD_SEPERATOR="@PRELOAD_SEPERATOR@"
  PRELOAD_POSTFIX="@PRELOAD_POSTFIX@"
---- a/doc/faq.tex	2008-07-07 17:58:39.000000000 +0300
-+++ b/doc/faq.tex	2008-07-07 17:59:30.000000000 +0300
+--- a/doc/faq.tex
++++ b/doc/faq.tex
 @@ -475,7 +475,7 @@
     edit the file /etc/ld.so.preload
     and add two lines saying:
@@ -38,8 +38,8 @@
    to the linkoptions is usually enough.)
  
   \subsection{Why doesn't socksify work on HP-UX 11.00?}
---- a/doc/README.socksify	2008-07-07 18:00:54.000000000 +0300
-+++ b/doc/README.socksify	2008-07-07 18:00:57.000000000 +0300
+--- a/doc/README.socksify
++++ b/doc/README.socksify
 @@ -2,7 +2,7 @@
  
  The shell script socksify in the bin directory is meant to aid in
@@ -49,8 +49,8 @@
  then wrap all networking-related system calls.
  
  When used the script can socksify a program by simply giving it as a
---- a/doc/README.usage	2008-07-07 18:02:16.000000000 +0300
-+++ b/doc/README.usage	2008-07-07 18:03:48.000000000 +0300
+--- a/doc/README.usage
++++ b/doc/README.usage
 @@ -7,15 +7,15 @@
  	The simplest way to add socks support to an already
  (dynamically) complied application is to use the LD_PRELOAD facility
@@ -111,8 +111,8 @@
  	$(LINK) -rpath $(libdir) $(libsocks_la_LDFLAGS) $(libsocks_la_OBJECTS) $(libsocks_la_LIBADD) $(LIBS)
  
  mostlyclean-compile:
---- a/dlib/int_osf3.c	2008-07-07 18:05:58.000000000 +0300
-+++ b/dlib/int_osf3.c	2008-07-07 18:06:03.000000000 +0300
+--- a/dlib/int_osf3.c
++++ b/dlib/int_osf3.c
 @@ -81,7 +81,7 @@
  #undef sendto
  
@@ -142,8 +142,8 @@
  	$(LINK) -rpath $(libdir) $(libdsocks_la_LDFLAGS) $(libdsocks_la_OBJECTS) $(libdsocks_la_LIBADD) $(LIBS)
  
  mostlyclean-compile:
---- a/include/socks.h	2008-07-07 18:07:01.000000000 +0300
-+++ b/include/socks.h	2008-07-07 18:07:05.000000000 +0300
+--- a/include/socks.h
++++ b/include/socks.h
 @@ -237,7 +237,7 @@
  __BEGIN_DECLS
  

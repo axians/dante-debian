@@ -1,5 +1,5 @@
---- a/sockd/getifa.c	2008-07-07 18:24:01.000000000 +0300
-+++ b/sockd/getifa.c	2008-07-07 18:24:07.000000000 +0300
+--- a/sockd/getifa.c
++++ b/sockd/getifa.c
 @@ -120,8 +120,7 @@
  
  	if (rtnetlink_sk == -1) {
