@@ -96,7 +96,7 @@ dante (1.1.19.dfsg-1) unstable; urgency=low
   * debian/watch
     - create this file
 
- -- Peter Pentchev <roam@ringlet.net>  Wed, 16 Jul 2008 17:16:06 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Thu, 17 Jul 2008 15:14:50 +0300
 
 dante (1.1.18.dfsg-0.2) unstable; urgency=low
 
