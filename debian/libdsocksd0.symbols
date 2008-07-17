@@ -75,7 +75,6 @@ libdsocksd.so.0 libdsocksd0 #MINVER#
  readv@Base 1.1.19
  recv@Base 1.1.19
  recv_mspresponse@Base 1.1.19
- recv_sockshost@Base 1.1.19
  recvfrom@Base 1.1.19
  recvmsg@Base 1.1.19
  recvmsgn@Base 1.1.19
