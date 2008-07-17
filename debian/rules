@@ -45,10 +45,10 @@ clean:
 
 install:	build
 	dh "$@" --before dh_install
-	mv $(DEB)/usr/share/man/man5/socks.conf.5  $(DEB)/usr/share/man/man5/dante.conf.5
-	mv $(DEB)/usr/share/man/man5/sockd.conf.5  $(DEB)/usr/share/man/man5/danted.conf.5
-	mv $(DEB)/usr/share/man/man8/sockd.8 $(DEB)/usr/share/man/man8/danted.8
-	mv $(DEB)/usr/sbin/sockd $(DEB)/usr/sbin/danted
+	cp $(DEB)/usr/share/man/man5/socks.conf.5  $(DEB)/usr/share/man/man5/dante.conf.5
+	cp $(DEB)/usr/share/man/man5/sockd.conf.5  $(DEB)/usr/share/man/man5/danted.conf.5
+	cp $(DEB)/usr/share/man/man8/sockd.8 $(DEB)/usr/share/man/man8/danted.8
+	cp $(DEB)/usr/sbin/sockd $(DEB)/usr/sbin/danted
 	cp example/socks.conf example/dante.conf
 	cp example/sockd.conf example/danted.conf
 	dh_installdocs -A README doc/faq.tex doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
