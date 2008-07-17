@@ -224,3 +224,14 @@
  #endif
  
  /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
+--- a/sockd/sockd_util.c
++++ b/sockd/sockd_util.c
+@@ -175,7 +175,7 @@
+ 	int mainmother;
+ 	static int init;
+ 
+-	slog(LOG_DEBUG, function);
++	slog(LOG_DEBUG, "%s", function);
+ 
+ 	/*
+ 	 * we are terminating, don't want to receive SIGTERM while terminating,
