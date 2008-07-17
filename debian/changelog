@@ -16,6 +16,7 @@ dante (1.1.19.dfsg-1) unstable; urgency=low
   * Enable build hardening unless DEB_BUILD_OPTIONS contains "nohardening"
   * New upstream version
     - remove the sockd/serverconfig.c upstream patch
+    - doc/README.msproxy was removed
 
   * debian/README.source
     - create this file with some information about quilt

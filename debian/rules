@@ -53,7 +53,7 @@ install:	build
 	cp example/sockd.conf example/danted.conf
 	dh_installdocs -A README doc/faq.tex doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
 	dh_installdocs -pdante-client doc/README.socksify
-	dh_installdocs -pdante-client -pdante-server doc/README.msproxy
+	dh_installdocs -pdante-client -pdante-server
 	dh_installdocs -pdante-server doc/SOCKS4.protocol
 	dh_installchangelogs NEWS
 	dh_installinit -pdante-server -r --init-script=danted
