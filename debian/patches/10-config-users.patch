@@ -1,6 +1,6 @@
---- a/example/sockd.conf	2008-07-07 18:24:50.000000000 +0300
-+++ b/example/sockd.conf	2008-07-07 18:24:57.000000000 +0300
-@@ -73,15 +73,15 @@
+--- a/example/sockd.conf
++++ b/example/sockd.conf
+@@ -77,15 +77,15 @@
  #
  
  # when doing something that can require privilege, it will use the

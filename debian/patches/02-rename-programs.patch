@@ -59,8 +59,17 @@
 +danted.conf \- \fBDante\fP server configuration file syntax
  .SH DESCRIPTION
  The configuration file for the \fBDante\fP server controls both access
- controls and logging.  It is divided into two parts, server settings
+ controls and logging.  It is divided into three parts; server settings,
 @@ -308,7 +308,7 @@
+ .SH ROUTES
+ The routes are specified with a \fBroute\fP keyword.
+ Inside a pair of parens ({}) a set of keywords control the behavior of
+-the route.  See socks.conf(5) for a description.  This is used to
++the route.  See dante.conf(5) for a description.  This is used to
+ perform so-called "server-chaining", where one socks-server connects
+ to another socks-server futher upstream.  
+ .SH EXAMPLES
+@@ -316,7 +316,7 @@
  .SH FILES
  .nf
  .ta \w 1
@@ -69,12 +78,12 @@
  /etc/passwd	file used when checking username/passwords.
  .fi
  .SH AUTHORS
-@@ -316,7 +316,7 @@
+@@ -324,7 +324,7 @@
   Michael Shuldman <michaels@inet.no>: Design and implementation.
   Karl-Andre' Skevik <karls@inet.no>: Autoconf and porting.
  .SH SEE ALSO
--sockd(8), hosts_access(5)
-+danted(8), hosts_access(5)
+-sockd(8), socks.conf(5), hosts_access(5)
++danted(8), dante.conf(5), hosts_access(5)
  .Pp
  Information about new releases and other related issues can be found
  on the
@@ -92,9 +101,9 @@
  .SH DESCRIPTION
  The configuration file for the socks client library allow control over
  logging and server selection.  It is divided into two parts,
-@@ -113,13 +113,13 @@
- Use \fBSOCKS_USERNAME\fP as the username when doing username
- authentication.
+@@ -119,13 +119,13 @@
+ authentication.  Not recommended as other users on the system 
+ might be able to see your password.
  .SH FILES
 -.I /etc/socks.conf
 +.I /etc/dante.conf

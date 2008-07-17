@@ -3,7 +3,7 @@ Do not add "-g -O2" to the Debian build's CFLAGS.
 
 --- a/configure
 +++ b/configure
-@@ -2692,7 +2692,7 @@
+@@ -2693,7 +2693,7 @@
    CFLAGS=$ac_save_CFLAGS
  elif test $ac_cv_prog_cc_g = yes; then
    if test "$GCC" = yes; then
@@ -12,7 +12,7 @@ Do not add "-g -O2" to the Debian build's CFLAGS.
    else
      CFLAGS="-g"
    fi
-@@ -19153,8 +19153,8 @@
+@@ -18541,8 +18541,8 @@
  # This can be used to rebuild libtool when needed
  LIBTOOL_DEPS="$ac_aux_dir/ltmain.sh"
  
@@ -23,9 +23,9 @@ Do not add "-g -O2" to the Debian build's CFLAGS.
  
  # Prevent multiple expansion
  
-@@ -29830,7 +29830,7 @@
- 		    fi
+@@ -29645,7 +29645,7 @@
  		;;
+ 
  		*)
 -		    LIBRARY_DLOPEN="${base_library_path}libdl.${SOLIB_POSTFIX}"
 +		    LIBRARY_DLOPEN="/lib/libdl.so.2"

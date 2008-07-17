@@ -15,6 +15,7 @@ dante (1.1.19.dfsg-1) unstable; urgency=low
   * Fix some C compiler warnings, mainly related to printf format strings
   * Enable build hardening unless DEB_BUILD_OPTIONS contains "nohardening"
   * New upstream version
+    - remove the sockd/serverconfig.c upstream patch
 
   * debian/README.source
     - create this file with some information about quilt
@@ -61,6 +62,9 @@ dante (1.1.19.dfsg-1) unstable; urgency=low
     - create these files
   * debian/patches
     - convert the existing Debian source patch to patches 01 through 11
+  * debian/patches/02-rename-programs.patch
+    - inherit the socks -> dante change from the existing diff.gz
+    - update several instances new in dante-1.1.19
   * debian/patches/03-configure
     - inherit the libtool and libdl fixes from the existing diff.gz
     - honor DEB_BUILD_OPTIONS by not adding "-g -O2" to the CFLAGS that

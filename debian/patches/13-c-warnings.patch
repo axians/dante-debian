@@ -1,6 +1,6 @@
 --- a/include/common.h
 +++ b/include/common.h
-@@ -1659,7 +1659,7 @@
+@@ -1692,7 +1692,7 @@
   */
  
  char *
@@ -22,7 +22,7 @@
  {
 --- a/lib/config.c
 +++ b/lib/config.c
-@@ -564,7 +564,7 @@
+@@ -621,7 +621,7 @@
  			break;
  	}
  
@@ -30,8 +30,8 @@
 +	slog(LOG_DEBUG, "%s", function);
  	return NULL;
  }
- 
-@@ -593,24 +593,24 @@
+ #endif /* SOCKS_CLIENT */
+@@ -649,24 +649,24 @@
  	if (state->command.udpreply)
  		bufused += snprintfn(&buf[bufused], sizeof(buf) - bufused, "%s, ",
  		SOCKS_UDPREPLYs);
@@ -140,16 +140,7 @@
  		if ((socksfd = socks_getaddr((unsigned int)i)) == NULL)
 --- a/sockd/auth_pam.c
 +++ b/sockd/auth_pam.c
-@@ -86,7 +86,7 @@
- 	int rc;
- 	uid_t	euid;
- 	struct pam_conv _pam_conv = {
--		(int (*)(int,struct pam_message **,struct pam_response **,void *))
-+		/*(int (*)(int,struct pam_message **,struct pam_response **,void *))*/
- 			&_pam_conversation,
- 		NULL
- 	};
-@@ -95,7 +95,7 @@
+@@ -91,7 +91,7 @@
  	_pam_priv_data = NULL;
  #endif /* HAVE_SOLARIS_PAM_BUG */
  
@@ -160,7 +151,7 @@
  
 --- a/sockd/serverconfig.c
 +++ b/sockd/serverconfig.c
-@@ -467,13 +467,13 @@
+@@ -473,13 +473,13 @@
  	for (i = 0; (size_t)i < sockscf->methodc; ++i)
  		bufused += snprintfn(&buf[bufused], sizeof(buf) - bufused, "%s%s",
  		i > 0 ? ", " : "", method2string(sockscf->methodv[i]));
@@ -178,7 +169,7 @@
  		struct rule_t *rule;
 --- a/sockd/sockd.c
 +++ b/sockd/sockd.c
-@@ -975,7 +975,7 @@
+@@ -974,7 +974,7 @@
  	uid_t euid;
  	int p;
  
@@ -189,7 +180,7 @@
  	optioninit();
 --- a/sockd/sockd_child.c
 +++ b/sockd/sockd_child.c
-@@ -111,7 +111,7 @@
+@@ -112,7 +112,7 @@
  	 */
  	if (freedescriptors(NULL) < reserved) {
  		errno = EMFILE;
@@ -200,7 +191,7 @@
  
 --- a/lib/config_parse.c
 +++ b/lib/config_parse.c
-@@ -923,8 +923,8 @@
+@@ -932,8 +932,8 @@
  	va_end(ap);
  
  	if (errno)
@@ -211,7 +202,7 @@
  }
  
  void
-@@ -958,8 +958,8 @@
+@@ -967,8 +967,8 @@
  	va_end(ap);
  
  	if (errno)
@@ -224,7 +215,7 @@
  static void
 --- a/lib/config_scan.c
 +++ b/lib/config_scan.c
-@@ -1566,7 +1566,7 @@
+@@ -1583,7 +1583,7 @@
  /* This used to be an fputs(), but since the string might contain NUL's,
   * we now use fwrite().
   */

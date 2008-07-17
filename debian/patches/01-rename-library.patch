@@ -91,9 +91,9 @@
 + libsocksd.so  - standard shared library, contains Rfoo type functions.
 + libsocksd.a   - static version of the above.
 + libdsocksd.so - shared library which does "on the fly" socksification.
---- a/lib/Makefile.in	2008-07-07 18:04:34.000000000 +0300
-+++ b/lib/Makefile.in	2008-07-07 18:04:38.000000000 +0300
-@@ -216,7 +216,7 @@
+--- a/lib/Makefile.in
++++ b/lib/Makefile.in
+@@ -213,7 +213,7 @@
  subdirs = @subdirs@
  sysconfdir = @sysconfdir@
  target_alias = @target_alias@
@@ -102,7 +102,7 @@
  libsocks_la_SOURCES = config_parse.y config_scan.l Raccept.c Rbind.c \
  	Rgetpeername.c Rgetsockname.c Rrresvport.c io.c    \
  	address.c authneg.c client.c clientconfig.c clientprotocol.c \
-@@ -305,7 +305,7 @@
+@@ -302,7 +302,7 @@
  	  rm -f config_parse.c; \
  	  $(MAKE) config_parse.c; \
  	else :; fi
@@ -122,9 +122,9 @@
     using the new versions. */
  
  /* sockaddr struct, with sa_len */
---- a/dlib/Makefile.in	2008-07-07 18:06:36.000000000 +0300
-+++ b/dlib/Makefile.in	2008-07-07 18:06:41.000000000 +0300
-@@ -217,7 +217,7 @@
+--- a/dlib/Makefile.in
++++ b/dlib/Makefile.in
+@@ -214,7 +214,7 @@
  subdirs = @subdirs@
  sysconfdir = @sysconfdir@
  target_alias = @target_alias@
@@ -133,7 +133,7 @@
  libdsocks_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c \
  	../lib/config_parse.y ../lib/io.c ../lib/debug.c ../lib/udp.c \
  	../lib/Rgetpeername.c ../lib/Rgetsockname.c \
-@@ -307,7 +307,7 @@
+@@ -304,7 +304,7 @@
  	  rm -f config_parse.c; \
  	  $(MAKE) config_parse.c; \
  	else :; fi
