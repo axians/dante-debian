@@ -76,6 +76,8 @@ dante (1.1.19.dfsg-1) unstable; urgency=low
       pages with man (an.tmac) ones
   * debian/patches/13-c-warnings.patch
     - fix some C compiler warnings, mainly related to printf format strings
+  * debian/patches/14-httpproxy-underrun.patch
+    - fix a possible buffer underrun in lib/httpproxy.c
   * debian/rules
     - comment out DH_VERBOSE
     - use quilt.make to apply and deapply patches
