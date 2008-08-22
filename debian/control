@@ -12,6 +12,8 @@ Package: libdsocksd0
 Architecture: any
 Section: libs
 Depends: ${shlibs:Depends}
+Conflicts: dante-client (<< 1.1.19.dfsg)
+Replaces: dante-client (<< 1.1.19.dfsg)
 Description: SOCKS library for internal use by the dante client
  The actual SOCKS wrapper library, which should only be used via
  the dante-client package's socksify(1) executable.

@@ -1,3 +1,11 @@
+dante (1.1.19.dfsg-2) unstable; urgency=low
+
+  * Since the "new" binary package libdsocksd0 extracts a library that
+    was formerly in dante-client, it should conflict and replace old
+    versions of dante-client.  Closes: #494712.
+
+ -- Peter Pentchev <roam@ringlet.net>  Fri, 22 Aug 2008 12:46:45 +0300
+
 dante (1.1.19.dfsg-1) unstable; urgency=low
 
   * New maintainer.  Closes: #486756
