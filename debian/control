@@ -29,7 +29,7 @@ Description: SOCKS library for packages built using libsocksd-dev
 Package: libsocksd0-dev
 Architecture: any
 Section: libdevel
-Depends: libsocksd
+Depends: libsocksd0 (= ${binary:Version})
 Description: Development files for compiling programs with SOCKS support
  Provides header files and instructions for compiling programs with SOCKS
  support.
