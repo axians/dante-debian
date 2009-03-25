@@ -1,3 +1,5 @@
+Warn against using ld.so.preload to use the Dante library for everything.
+
 --- a/doc/faq.tex
 +++ b/doc/faq.tex
 @@ -477,7 +477,10 @@

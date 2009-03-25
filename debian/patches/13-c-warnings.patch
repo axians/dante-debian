@@ -1,3 +1,6 @@
+Fix a whole slew of warnings from the C compiler with and without
+the Debian hardening wrapper.
+
 --- a/include/common.h
 +++ b/include/common.h
 @@ -1692,7 +1692,7 @@

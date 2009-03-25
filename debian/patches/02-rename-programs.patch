@@ -1,3 +1,8 @@
+Rename some files to reflect that this is Dante, not the original SOCKS:
+- /etc/socks.conf => /etc/dante.conf
+- /etc/sockd.conf => /etc/danted.conf
+- /usr/sbin/sockd => /usr/sbin/danted
+
 --- a/INSTALL
 +++ b/INSTALL
 @@ -264,8 +264,8 @@

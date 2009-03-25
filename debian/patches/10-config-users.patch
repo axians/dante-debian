@@ -1,3 +1,5 @@
+Do not invent our own users for dante-server, use "proxy" and "nobody".
+
 --- a/example/sockd.conf
 +++ b/example/sockd.conf
 @@ -77,15 +77,15 @@

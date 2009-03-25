@@ -1,3 +1,5 @@
+Add a manual page for socksify(1).
+
 --- /dev/null
 +++ b/doc/socksify.1
 @@ -0,0 +1,35 @@

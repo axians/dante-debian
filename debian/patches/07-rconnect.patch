@@ -1,3 +1,5 @@
+Initialize the client at first connection for programs that have not done so.
+
 --- a/lib/Rconnect.c
 +++ b/lib/Rconnect.c
 @@ -75,6 +75,10 @@

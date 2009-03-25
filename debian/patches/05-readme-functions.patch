@@ -1,3 +1,5 @@
+Remove the list of overridden functions; it is better to include socks.h.
+
 --- a/doc/README.usage
 +++ b/doc/README.usage
 @@ -27,29 +27,8 @@

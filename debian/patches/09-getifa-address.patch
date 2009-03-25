@@ -1,3 +1,5 @@
+Try harder to get an address.
+
 --- a/sockd/getifa.c
 +++ b/sockd/getifa.c
 @@ -120,8 +120,7 @@
