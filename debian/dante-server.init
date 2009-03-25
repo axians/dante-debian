@@ -45,7 +45,7 @@ case "$1" in
 	fi
 	echo -n "Starting $DESC: "
 	touch_pidfile
-	start-stop-daemon --start --quiet --pidfile $PIDFILE \
+	start-stop-daemon --start --quiet --oknodo --pidfile $PIDFILE \
 		--exec $DAEMON -- -D
 	echo "$NAME."
 	;;

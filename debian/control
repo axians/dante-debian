@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Peter Pentchev <roam@ringlet.net>
 Build-Depends: flex,debhelper(>=7),quilt(>=0.40),libtool,autotools-dev,libwrap0-dev,libpam0g-dev
 Homepage: http://www.inet.no/dante/
-Standards-Version: 3.8.0
+Standards-Version: 3.8.1
 Vcs-Svn: http://svn.ringlet.net/svn/ringlet/net/dante/trunk/dante-pkg/debian
 Vcs-Browser: http://svn.ringlet.net/cgi-bin/viewvc/viewvc.cgi/ringlet/net/dante/trunk/dante-pkg/debian/
 
