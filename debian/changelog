@@ -9,6 +9,8 @@ dante (1.1.19.dfsg-3) unstable; urgency=low
   * Bump Standards-Version to 3.8.1:
     - make the dante-server init script exit successfully if the server
       is already running
+  * Drop the versioned build-dependency on quilt - in this day and age,
+    we are virtually guaranteed a quilt >= 0.40.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 25 Mar 2009 12:52:37 +0200
 
