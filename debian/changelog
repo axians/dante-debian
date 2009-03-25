@@ -12,7 +12,7 @@ dante (1.1.19.dfsg-3) unstable; urgency=low
   * Drop the versioned build-dependency on quilt - in this day and age,
     we are virtually guaranteed a quilt >= 0.40.
 
- -- Peter Pentchev <roam@ringlet.net>  Wed, 25 Mar 2009 12:52:37 +0200
+ -- Peter Pentchev <roam@ringlet.net>  Wed, 25 Mar 2009 14:18:11 +0200
 
 dante (1.1.19.dfsg-2) unstable; urgency=low
 
