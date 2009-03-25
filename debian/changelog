@@ -1,6 +1,7 @@
 dante (1.1.19.dfsg-3) unstable; urgency=low
 
   * Make libsocksd0-dev installable by fixing its dependency on libsocksd0!
+  * Add misc:Depends to all binary packages, just in case.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 25 Mar 2009 12:52:37 +0200
 

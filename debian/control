@@ -11,7 +11,7 @@ Vcs-Browser: http://svn.ringlet.net/cgi-bin/viewvc/viewvc.cgi/ringlet/net/dante/
 Package: libdsocksd0
 Architecture: any
 Section: libs
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: dante-client (<< 1.1.19.dfsg)
 Replaces: dante-client (<< 1.1.19.dfsg)
 Description: SOCKS library for internal use by the dante client
@@ -21,7 +21,7 @@ Description: SOCKS library for internal use by the dante client
 Package: libsocksd0
 Architecture: any
 Section: libs
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: SOCKS library for packages built using libsocksd-dev
  This library is used for running programs built using libsocksd-dev
  and will generally be automatically selected if you require it.
@@ -29,14 +29,14 @@ Description: SOCKS library for packages built using libsocksd-dev
 Package: libsocksd0-dev
 Architecture: any
 Section: libdevel
-Depends: libsocksd0 (= ${binary:Version})
+Depends: libsocksd0 (= ${binary:Version}), ${misc:Depends}
 Description: Development files for compiling programs with SOCKS support
  Provides header files and instructions for compiling programs with SOCKS
  support.
 
 Package: dante-client
 Architecture: any
-Depends: ${shlibs:Depends}, libdsocksd0 (= ${binary:Version})
+Depends: ${shlibs:Depends}, libdsocksd0 (= ${binary:Version}), ${misc:Depends}
 Description: SOCKS wrapper for users behind a firewall
  Dante provides "socksify" - a program which forwards network requests from
  any program to a SOCKS server (v4 or v5) which then performs them on your
@@ -44,7 +44,7 @@ Description: SOCKS wrapper for users behind a firewall
 
 Package: dante-server
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: SOCKS (v4 and v5) proxy daemon (danted)
  Dante is a circuit-level firewall/proxy that can be used to provide
  convenient and secure network connectivity to a wide range of hosts
