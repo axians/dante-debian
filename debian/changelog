@@ -5,6 +5,7 @@ dante (1.1.19.dfsg-3) unstable; urgency=low
   * Add comments to the patches that did not have any.
   * Override the "dfsg version with period" lintian warning.
   * Properly refer to GPL-2 instead of just GPL in the copyright file.
+  * Improve the long descriptions of all packages.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 25 Mar 2009 12:52:37 +0200
 
