@@ -12,6 +12,7 @@ dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
     - use debhelper override rules
     - use dh --with autotools_dev to take care of config.guess and config.sub
     - do not pass --prefix to dh_auto_configure - it does it by itself
+    - use libsocksd0-dev.links
   * Sort and beautify the Build-Depends line in the control file.
 
  -- Peter Pentchev <roam@ringlet.net>  Thu, 01 Jul 2010 11:38:12 +0300
