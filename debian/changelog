@@ -1,6 +1,8 @@
 dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
 
   TODO: move the socksify.1 manual page into its own file
+  TODO: update to 1.2.1, with +dfsg this time
+  TODO: forward upstream the patches that merit forwarding
 
   * Convert to the 3.0 (quilt) source format.
   * Simplify the rules file:
