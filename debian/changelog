@@ -1,6 +1,5 @@
 dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
 
-  TODO: copyright rev. 135
   TODO: shorten the Vcs-Browser URL
   TODO: DEP 3 patch headers
   TODO: move the socksify.1 manual page into its own file
@@ -17,6 +16,8 @@ dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
       with them
   * Use dpkg-buildflags from dpkg-dev 1.15.7 to obtain the default values
     for CFLAGS, CPPFLAGS, and LDFLAGS.
+  * Update the copyright file to the latest DEP 5 format and bump the year on
+    my copyright notice.
 
  -- Peter Pentchev <roam@ringlet.net>  Thu, 01 Jul 2010 11:38:12 +0300
 
