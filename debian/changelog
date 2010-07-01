@@ -1,3 +1,17 @@
+dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
+
+  TODO: policy 3.9.0
+  TODO: 3.0 (quilt)
+  TODO: dpkg-buildflags
+  TODO: debhelper override rules
+  TODO: copyright rev. 135
+  TODO: shorten the Vcs-Browser URL
+  TODO: autotools
+  TODO: DEP 3 patch headers
+  TODO: move the socksify.1 manual page into its own file
+
+ -- Peter Pentchev <roam@ringlet.net>  Thu, 01 Jul 2010 11:38:12 +0300
+
 dante (1.1.19.dfsg-3) unstable; urgency=low
 
   * Make libsocksd0-dev installable by fixing its dependency on libsocksd0!
