@@ -2,7 +2,8 @@ Source: dante
 Section: net
 Priority: optional
 Maintainer: Peter Pentchev <roam@ringlet.net>
-Build-Depends: flex,debhelper(>=7.0.50~),libtool,autotools-dev,libwrap0-dev,libpam0g-dev
+Build-Depends: debhelper(>= 7.0.50~), autotools-dev, flex, libtool,
+	libpam0g-dev, libwrap0-dev
 Homepage: http://www.inet.no/dante/
 Standards-Version: 3.8.1
 Vcs-Svn: http://svn.ringlet.net/svn/ringlet/net/dante/trunk/dante-pkg/debian

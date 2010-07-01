@@ -11,6 +11,7 @@ dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
   * Convert to the 3.0 (quilt) source format.
   * Simplify the rules file:
     - use debhelper override rules
+  * Sort and beautify the Build-Depends line in the control file.
 
  -- Peter Pentchev <roam@ringlet.net>  Thu, 01 Jul 2010 11:38:12 +0300
 
