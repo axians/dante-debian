@@ -3,7 +3,6 @@
 03-configure.patch
 04-faq.patch
 05-readme-functions.patch
-06-socksify-manpage.patch
 07-rconnect.patch
 09-getifa-address.patch
 10-config-users.patch

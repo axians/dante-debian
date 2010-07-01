@@ -1,6 +1,5 @@
 dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
 
-  TODO: move the socksify.1 manual page into its own file
   TODO: update to 1.2.1, with +dfsg this time
   TODO: forward upstream the patches that merit forwarding
 
@@ -20,6 +19,8 @@ dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
     my copyright notice.
   * Shorten the Vcs-Browser URL.
   * Add DEP 3 headers to all the patches.
+  * Keep the socksify.1 manual page in its own file in debian/ instead of
+    creating a whole file using a patch.
 
  -- Peter Pentchev <roam@ringlet.net>  Thu, 01 Jul 2010 11:38:12 +0300
 
