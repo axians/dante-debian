@@ -1,5 +1,7 @@
-Fix a whole slew of warnings from the C compiler with and without
-the Debian hardening wrapper.
+Description: Fix a whole slew of warnings from the C compiler.
+Forwarded: no
+Author: Peter Pentchev <roam@ringlet.net>
+Last-Update: 2010-07-01
 
 --- a/include/common.h
 +++ b/include/common.h

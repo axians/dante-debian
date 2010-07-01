@@ -1,5 +1,8 @@
-Rename the libdsocks library to libdsocskd to avoid a conflict with
-the libsocks4 package (#52475).
+Description: Rename the libdsocks library to avoid a conflict with libsocks4.
+Bug-Debian: http://bugs.debian.org/52476
+Forwarded: not-needed
+Author: Adrian Bridgett <bridgett@debian.org>
+Last-Update: 2010-07-01
 
 --- a/bin/socksify.in
 +++ b/bin/socksify.in

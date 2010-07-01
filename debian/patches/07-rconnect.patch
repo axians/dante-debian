@@ -1,4 +1,8 @@
-Initialize the client at first connection for programs that have not done so.
+Description: Initialize the client at first connection if not done yet.
+Bug-Debian: http://bugs.debian.org/100375
+Forwarded: no
+Author: Philip Kendall <pak21@srcf.ucam.org>
+Last-Update: 2010-07-01
 
 --- a/lib/Rconnect.c
 +++ b/lib/Rconnect.c

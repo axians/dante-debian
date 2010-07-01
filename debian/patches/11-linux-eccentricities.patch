@@ -1,4 +1,7 @@
-Debian is not eccentric :)
+Description: Debian is not eccentric :)
+Forwarded: not-needed
+Author: Adrian Bridgett <bridgett@debian.org>
+Last-Update: 2010-07-01
 
 --- a/include/common.h
 +++ b/include/common.h

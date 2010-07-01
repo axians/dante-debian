@@ -1,4 +1,7 @@
-Fix the manual page errors - these are man (an.tmac) pages, not mdoc ones :)
+Description: Fix the manual page errors - replace mdoc macros with man ones.
+Forwarded: no
+Author: Peter Pentchev <roam@ringlet.net>
+Last-Update: 2010-07-01
 
 --- a/doc/sockd.conf.5
 +++ b/doc/sockd.conf.5

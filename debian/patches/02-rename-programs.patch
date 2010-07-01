@@ -1,7 +1,12 @@
-Rename some files to reflect that this is Dante, not the original SOCKS:
-- /etc/socks.conf => /etc/dante.conf
-- /etc/sockd.conf => /etc/danted.conf
-- /usr/sbin/sockd => /usr/sbin/danted
+Description: Rename some files - this is Dante, not the original SOCKS.
+ - /etc/socks.conf => /etc/dante.conf
+ - /etc/sockd.conf => /etc/danted.conf
+ - /usr/sbin/sockd => /usr/sbin/danted
+ The changelog entry references bug #35187, but bugs.debian.org disclaims any
+ knowledge of it.
+Forwarded: not-needed
+Author: Adrian Bridgett <bridgett@debian.org>
+Last-Update: 2010-07-01
 
 --- a/INSTALL
 +++ b/INSTALL

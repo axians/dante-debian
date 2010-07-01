@@ -1,4 +1,8 @@
-Warn against using ld.so.preload to use the Dante library for everything.
+Description: Warn against using ld.so.preload for everything.
+Bug-Debian: http://bugs.debian.org/69017
+Forwarded: not-needed
+Author: Adrian Bridgett <bridgett@debian.org>
+Last-Update: 2010-07-01
 
 --- a/doc/faq.tex
 +++ b/doc/faq.tex

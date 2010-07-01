@@ -1,4 +1,7 @@
-Do not invent our own users for dante-server, use "proxy" and "nobody".
+Description: Do not invent our own users, use "proxy" and "nobody".
+Forwarded: not-needed
+Author: Adrian Bridgett <bridgett@debian.org>
+Last-Update: 2010-07-01
 
 --- a/example/sockd.conf
 +++ b/example/sockd.conf

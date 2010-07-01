@@ -1,4 +1,7 @@
-Add a manual page for socksify(1).
+Descrpition: Add a manual page for socksify(1).
+Forwarded: no
+Author: Adrian Bridgett <bridgett@debian.org>
+Last-Update: 2010-07-01
 
 --- /dev/null
 +++ b/doc/socksify.1

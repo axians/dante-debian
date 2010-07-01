@@ -1,4 +1,8 @@
-Try harder to get an address.
+Description: Try harder to get an address.
+Bug-Debian: http://bugs.debian.org/139434
+Forwarded: no
+Author: Adrian Bridgett <bridgett@debian.org>
+Last-Update: 2010-07-01
 
 --- a/sockd/getifa.c
 +++ b/sockd/getifa.c

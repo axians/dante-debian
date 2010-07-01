@@ -1,5 +1,7 @@
-Do not try to process a zero-length buffer at all, thus avoiding
-a possible buffer underrun.
+Description: Fix a possible buffer underrun.
+Forwarded: no
+Author: Peter Pentchev <roam@ringlet.net>
+Last-Update: 2010-07-01
 
 --- a/lib/httpproxy.c
 +++ b/lib/httpproxy.c
