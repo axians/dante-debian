@@ -13,7 +13,7 @@ endif
 CFLAGS+=	-D_REENTRANT
 
 override_dh_auto_configure:
-	dh_auto_configure -- CFLAGS="${CFLAGS}" --prefix=/usr \
+	dh_auto_configure -- CFLAGS="${CFLAGS}" \
 	  --with-socks-conf=/etc/dante.conf \
 	  --with-sockd-conf=/etc/danted.conf \
 	  --with-pidfile=/var/run/danted.pid
