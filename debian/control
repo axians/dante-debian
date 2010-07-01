@@ -7,7 +7,7 @@ Build-Depends: debhelper(>= 7.0.50~), autotools-dev (>= 20100122.1~),
 Homepage: http://www.inet.no/dante/
 Standards-Version: 3.9.0
 Vcs-Svn: http://svn.ringlet.net/svn/ringlet/net/dante/trunk/dante-pkg/debian
-Vcs-Browser: http://svn.ringlet.net/cgi-bin/viewvc/viewvc.cgi/ringlet/net/dante/trunk/dante-pkg/debian/
+Vcs-Browser: http://svn.ringlet.net/v/ringlet/net/dante/trunk/dante-pkg/debian/
 
 Package: libdsocksd0
 Architecture: any
