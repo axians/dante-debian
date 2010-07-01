@@ -12,10 +12,7 @@ export DEB_BUILD_HARDENING=0
 endif
 CFLAGS+=	-D_REENTRANT
 
-build:	build-stamp
-
-build-stamp:
-	dh build --before dh_auto_configure
+override_dh_auto_configure:
 	cp /usr/share/misc/config.guess /usr/share/misc/config.sub . 
 	dh_auto_configure -- CFLAGS="${CFLAGS}" --prefix=/usr \
 	  --with-socks-conf=/etc/dante.conf \
@@ -23,11 +20,9 @@ build-stamp:
 	  --with-pidfile=/var/run/danted.pid
 	cp lib/config_parse.c lib/config_scan.c dlib/
 	cp lib/config_parse.c lib/config_scan.c sockd/
-	dh build --remaining
-	touch build-stamp
 
-clean:
-	dh "$@" --before dh_clean
+override_dh_auto_clean:
+	dh_auto_clean
 	for d in sockd dlib; do \
 	  cd $$d; \
 	  for i in *; do \
@@ -36,13 +31,8 @@ clean:
 	  cd ..; \
 	done
 	rm -rf example/renamed
-	dh_clean config.guess config.sub \
-	  dlib/config_parse.c dlib/config_scan.c \
-	  sockd/config_parse.c sockd/config_scan.c
-	dh clean --remaining
 
-install:	build
-	dh "$@" --before dh_install
+override_dh_install:
 	cp $(DEB)/usr/share/man/man5/socks.conf.5  $(DEB)/usr/share/man/man5/dante.conf.5
 	cp $(DEB)/usr/share/man/man5/sockd.conf.5  $(DEB)/usr/share/man/man5/danted.conf.5
 	cp $(DEB)/usr/share/man/man8/sockd.8 $(DEB)/usr/share/man/man8/danted.8
@@ -54,20 +44,22 @@ install:	build
 	for i in example/socks*.conf; do \
 		sed -e 's/sample socks.conf/sample dante.conf/' < "$$i" > example/renamed/"`basename $$i | sed -e s/socks/dante/`"; \
 	done
+	dh_install
+
+override_dh_installdocs:
 	dh_installdocs -A README doc/faq.tex doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
 	dh_installdocs -pdante-client doc/README.socksify
 	dh_installdocs -pdante-client -pdante-server
 	dh_installdocs -pdante-server doc/SOCKS4.protocol
+
+override_dh_installchangelogs:
 	dh_installchangelogs NEWS
+
+override_dh_installinit:
 	dh_installinit -pdante-server -r --init-script=danted
+
+override_dh_link:
 	dh_link -plibsocksd0-dev /usr/lib/libsocksd0.so.0 /usr/lib/libsocksd.so
-	dh "$@" --remaining
 
-binary-indep:	build install
-	# Nothing to do here
-
-binary-arch:	build install
+%:
 	dh "$@"
-
-binary:	binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary

@@ -1,0 +1,6 @@
+config.guess
+config.sub
+dlib/config_parse.c
+dlib/config_scan.c
+sockd/config_parse.c
+sockd/config_scan.c
