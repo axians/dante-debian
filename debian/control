@@ -5,7 +5,7 @@ Maintainer: Peter Pentchev <roam@ringlet.net>
 Build-Depends: debhelper(>= 7.0.50~), autotools-dev (>= 20100122.1~), flex,
 	libtool, libpam0g-dev, libwrap0-dev
 Homepage: http://www.inet.no/dante/
-Standards-Version: 3.8.1
+Standards-Version: 3.9.0
 Vcs-Svn: http://svn.ringlet.net/svn/ringlet/net/dante/trunk/dante-pkg/debian
 Vcs-Browser: http://svn.ringlet.net/cgi-bin/viewvc/viewvc.cgi/ringlet/net/dante/trunk/dante-pkg/debian/
 
@@ -13,7 +13,7 @@ Package: libdsocksd0
 Architecture: any
 Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: dante-client (<< 1.1.19.dfsg)
+Breaks: dante-client (<< 1.1.19.dfsg)
 Replaces: dante-client (<< 1.1.19.dfsg)
 Description: SOCKS library for internal use by the dante client
  Dante is a circuit-level firewall/proxy that can be used to provide
