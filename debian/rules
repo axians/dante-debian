@@ -13,7 +13,6 @@ endif
 CFLAGS+=	-D_REENTRANT
 
 override_dh_auto_configure:
-	cp /usr/share/misc/config.guess /usr/share/misc/config.sub . 
 	dh_auto_configure -- CFLAGS="${CFLAGS}" --prefix=/usr \
 	  --with-socks-conf=/etc/dante.conf \
 	  --with-sockd-conf=/etc/danted.conf \
@@ -62,4 +61,4 @@ override_dh_link:
 	dh_link -plibsocksd0-dev /usr/lib/libsocksd0.so.0 /usr/lib/libsocksd.so
 
 %:
-	dh "$@"
+	dh --with autotools_dev "$@"
