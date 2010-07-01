@@ -5,8 +5,6 @@
 DEB=$(CURDIR)/debian/tmp
 DEV=debian/libsocksd0-dev
 
-include /usr/share/quilt/quilt.make
-
 ifeq (,$(filter nohardening,$(DEB_BUILD_OPTIONS)))
 export DEB_BUILD_HARDENING=1
 else
@@ -16,7 +14,7 @@ CFLAGS+=	-D_REENTRANT
 
 build:	build-stamp
 
-build-stamp: ${QUILT_STAMPFN}
+build-stamp:
 	dh build --before dh_auto_configure
 	cp /usr/share/misc/config.guess /usr/share/misc/config.sub . 
 	dh_auto_configure -- CFLAGS="${CFLAGS}" --prefix=/usr \
@@ -37,7 +35,6 @@ clean:
 	  done; \
 	  cd ..; \
 	done
-	$(MAKE) -f debian/rules unpatch
 	rm -rf example/renamed
 	dh_clean config.guess config.sub \
 	  dlib/config_parse.c dlib/config_scan.c \
