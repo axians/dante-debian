@@ -1,17 +1,17 @@
 Description: Remove the list of overridden functions; better to include socks.h
 Forwarded: no
 Author: Adrian Bridgett <bridgett@debian.org>
-Last-Update: 2010-07-01
+Last-Update: 2010-07-02
 
 --- a/doc/README.usage
 +++ b/doc/README.usage
-@@ -27,29 +27,8 @@
+@@ -27,46 +27,14 @@
  is then linked with the libsocks library in the distribution (-lsocksd,
  not -ldsocksd).
  
 -These function calls can be found in the socks library:
 -Raccept
--Rbind 
+-Rbind
 -Rbindresvport
 -Rconnect
 -Rgetaddrinfo()
@@ -20,6 +20,7 @@ Last-Update: 2010-07-01
 -Rgetipnodebyname()
 -Rgetpeername
 -Rgetsockname
+-Rlisten
 -Rread
 -Rreadv
 -Rrecv
@@ -37,7 +38,6 @@ Last-Update: 2010-07-01
  
  These calls currently does nothing and are only provided for
  compatibility with programs which use them:
-@@ -57,16 +36,6 @@
  Rselect
  SOCKSinit
  
@@ -45,7 +45,7 @@ Last-Update: 2010-07-01
 -change the source during compilation, as following:
 -
 -Either add this line to the command compilation line (e.g. CFLAGS):
---Dconnect=Rconnect -Dbind=Rbind -Dgetsockname=Rgetsockname -Dgetpeername=Rgetpeername -Daccept=Raccept -Drresvport=Rrresvport -Dbindresvport=Rbindresvport -Dgethostbyname=Rgethostbyname -Dgethostbyname2=Rgethostbyname2 -Dsendto=Rsendto -Drecvfrom=Rrecvfrom -Drecvfrom=Rrecvfrom -Dwrite=Rwrite -Dwritev=Rwritev -Dsend=Rsend -Dsendmsg=Rsendmsg -Dread=Rread -Dreadv=Rreadv -Drecv=Rrecv -Drecvmsg=Rrecvmsg -Dgetaddrinfo=Rgetaddrinfo -Dgetipnodebyname=Rgetipnodebyname
+--Dconnect=Rconnect -Dbind=Rbind -Dgetsockname=Rgetsockname -Dgetpeername=Rgetpeername -Daccept=Raccept -Drresvport=Rrresvport -Dbindresvport=Rbindresvport -Dgethostbyname=Rgethostbyname -Dgethostbyname2=Rgethostbyname2 -Dsendto=Rsendto -Drecvfrom=Rrecvfrom -Drecvfrom=Rrecvfrom -Dwrite=Rwrite -Dwritev=Rwritev -Dlisten=Rlisten -Dsend=Rsend -Dsendmsg=Rsendmsg -Dread=Rread -Dreadv=Rreadv -Drecv=Rrecv -Drecvmsg=Rrecvmsg -Dgetaddrinfo=Rgetaddrinfo -Dgetipnodebyname=Rgetipnodebyname
 -
 -or add "include <socks.h>" to every C file in the program you are
 -compiling.

@@ -9,41 +9,12 @@ Last-Update: 2010-07-01
 @@ -52,7 +52,7 @@
  LIBDIR="@LIBRARY_PREFIX@"
  
- #XXX shared library name should be generated too (possibly including version)
+ #dlib/Makefile.am libtool flags should produce a predictable library name
 -LIBRARY="${SOCKS_LIBRARY-${LIBDIR}/libdsocks.@SOLIB_POSTFIX@}"
-+LIBRARY="${SOCKS_LIBRARY-${LIBDIR}/libdsocksd.@SOLIB_POSTFIX@}.0"
++LIBRARY="${SOCKS_LIBRARY-${LIBDIR}/libdsocksd.@SOLIB_POSTFIX@}"
  
- PRELOAD_SEPERATOR="@PRELOAD_SEPERATOR@"
- PRELOAD_POSTFIX="@PRELOAD_POSTFIX@"
---- a/doc/faq.tex
-+++ b/doc/faq.tex
-@@ -475,7 +475,7 @@
-    edit the file /etc/ld.so.preload
-    and add two lines saying:
-       libdl.so
--      libdsocks.so
-+      libdsocksd.so
-   \end{verbatim}
-  \emph{Thanks to: Dag Wieers <dag@wieers.com>.}
- 
-@@ -489,7 +489,7 @@
-   you could add
- 
-   \begin{verbatim}
--   LD_PRELOAD="libdl.so libdsocks.so"
-+   LD_PRELOAD="libdl.so libdsocksd.so.0"
-    export LD_PRELOAD
-   \end{verbatim}
-   to the environment. (/etc/profile ~/.profile ~/.bashrc)
-@@ -528,7 +528,7 @@
-   the result becomes the the same as not using socksify on them.
- 
-   Solution: strip off the suid bit if possible or recompile the binary
--  (rsh, ssh, etc) with explicit socks support (adding "-ldsocks"
-+  (rsh, ssh, etc) with explicit socks support (adding "-ldsocksd"
-   to the linkoptions is usually enough.)
- 
-  \subsection{Why doesn't socksify work on HP-UX 11.00?}
+ if ! test -s "$LIBRARY"; then
+     echo "socksify: missing $LIBRARY. no preload support?" >&2
 --- a/doc/README.socksify
 +++ b/doc/README.socksify
 @@ -2,7 +2,7 @@
@@ -99,24 +70,93 @@ Last-Update: 2010-07-01
 + libdsocksd.so - shared library which does "on the fly" socksification.
 --- a/lib/Makefile.in
 +++ b/lib/Makefile.in
-@@ -213,7 +213,7 @@
- subdirs = @subdirs@
+@@ -37,7 +37,7 @@
+ POST_UNINSTALL = :
+ build_triplet = @build@
+ host_triplet = @host@
+-@RUNLINT_FALSE@libsocks_la_DEPENDENCIES = ../libscompat/libscompat.la
++@RUNLINT_FALSE@libsocksd_la_DEPENDENCIES = ../libscompat/libscompat.la
+ subdir = lib
+ DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
+ 	$(srcdir)/Makefile.in
+@@ -59,7 +59,7 @@
+ am__installdirs = "$(DESTDIR)$(libdir)"
+ libLTLIBRARIES_INSTALL = $(INSTALL)
+ LTLIBRARIES = $(lib_LTLIBRARIES)
+-am_libsocks_la_OBJECTS = config_parse.lo config_scan.lo Raccept.lo \
++am_libsocksd_la_OBJECTS = config_parse.lo config_scan.lo Raccept.lo \
+ 	Rbind.lo Rgetpeername.lo Rgetsockname.lo Rrresvport.lo io.lo \
+ 	address.lo authneg.lo client.lo clientconfig.lo \
+ 	clientprotocol.lo udp.lo userio.lo connectchild.lo config.lo \
+@@ -68,7 +68,7 @@
+ 	Rcompat.lo msproxy_clientprotocol.lo hostcache.lo broken.lo \
+ 	serr.lo httpproxy.lo tostring.lo addressmatch.lo Rlisten.lo \
+ 	upnp.lo gssapi.lo iobuf.lo
+-libsocks_la_OBJECTS = $(am_libsocks_la_OBJECTS)
++libsocksd_la_OBJECTS = $(am_libsocksd_la_OBJECTS)
+ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include
+ depcomp = $(SHELL) $(top_srcdir)/depcomp
+ am__depfiles_maybe = depfiles
+@@ -80,8 +80,8 @@
+ CCLD = $(CC)
+ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+ 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+-SOURCES = $(libsocks_la_SOURCES)
+-DIST_SOURCES = $(libsocks_la_SOURCES)
++SOURCES = $(libsocksd_la_SOURCES)
++DIST_SOURCES = $(libsocksd_la_SOURCES)
+ HEADERS = $(noinst_HEADERS)
+ ETAGS = etags
+ CTAGS = ctags
+@@ -222,8 +222,8 @@
+ sharedstatedir = @sharedstatedir@
  sysconfdir = @sysconfdir@
  target_alias = @target_alias@
 -lib_LTLIBRARIES = libsocks.la
+-libsocks_la_SOURCES = config_parse.c config_scan.c Raccept.c Rbind.c \
 +lib_LTLIBRARIES = libsocksd.la
- libsocks_la_SOURCES = config_parse.y config_scan.l Raccept.c Rbind.c \
++libsocksd_la_SOURCES = config_parse.c config_scan.c Raccept.c Rbind.c \
  	Rgetpeername.c Rgetsockname.c Rrresvport.c io.c    \
  	address.c authneg.c client.c clientconfig.c clientprotocol.c \
-@@ -302,7 +302,7 @@
- 	  rm -f config_parse.c; \
- 	  $(MAKE) config_parse.c; \
- 	else :; fi
+ 	udp.c userio.c connectchild.c config.c  \
+@@ -233,10 +233,10 @@
+ 	tostring.c addressmatch.c Rlisten.c upnp.c gssapi.c iobuf.c
+ 
+ 
+-#libsocks version info, interfaceversion:revision:old interfaces supported
++#libsocksd version info, interfaceversion:revision:old interfaces supported
+ #XXX SPEC/dante.spec.in must have the same value as version info
+-libsocks_la_LDFLAGS = -version-info 1:1:1
+-libsocks_la_LIBADD = ../libscompat/libscompat.la @DLIBDEPS@
++libsocksd_la_LDFLAGS = -version-info 1:1:1
++libsocksd_la_LIBADD = ../libscompat/libscompat.la @DLIBDEPS@
+ INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libscompat
+ AM_CFLAGS = -DSOCKS_CLIENT=1 -DSOCKS_SERVER=0 -DSOCKSLIBRARY_DYNAMIC=0
+ EXTRA_DIST = config_parse.y config_scan.l
+@@ -246,10 +246,10 @@
+ AM_YFLAGS = -d -p${PREFIX}
+ AM_LFLAGS = -P${PREFIX} -olex.yy.c
+ @RUNLINT_TRUE@SUFFIXES = .ln
+-@RUNLINT_TRUE@LINTFILESa = $(libsocks_la_SOURCES:.c=.ln)
++@RUNLINT_TRUE@LINTFILESa = $(libsocksd_la_SOURCES:.c=.ln)
+ @RUNLINT_TRUE@LINTFILESb = $(LINTFILESa:.y=.ln)
+ @RUNLINT_TRUE@LINTFILES = $(LINTFILESb:.l=.ln)
+-@RUNLINT_TRUE@libsocks_la_DEPENDENCIES = $(LINTFILES)
++@RUNLINT_TRUE@libsocksd_la_DEPENDENCIES = $(LINTFILES)
+ @RUNLINT_TRUE@CLEANFILES = $(LINTFILES)
+ all: all-am
+ 
+@@ -311,8 +311,8 @@
+ 	  echo "rm -f \"$${dir}/so_locations\""; \
+ 	  rm -f "$${dir}/so_locations"; \
+ 	done
 -libsocks.la: $(libsocks_la_OBJECTS) $(libsocks_la_DEPENDENCIES) 
-+libsocksd.la: $(libsocks_la_OBJECTS) $(libsocks_la_DEPENDENCIES) 
- 	$(LINK) -rpath $(libdir) $(libsocks_la_LDFLAGS) $(libsocks_la_OBJECTS) $(libsocks_la_LIBADD) $(LIBS)
+-	$(LINK) -rpath $(libdir) $(libsocks_la_LDFLAGS) $(libsocks_la_OBJECTS) $(libsocks_la_LIBADD) $(LIBS)
++libsocksd.la: $(libsocksd_la_OBJECTS) $(libsocksd_la_DEPENDENCIES)
++	$(LINK) -rpath $(libdir) $(libsocksd_la_LDFLAGS) $(libsocksd_la_OBJECTS) $(libsocksd_la_LIBADD) $(LIBS)
  
  mostlyclean-compile:
+ 	-rm -f *.$(OBJEXT)
 --- a/dlib/int_osf3.c
 +++ b/dlib/int_osf3.c
 @@ -81,7 +81,7 @@
@@ -130,28 +170,92 @@ Last-Update: 2010-07-01
  /* sockaddr struct, with sa_len */
 --- a/dlib/Makefile.in
 +++ b/dlib/Makefile.in
-@@ -214,7 +214,7 @@
- subdirs = @subdirs@
+@@ -36,7 +36,7 @@
+ POST_UNINSTALL = :
+ build_triplet = @build@
+ host_triplet = @host@
+-@RUNLINT_FALSE@libdsocks_la_DEPENDENCIES =  \
++@RUNLINT_FALSE@libdsocksd_la_DEPENDENCIES =  \
+ @RUNLINT_FALSE@	../libscompat/libscompat.la
+ subdir = dlib
+ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+@@ -58,7 +58,7 @@
+ am__installdirs = "$(DESTDIR)$(libdir)"
+ libLTLIBRARIES_INSTALL = $(INSTALL)
+ LTLIBRARIES = $(lib_LTLIBRARIES)
+-am_libdsocks_la_OBJECTS = interposition.lo int_osf1.lo int_osf2.lo \
++am_libdsocksd_la_OBJECTS = interposition.lo int_osf1.lo int_osf2.lo \
+ 	int_osf3.lo config_parse.lo config_scan.lo io.lo debug.lo \
+ 	udp.lo Rgetpeername.lo Rgetsockname.lo Rrresvport.lo Rbind.lo \
+ 	address.lo authneg.lo client.lo clientconfig.lo \
+@@ -68,7 +68,7 @@
+ 	Rcompat.lo msproxy_clientprotocol.lo broken.lo hostcache.lo \
+ 	serr.lo httpproxy.lo tostring.lo addressmatch.lo Rlisten.lo \
+ 	upnp.lo gssapi.lo iobuf.lo
+-libdsocks_la_OBJECTS = $(am_libdsocks_la_OBJECTS)
++libdsocksd_la_OBJECTS = $(am_libdsocksd_la_OBJECTS)
+ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include
+ depcomp = $(SHELL) $(top_srcdir)/depcomp
+ am__depfiles_maybe = depfiles
+@@ -80,8 +80,8 @@
+ CCLD = $(CC)
+ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+ 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+-SOURCES = $(libdsocks_la_SOURCES)
+-DIST_SOURCES = $(libdsocks_la_SOURCES)
++SOURCES = $(libdsocksd_la_SOURCES)
++DIST_SOURCES = $(libdsocksd_la_SOURCES)
+ ETAGS = etags
+ CTAGS = ctags
+ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+@@ -221,8 +221,8 @@
+ sharedstatedir = @sharedstatedir@
  sysconfdir = @sysconfdir@
  target_alias = @target_alias@
 -lib_LTLIBRARIES = libdsocks.la
+-libdsocks_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c \
 +lib_LTLIBRARIES = libdsocksd.la
- libdsocks_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c \
- 	../lib/config_parse.y ../lib/io.c ../lib/debug.c ../lib/udp.c \
++libdsocksd_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c \
+ 	../lib/config_parse.c ../lib/config_scan.c \
+ 	../lib/io.c ../lib/debug.c ../lib/udp.c \
  	../lib/Rgetpeername.c ../lib/Rgetsockname.c \
-@@ -304,7 +304,7 @@
- 	  rm -f config_parse.c; \
- 	  $(MAKE) config_parse.c; \
- 	else :; fi
+@@ -238,17 +238,17 @@
+ 	../lib/addressmatch.c ../lib/Rlisten.c ../lib/upnp.c ../lib/gssapi.c \
+ 	../lib/iobuf.c
+ 
+-libdsocks_la_LDFLAGS = -avoid-version -all-dynamic @MAPOPT@
+-libdsocks_la_LIBADD = ../libscompat/libscompat.la @DLIBDEPS@
++libdsocksd_la_LDFLAGS = -avoid-version -all-dynamic @MAPOPT@
++libdsocksd_la_LIBADD = ../libscompat/libscompat.la @DLIBDEPS@
+ INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libscompat \
+ 	   -I$(top_srcdir)/lib
+ 
+ AM_CFLAGS = -DSOCKS_CLIENT=1 -DSOCKS_SERVER=0 -DSOCKSLIBRARY_DYNAMIC=1
+ @RUNLINT_TRUE@SUFFIXES = .ln
+-@RUNLINT_TRUE@LINTFILESa = $(libdsocks_la_SOURCES:.c=.ln)
++@RUNLINT_TRUE@LINTFILESa = $(libdsocksd_la_SOURCES:.c=.ln)
+ @RUNLINT_TRUE@LINTFILESb = $(LINTFILESa:.y=.ln)
+ @RUNLINT_TRUE@LINTFILES = $(LINTFILESb:.l=.ln)
+-@RUNLINT_TRUE@libdsocks_la_DEPENDENCIES = $(LINTFILES)
++@RUNLINT_TRUE@libdsocksd_la_DEPENDENCIES = $(LINTFILES)
+ @RUNLINT_TRUE@CLEANFILES = $(LINTFILES)
+ all: all-am
+ 
+@@ -310,8 +310,8 @@
+ 	  echo "rm -f \"$${dir}/so_locations\""; \
+ 	  rm -f "$${dir}/so_locations"; \
+ 	done
 -libdsocks.la: $(libdsocks_la_OBJECTS) $(libdsocks_la_DEPENDENCIES) 
-+libdsocksd.la: $(libdsocks_la_OBJECTS) $(libdsocks_la_DEPENDENCIES) 
- 	$(LINK) -rpath $(libdir) $(libdsocks_la_LDFLAGS) $(libdsocks_la_OBJECTS) $(libdsocks_la_LIBADD) $(LIBS)
+-	$(LINK) -rpath $(libdir) $(libdsocks_la_LDFLAGS) $(libdsocks_la_OBJECTS) $(libdsocks_la_LIBADD) $(LIBS)
++libdsocksd.la: $(libdsocksd_la_OBJECTS) $(libdsocksd_la_DEPENDENCIES)
++	$(LINK) -rpath $(libdir) $(libdsocksd_la_LDFLAGS) $(libdsocksd_la_OBJECTS) $(libdsocksd_la_LIBADD) $(LIBS)
  
  mostlyclean-compile:
+ 	-rm -f *.$(OBJEXT)
 --- a/include/socks.h
 +++ b/include/socks.h
-@@ -237,7 +237,7 @@
- __BEGIN_DECLS
+@@ -394,7 +394,7 @@
+ typedef sigset_t addrlockopaque_t;
  
  /*
 - * libsocks function declarations

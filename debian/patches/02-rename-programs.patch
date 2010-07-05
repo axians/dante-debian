@@ -10,7 +10,7 @@ Last-Update: 2010-07-01
 
 --- a/INSTALL
 +++ b/INSTALL
-@@ -264,8 +264,8 @@
+@@ -346,8 +346,8 @@
  
  No configuration-files are installed, these must be installed
  manually.
@@ -27,8 +27,8 @@ Last-Update: 2010-07-01
  .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
  .\" the rights to redistribute these changes.
  .\"
--.TH SOCKD 8 "Feb 17, 2001"
-+.TH DANTED 8 "Feb 17, 2001"
+-.TH SOCKD 8 "January, 2009"
++.TH DANTED 8 "January, 2009"
  .SH NAME
 -sockd \- network proxyserver
 +danted \- network proxyserver
@@ -38,7 +38,16 @@ Last-Update: 2010-07-01
  .RB [ \-DLVdhnv ]
  .RB [ \-N
  .IR number ]
-@@ -112,7 +112,7 @@
+@@ -96,7 +96,7 @@
+ enables TCP keep-alive messages so that connections from machines that
+ have crashed or for other reasons no longer can be reached time out.
+ Note that this can take several hours.  See also the "timeout"
+-option in sockd.conf(5).
++option in danted.conf(5).
+ .TP
+ .B \-v
+ Displays
+@@ -122,7 +122,7 @@
  be set to a (local) filesystem with low latency.
  .SH FILES
  .TP
@@ -47,9 +56,9 @@ Last-Update: 2010-07-01
  .B Dante
  server configuration file.
  .SH AUTHORS
-@@ -120,7 +120,7 @@
-  Michael Shuldman <michaels@inet.no>: Design and implementation.
-  Karl-Andre' Skevik <karls@inet.no>: Autoconf and porting.
+@@ -130,7 +130,7 @@
+    Michael Shuldman
+    Karl-Andre' Skevik
  .SH SEE ALSO
 -socks.conf(5) sockd.conf(5)
 +dante.conf(5) danted.conf(5)
@@ -58,39 +67,86 @@ Last-Update: 2010-07-01
  on the
 --- a/doc/sockd.conf.5
 +++ b/doc/sockd.conf.5
-@@ -40,9 +40,9 @@
+@@ -41,9 +41,9 @@
  .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
  .\" the rights to redistribute these changes.
  .\"
--.TH SOCKD.CONF 5 "May 11, 2001"
-+.TH DANTED.CONF 5 "May 11, 2001"
+-.TH SOCKD.CONF 5 "January, 2009"
++.TH DANTED.CONF 5 "January, 2009"
  .SH NAME
 -sockd.conf \- \fBDante\fP server configuration file syntax
 +danted.conf \- \fBDante\fP server configuration file syntax
  .SH DESCRIPTION
  The configuration file for the \fBDante\fP server controls both access
  controls and logging.  It is divided into three parts; server settings,
-@@ -308,7 +308,7 @@
+@@ -116,7 +116,7 @@
+ .IP \fBtimeout.io\fP
+ The number of seconds an established connection can be idle.
+ The default is 86400 (24 hours).  Set it to 0 for forever.
+-See also the "-n" option in the sockd(8) manpage.
++See also the "-n" option in the danted(8) manpage.
+ 
+ Individual timeouts can be set for tcp and udp by suffixing io with
+ ".<protocolname>", i.e. \fBtimeout.io.tcp\fP or \fBtimeout.io.udp\fP
+@@ -195,8 +195,8 @@
+ 
+ .IP \fBuser.privileged\fP
+ Username which will be used for doing privileged operations.
+-If you need special privileges to read the sockd.conf file or to write
+-the sockd.pid file (you can create it manually before starting sockd),
++If you need special privileges to read the danted.conf file or to write
++the danted.pid file (you can create it manually before starting danted),
+ have anything in your configuration that requires binding privileged
+ tcp/udp ports (ports below 1024), or use some sort of password-based
+ authentication, this probably needs to be set to root.
+@@ -330,7 +330,7 @@
+ Possible values are \fBclear\fP, \fBintegrity\fP, or \fBconfidentiality\fP.
+ The default is to accept whatever the client offers.
+ .IP \fBgssapi.keytab\fP
+-Value for keytab to use.  The default is "FILE:/etc/sockd.keytab".
++Value for keytab to use.  The default is "FILE:/etc/danted.keytab".
+ .IP \fBgssapi.servicename\fP
+ Which servicename to use when involving GSSAPI.  Default is "rcmd".
+ 
+@@ -355,7 +355,7 @@
+ The default is all ports.
+ 
+ .IP \fBpam.servicename\fP
+-Which servicename to use when involving pam.  Default is "sockd".
++Which servicename to use when involving pam.  Default is "danted".
+ .IP \fBto\fP
+ The rule applies to requests going to the address given as value.
+ .IP \fBuser\fP
+@@ -396,7 +396,7 @@
+ the rule.
+ Valid values are the same as in the global \fBmethod\fP line.
+ .IP \fBpam.servicename\fP
+-What servicename to use when involving pam.  Default is "sockd".
++What servicename to use when involving pam.  Default is "danted".
+ .IP \fBport\fP
+ Parameter to \fBfrom\fP, \fBto\fP and \fBvia\fP.  Accepts the keywords
+ \fBeq/=, neq/!=, ge/>=, le/<=, gt/>, lt/<\fP followed by a number.
+@@ -445,7 +445,7 @@
  .SH ROUTES
  The routes are specified with a \fBroute\fP keyword.
- Inside a pair of parens ({}) a set of keywords control the behavior of
+ Inside a pair of parenthesis ({}) a set of keywords control the behavior of
 -the route.  See socks.conf(5) for a description.  This is used to
 +the route.  See dante.conf(5) for a description.  This is used to
  perform so-called "server-chaining", where one socks-server connects
- to another socks-server futher upstream.  
- .SH EXAMPLES
-@@ -316,7 +316,7 @@
+ to another socks-server further upstream.
+ 
+@@ -457,7 +457,7 @@
  .SH FILES
  .nf
  .ta \w 1
--/etc/sockd.conf	\fBDante\fP server configuration file.
-+/etc/danted.conf	\fBDante\fP server configuration file.
- /etc/passwd	file used when checking username/passwords.
+-/etc/sockd.conf   \fBDante\fP server configuration file.
++/etc/danted.conf   \fBDante\fP server configuration file.
+ /etc/passwd   file used when checking username/passwords.
  .fi
  .SH AUTHORS
-@@ -324,7 +324,7 @@
-  Michael Shuldman <michaels@inet.no>: Design and implementation.
-  Karl-Andre' Skevik <karls@inet.no>: Autoconf and porting.
+@@ -465,7 +465,7 @@
+    Michael Shuldman
+    Karl-Andre' Skevik
  .SH SEE ALSO
 -sockd(8), socks.conf(5), hosts_access(5)
 +danted(8), dante.conf(5), hosts_access(5)
@@ -103,27 +159,27 @@ Last-Update: 2010-07-01
  .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
  .\" the rights to redistribute these changes.
  .\"
--.TH SOCKS.CONF 5 "February 17, 2001"
-+.TH DANTE.CONF 5 "February 17, 2001"
+-.TH SOCKS.CONF 5 "January, 2009"
++.TH DANTE.CONF 5 "January, 2009"
  .SH NAME
 -socks.conf \- socks client configuration file syntax
 +dante.conf \- socks client configuration file syntax
  .SH DESCRIPTION
  The configuration file for the socks client library allow control over
  logging and server selection.  It is divided into two parts,
-@@ -119,13 +119,13 @@
- authentication.  Not recommended as other users on the system 
- might be able to see your password.
+@@ -163,13 +163,13 @@
+ Some additional environment variables are documented in socksify(1).
+ .TP
  .SH FILES
 -.I /etc/socks.conf
 +.I /etc/dante.conf
  .SH AUTHORS
- For Inferno Nettverk A/S, Norway:
-  Michael Shuldman <michaels@inet.no>: Design and implementation.
-  Karl-Andre' Skevik <karls@inet.no>: Autoconf and porting.
+ For inferno Nettverk A/S:
+    Michael Shuldman
+    Karl-Andre' Skevik
  .SH SEE ALSO
--sockd(8) sockd.conf(5)
-+danted(8) danted.conf(5)
- .Pp
+-socksify(1) sockd(8) sockd.conf(5)
++socksify(1) danted(8) danted.conf(5)
+ .TP
  Information about new releases and other related issues can be found
  on the

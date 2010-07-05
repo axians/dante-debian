@@ -1,13 +1,13 @@
 Description: Debian is not eccentric :)
 Forwarded: not-needed
 Author: Adrian Bridgett <bridgett@debian.org>
-Last-Update: 2010-07-01
+Last-Update: 2010-07-02
 
---- a/include/common.h
-+++ b/include/common.h
-@@ -68,7 +68,8 @@
- #define __attribute__(a)
- #endif
+--- a/include/osdep.h
++++ b/include/osdep.h
+@@ -44,7 +44,8 @@
+ 
+ /* $Id: osdep.h,v 1.51.2.2 2010/05/24 16:38:23 karls Exp $ */
  
 -#if HAVE_LINUX_ECCENTRICITIES
 +/*#if HAVE_LINUX_ECCENTRICITIES*/

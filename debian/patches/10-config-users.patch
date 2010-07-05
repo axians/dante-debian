@@ -1,11 +1,11 @@
 Description: Do not invent our own users, use "proxy" and "nobody".
 Forwarded: not-needed
 Author: Adrian Bridgett <bridgett@debian.org>
-Last-Update: 2010-07-01
+Last-Update: 2010-07-02
 
 --- a/example/sockd.conf
 +++ b/example/sockd.conf
-@@ -77,15 +77,15 @@
+@@ -76,15 +76,15 @@
  #
  
  # when doing something that can require privilege, it will use the
@@ -15,9 +15,9 @@ Last-Update: 2010-07-01
 +user.privileged: proxy
  
 -# when running as usual, it will use the unprivileged userid of "sockd".
--#user.notprivileged: sockd
+-#user.unprivileged: sockd
 +# when running as usual, it will use the unprivileged userid of:
-+user.notprivileged: nobody
++user.unprivileged: nobody
  
  # If you compiled with libwrap support, what userid should it use
  # when executing your libwrap commands?  "libwrap".

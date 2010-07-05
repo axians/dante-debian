@@ -1,4 +1,4 @@
-dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
+dante (1.2.1+dfsg-1) UNRELEASED; urgency=low
 
   TODO: update to 1.2.1, with +dfsg this time
   TODO: forward upstream the patches that merit forwarding
@@ -21,6 +21,12 @@ dante (1.1.19.dfsg-4) UNRELEASED; urgency=low
   * Add DEP 3 headers to all the patches.
   * Keep the socksify.1 manual page in its own file in debian/ instead of
     creating a whole file using a patch.
+  * New upstream version:
+    - update the 01-rename-library, 02-rename-programs, 05-readme-functions,
+      07-rconnect, 10-config-users, 11-linux-eccentricities, 12-man-errors,
+      and 13-c-warnings patches
+    - remove the 04-faq, 09-getifa-address, and 14-httpproxy-underrun patches,
+      merged upstream independently
 
  -- Peter Pentchev <roam@ringlet.net>  Thu, 01 Jul 2010 11:38:12 +0300
 
