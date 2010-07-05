@@ -8,7 +8,7 @@ Last-Update: 2010-07-01
 
 --- a/configure
 +++ b/configure
-@@ -2693,7 +2693,7 @@
+@@ -3279,7 +3279,7 @@
    CFLAGS=$ac_save_CFLAGS
  elif test $ac_cv_prog_cc_g = yes; then
    if test "$GCC" = yes; then
@@ -17,7 +17,7 @@ Last-Update: 2010-07-01
    else
      CFLAGS="-g"
    fi
-@@ -18541,8 +18541,8 @@
+@@ -19714,8 +19714,8 @@
  # This can be used to rebuild libtool when needed
  LIBTOOL_DEPS="$ac_aux_dir/ltmain.sh"
  
@@ -28,7 +28,7 @@ Last-Update: 2010-07-01
  
  # Prevent multiple expansion
  
-@@ -29645,7 +29645,7 @@
+@@ -31128,7 +31128,7 @@
  		;;
  
  		*)
