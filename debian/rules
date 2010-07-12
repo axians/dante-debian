@@ -51,7 +51,7 @@ override_dh_install:
 	dh_install
 
 override_dh_installdocs:
-	dh_installdocs -A README doc/faq.tex doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
+	dh_installdocs -A README doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
 	dh_installdocs -pdante-client doc/README.socksify
 	dh_installdocs -pdante-client -pdante-server
 	dh_installdocs -pdante-server doc/SOCKS4.protocol
