@@ -27,7 +27,13 @@ dante (1.2.1+dfsg-1) UNRELEASED; urgency=low
       and 13-c-warnings patches
     - remove the 04-faq, 09-getifa-address, and 14-httpproxy-underrun patches,
       merged upstream independently
+    - remove the 11-linux-eccentricities patch - dante fails to build without
+      the macro masking
     - refresh the 03-configure patch
+    - doc/faq.tex has disappeared, so do not install it
+    - libdsocksd0 has turned into a private library
+    - update the libsocksd0 and libdsocksd0 symbols files
+    - remove dlib/socks.map at clean-up time
 
  -- Peter Pentchev <roam@ringlet.net>  Thu, 01 Jul 2010 11:38:12 +0300
 

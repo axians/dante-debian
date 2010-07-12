@@ -1,4 +1,5 @@
 dlib/config_parse.c
 dlib/config_scan.c
+dlib/socks.map
 sockd/config_parse.c
 sockd/config_scan.c
