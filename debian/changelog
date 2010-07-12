@@ -1,6 +1,5 @@
 dante (1.2.1+dfsg-1) UNRELEASED; urgency=low
 
-  TODO: update to 1.2.1, with +dfsg this time
   TODO: forward upstream the patches that merit forwarding
 
   * Convert to the 3.0 (quilt) source format.
