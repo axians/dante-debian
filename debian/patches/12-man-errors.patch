@@ -1,10 +1,21 @@
-Description: Fix the manual page errors - replace mdoc macros with man ones.
+Description: Fix the manual page errors.
+ - replace mdoc macros with man ones
+ - use minus signs instead of hyphens where necessary
 Forwarded: no
 Author: Peter Pentchev <roam@ringlet.net>
-Last-Update: 2010-07-02
+Last-Update: 2010-07-12
 
 --- a/doc/sockd.conf.5
 +++ b/doc/sockd.conf.5
+@@ -116,7 +116,7 @@
+ .IP \fBtimeout.io\fP
+ The number of seconds an established connection can be idle.
+ The default is 86400 (24 hours).  Set it to 0 for forever.
+-See also the "-n" option in the danted(8) manpage.
++See also the "\-n" option in the danted(8) manpage.
+ 
+ Individual timeouts can be set for tcp and udp by suffixing io with
+ ".<protocolname>", i.e. \fBtimeout.io.tcp\fP or \fBtimeout.io.udp\fP
 @@ -420,10 +420,10 @@
  The syntax of the redirect statement is
  as follows:
@@ -18,6 +29,15 @@ Last-Update: 2010-07-02
  \fBredirect\fP to: \fBADDRESS\fP
  
  The semantics of \fBfrom\fP and \fBto\fP vary according to
+@@ -434,7 +434,7 @@
+ Note that the meaning of this address is affected by \fBcommand\fP.
+ .IP \fBudprange\fP
+ The argument to this keyword is two portnumbers, separated by
+-a dash ('-').  They specify the udp port-range that will be
++a dash ('\-').  They specify the udp port-range that will be
+ used between the socks-client and the Dante-server for udp
+ packets.  Note that this has no relation to the udp port-range
+ used between the Dante-server and external, non-socks, clients/servers.
 @@ -466,8 +466,8 @@
     Karl-Andre' Skevik
  .SH SEE ALSO
