@@ -6,3 +6,4 @@
 10-config-users.patch
 12-man-errors.patch
 13-c-warnings.patch
+15-lib-dante-client.patch

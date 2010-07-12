@@ -11,7 +11,7 @@ dante (1.2.1+dfsg-1) UNRELEASED; urgency=low
     - use libsocksd0-dev.links
   * Sort and beautify the Build-Depends line in the control file.
   * Bump Standards-Version to 3.9.0:
-    - libdsocksd0 now Breaks older dante-client versions, no longer Conflicts
+    - dante-client now Breaks older libdsocksd0 versions, no longer Conflicts
       with them
   * Use dpkg-buildflags from dpkg-dev 1.15.7 to obtain the default values
     for CFLAGS, CPPFLAGS, and LDFLAGS.
@@ -31,8 +31,10 @@ dante (1.2.1+dfsg-1) UNRELEASED; urgency=low
       the macro masking
     - refresh the 03-configure patch
     - doc/faq.tex has disappeared, so do not install it
-    - libdsocksd0 has turned into a private library
-    - update the libsocksd0 and libdsocksd0 symbols files
+    - libdsocksd0 has turned into a private library; add the 15-lib-dante-client
+      patch to swallow it back into dante-client as it used to be before
+      I broke it out in 1.1.19.dfsg-1
+    - update the libsocksd0 symbols file
     - remove dlib/socks.map at clean-up time
 
  -- Peter Pentchev <roam@ringlet.net>  Thu, 01 Jul 2010 11:38:12 +0300
