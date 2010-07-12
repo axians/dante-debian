@@ -36,6 +36,8 @@ dante (1.2.1+dfsg-1) UNRELEASED; urgency=low
       I broke it out in 1.1.19.dfsg-1
     - update the libsocksd0 symbols file
     - remove dlib/socks.map at clean-up time
+  * Explicitly disable GSSAPI support to avoid accidental dependencies arising
+    from the build environment.
 
  -- Peter Pentchev <roam@ringlet.net>  Thu, 01 Jul 2010 11:38:12 +0300
 
