@@ -1,7 +1,5 @@
 dante (1.2.1+dfsg-1) UNRELEASED; urgency=low
 
-  TODO: policy 3.9.1 (check the libs reentrant stuff)
-
   * Convert to the 3.0 (quilt) source format.
   * Simplify the rules file:
     - use debhelper override rules
@@ -9,9 +7,10 @@ dante (1.2.1+dfsg-1) UNRELEASED; urgency=low
     - do not pass --prefix to dh_auto_configure - it does it by itself
     - use libsocksd0-dev.links
   * Sort and beautify the Build-Depends line in the control file.
-  * Bump Standards-Version to 3.9.0:
+  * Bump Standards-Version to 3.9.1:
     - dante-client now Breaks older libdsocksd0 versions, no longer Conflicts
       with them
+    - we no longer need to pass -D_REENTRANT to the compiler
   * Use dpkg-buildflags from dpkg-dev 1.15.7 to obtain the default values
     for CFLAGS, CPPFLAGS, and LDFLAGS.
   * Update the copyright file to the latest DEP 5 format and bump the year on

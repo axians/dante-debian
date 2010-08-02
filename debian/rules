@@ -14,7 +14,6 @@ export DEB_BUILD_HARDENING=1
 else
 export DEB_BUILD_HARDENING=0
 endif
-CFLAGS+=	-D_REENTRANT
 export CFLAGS CPPFLAGS LDFLAGS
 
 override_dh_auto_configure:
