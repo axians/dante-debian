@@ -6,6 +6,8 @@ dante (1.2.1+dfsg-1) unstable; urgency=low
     - use dh --with autotools_dev to take care of config.guess and config.sub
     - do not pass --prefix to dh_auto_configure - it does it by itself
     - use libsocksd0-dev.links
+    - bump the debhelper compatibility level to 8 and put the dh sequence name
+      first before any options
   * Sort and beautify the Build-Depends line in the control file.
   * Bump Standards-Version to 3.9.1:
     - dante-client now Breaks older libdsocksd0 versions, no longer Conflicts
