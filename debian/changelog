@@ -1,4 +1,4 @@
-dante (1.2.1+dfsg-1) unstable; urgency=low
+dante (1.2.1+dfsg-1) experimental; urgency=low
 
   * Convert to the 3.0 (quilt) source format.
   * Simplify the rules file:
@@ -40,7 +40,7 @@ dante (1.2.1+dfsg-1) unstable; urgency=low
   * Explicitly disable GSSAPI support to avoid accidental dependencies arising
     from the build environment.
 
- -- Peter Pentchev <roam@ringlet.net>  Mon, 02 Aug 2010 13:42:59 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Fri, 03 Sep 2010 13:05:44 +0300
 
 dante (1.1.19.dfsg-3) unstable; urgency=low
 
