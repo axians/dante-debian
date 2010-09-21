@@ -1,3 +1,4 @@
+dlib/Makefile
 dlib/config_parse.c
 dlib/config_scan.c
 dlib/socks.map
