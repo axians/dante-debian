@@ -1,0 +1,63 @@
+Description: The "Linux eccentricities" hack only helps non-Linux arches.
+Forwarded: no
+Author: Peter Pentchev <roam@ringlet.net>
+Last-Update: 2010-09-21
+
+Index: b/include/osdep.h
+===================================================================
+--- a/include/osdep.h	2010-09-21 17:13:40.000000000 +0300
++++ b/include/osdep.h	2010-09-21 17:13:44.000000000 +0300
+@@ -44,7 +44,7 @@
+ 
+ /* $Id: osdep.h,v 1.51.2.2 2010/05/24 16:38:23 karls Exp $ */
+ 
+-#if HAVE_LINUX_ECCENTRICITIES
++#if 1
+ /*
+  * XXX This is a hack. Avoid transparent sockaddr union used in Linux
+  *  to avoid the use of the union in the code. Mainly used in
+Index: b/include/common.h
+===================================================================
+--- a/include/common.h	2010-09-21 17:13:40.000000000 +0300
++++ b/include/common.h	2010-09-21 17:27:12.000000000 +0300
+@@ -333,8 +333,10 @@
+  * cast is necessary on AIX, due to buggy headers there?
+  * needs additional testing on AIX, disable for now.
+  */
+-/* #define CMSG_CONTROLDATA(msg)   ((struct cmsghdr *)((msg).msg_control)) */
+-#define CMSG_CONTROLDATA(msg)   ((msg).msg_control)
++#warning RDBG redefining stuff
++#define CMSG_CONTROLDATA(msg)   ((struct cmsghdr *)((msg).msg_control))
++#define CMSG_CONTROLDATA_MUTABLE(msg)   ((msg).msg_control)
++/* #define CMSG_CONTROLDATA(msg)   ((msg).msg_control) */
+ #else /* !HAVE_CMSGHDR */
+ #define CMSG_CONTROLDATA(msg)   ((msg).msg_accrights)
+ #endif /* HAVE_CMSGHDR */
+Index: b/lib/address.c
+===================================================================
+--- a/lib/address.c	2010-09-21 17:13:40.000000000 +0300
++++ b/lib/address.c	2010-09-21 17:13:44.000000000 +0300
+@@ -1047,8 +1047,10 @@
+       if (socks_pthread_mutexattr_init(&attr) != 0)
+          serr(EXIT_FAILURE, "%s: mutexattr_init() failed", function);
+ 
++#ifdef PTHREAD_MUTEX_ERRORCHECK
+       if (socks_pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK) != 0)
+          swarn("%s: mutex_settype(PTHREAD_MUTEX_ERRORCHECK) failed", function);
++#endif
+ 
+       if (socks_pthread_mutex_init(&addrmutex, &attr) != 0) {
+          swarn("%s: mutex_init() failed", function);
+Index: b/lib/Rcompat.c
+===================================================================
+--- a/lib/Rcompat.c	2010-09-21 17:27:17.000000000 +0300
++++ b/lib/Rcompat.c	2010-09-21 17:27:27.000000000 +0300
+@@ -286,7 +286,7 @@
+ 
+    /* no cmsg on proxied sockets. */
+    CMSG_TOTLEN(*msg)      = 0;
+-   CMSG_CONTROLDATA(*msg) = NULL;
++   CMSG_CONTROLDATA_MUTABLE(*msg) = NULL;
+ 
+    for (received = ioc = rc = 0; ioc < (size_t)msg->msg_iovlen; ++ioc) {
+       /* LINTED pointer casts may be troublesome */
