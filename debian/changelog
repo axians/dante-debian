@@ -1,7 +1,5 @@
 dante (1.2.1+dfsg-2) UNRELEASED; urgency=low
 
-  TODO: test the build with the eccentricities patch on i386
-
   * Drop the automake1.9 build dependency after a discussion with
     George Danchev.
   * Reintroduce the 11-linux-eccentricities patch to fix the FTBFS on
