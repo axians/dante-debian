@@ -1,4 +1,4 @@
-dante (1.2.1+dfsg-2) UNRELEASED; urgency=low
+dante (1.2.1+dfsg-2) experimental; urgency=low
 
   * Drop the automake1.9 build dependency after a discussion with
     George Danchev.
@@ -7,7 +7,7 @@ dante (1.2.1+dfsg-2) UNRELEASED; urgency=low
   * Provide a separate symbols file on kFreeBSD - there's no need for
     the issetugid(2) and sockatmark(3) wrappers there.
 
- -- Peter Pentchev <roam@ringlet.net>  Wed, 08 Sep 2010 17:49:51 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Fri, 24 Sep 2010 17:36:53 +0300
 
 dante (1.2.1+dfsg-1) experimental; urgency=low
 
