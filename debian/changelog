@@ -7,6 +7,7 @@ dante (1.2.1+dfsg-2) experimental; urgency=low
   * Provide a separate symbols file on kFreeBSD - there's no need for
     the issetugid(2) and sockatmark(3) wrappers there.
   * Switch to bzip2 compression for the Debian tarball.
+  * Switch to Git and point the Vcs-* fields to Gitorious.
 
  -- Peter Pentchev <roam@ringlet.net>  Fri, 24 Sep 2010 17:36:53 +0300
 
