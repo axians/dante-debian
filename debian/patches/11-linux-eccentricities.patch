@@ -1,7 +1,7 @@
 Description: The "Linux eccentricities" hack only helps non-Linux arches.
 Forwarded: no
 Author: Peter Pentchev <roam@ringlet.net>
-Last-Update: 2010-09-21
+Last-Update: 2010-09-24
 
 --- a/include/osdep.h
 +++ b/include/osdep.h
@@ -16,13 +16,12 @@ Last-Update: 2010-09-21
   *  to avoid the use of the union in the code. Mainly used in
 --- a/include/common.h
 +++ b/include/common.h
-@@ -333,8 +333,10 @@
+@@ -333,8 +333,9 @@
   * cast is necessary on AIX, due to buggy headers there?
   * needs additional testing on AIX, disable for now.
   */
 -/* #define CMSG_CONTROLDATA(msg)   ((struct cmsghdr *)((msg).msg_control)) */
 -#define CMSG_CONTROLDATA(msg)   ((msg).msg_control)
-+#warning RDBG redefining stuff
 +#define CMSG_CONTROLDATA(msg)   ((struct cmsghdr *)((msg).msg_control))
 +#define CMSG_CONTROLDATA_MUTABLE(msg)   ((msg).msg_control)
 +/* #define CMSG_CONTROLDATA(msg)   ((msg).msg_control) */
