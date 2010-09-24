@@ -1,4 +1,9 @@
-Description: The "Linux eccentricities" hack only helps non-Linux arches.
+Description: Fix the build on non-Linux architectures.
+ - always build with the "Linux eccentricities" on Debian
+ - make the CMSG_CONTROLDATA() macro work and introduce
+   an lvalue equivalent
+ - only use PTHREAD_MUTEX_ERRORCHECK when available
+ - add two more kFreeBSD tests in the configure script
 Forwarded: no
 Author: Peter Pentchev <roam@ringlet.net>
 Last-Update: 2010-09-24
