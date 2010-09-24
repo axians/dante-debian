@@ -53,3 +53,23 @@ Last-Update: 2010-09-21
  
     for (received = ioc = rc = 0; ioc < (size_t)msg->msg_iovlen; ++ioc) {
        /* LINTED pointer casts may be troublesome */
+--- a/configure
++++ b/configure
+@@ -29203,7 +29203,7 @@
+  LIBS=$tLIBS
+  if test x"${ac_cv_search_pthread_mutexattr_init}" = x"-lpthread"; then
+     case $host in
+-       *-*-linux-*)
++       *-*-linux-*|*-*-k*bsd*-gnu*)
+ 	#XXX  attempt to find latest pthread library
+ 	  PATH=$PATH:/sbin
+ 	  export PATH
+@@ -31167,7 +31167,7 @@
+ #set default?
+ if test "x${LIBC_NAME}" = x; then
+ 	case $host in
+-		*-*-linux-*)
++		*-*-linux-*|*-*-k*bsd-gnu*)
+ 		#XXX
+ 		#can't set it to libc.so directly, might be ld script
+ 		unset LIBC_ALTS

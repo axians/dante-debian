@@ -1,7 +1,6 @@
 dante (1.2.1+dfsg-2) UNRELEASED; urgency=low
 
   TODO: test the build with the eccentricities patch on i386
-  TODO: let the build finish on kFreeBSD - libdsocksd.so in the wrong dir?
 
   * Drop the automake1.9 build dependency after a discussion with
     George Danchev.
