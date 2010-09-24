@@ -9,7 +9,7 @@ dante (1.2.1+dfsg-2) experimental; urgency=low
   * Switch to bzip2 compression for the Debian tarball.
   * Switch to Git and point the Vcs-* fields to Gitorious.
 
- -- Peter Pentchev <roam@ringlet.net>  Fri, 24 Sep 2010 17:36:53 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Fri, 24 Sep 2010 17:51:03 +0300
 
 dante (1.2.1+dfsg-1) experimental; urgency=low
 
