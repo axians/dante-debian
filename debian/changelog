@@ -1,7 +1,15 @@
-dante (1.2.1+dfsg-3) UNRELEASED; urgency=low
+dante (1.2.2+dfsg-1) UNRELEASED; urgency=low
+
+  TODO: test the build on mips/mipsel
+  TODO: fix a couple of warnings on i386
 
   * Another try to get the "Linux eccentricities" code right -
     fix the FTBFS on mips and mipsel.
+  * New upstream version:
+    - refresh the 01-rename-library patch
+    - refresh the 15-lib-dante-client and do not let LIBDIR override
+      the /usr/lib/dante-client parent path
+    - add getsockopt() to libsocksd0's symbols files
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 12 Oct 2010 10:59:43 +0300
 

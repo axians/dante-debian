@@ -9,7 +9,7 @@ Last-Update: 2010-07-12
  
  SOCKSIFY_PRELOAD_LIBS="@SOCKSIFY_PRELOAD_LIBS@"
  
--LIBDIR="@LIBRARY_PREFIX@"
+-LIBDIR="${LIBDIR:-@LIBRARY_PREFIX@}"
 +LIBDIR="@LIBRARY_PREFIX@/dante-client"
  
  #dlib/Makefile.am libtool flags should produce a predictable library name

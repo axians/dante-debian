@@ -2,12 +2,12 @@ Description: Rename the libdsocks library to avoid a conflict with libsocks4.
 Bug-Debian: http://bugs.debian.org/52476
 Forwarded: not-needed
 Author: Adrian Bridgett <bridgett@debian.org>
-Last-Update: 2010-07-01
+Last-Update: 2010-10-12
 
 --- a/bin/socksify.in
 +++ b/bin/socksify.in
 @@ -52,7 +52,7 @@
- LIBDIR="@LIBRARY_PREFIX@"
+ LIBDIR="${LIBDIR:-@LIBRARY_PREFIX@}"
  
  #dlib/Makefile.am libtool flags should produce a predictable library name
 -LIBRARY="${SOCKS_LIBRARY-${LIBDIR}/libdsocks.@SOLIB_POSTFIX@}"
@@ -91,7 +91,7 @@ Last-Update: 2010-07-01
 @@ -68,7 +68,7 @@
  	Rcompat.lo msproxy_clientprotocol.lo hostcache.lo broken.lo \
  	serr.lo httpproxy.lo tostring.lo addressmatch.lo Rlisten.lo \
- 	upnp.lo gssapi.lo iobuf.lo
+ 	upnp.lo gssapi.lo iobuf.lo Rgetsockopt.lo
 -libsocks_la_OBJECTS = $(am_libsocks_la_OBJECTS)
 +libsocksd_la_OBJECTS = $(am_libsocksd_la_OBJECTS)
  DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include
@@ -119,8 +119,8 @@ Last-Update: 2010-07-01
  	Rgetpeername.c Rgetsockname.c Rrresvport.c io.c    \
  	address.c authneg.c client.c clientconfig.c clientprotocol.c \
  	udp.c userio.c connectchild.c config.c  \
-@@ -233,10 +233,10 @@
- 	tostring.c addressmatch.c Rlisten.c upnp.c gssapi.c iobuf.c
+@@ -234,10 +234,10 @@
+ 	Rgetsockopt.c
  
  
 -#libsocks version info, interfaceversion:revision:old interfaces supported
@@ -133,7 +133,7 @@ Last-Update: 2010-07-01
  INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libscompat
  AM_CFLAGS = -DSOCKS_CLIENT=1 -DSOCKS_SERVER=0 -DSOCKSLIBRARY_DYNAMIC=0
  EXTRA_DIST = config_parse.y config_scan.l
-@@ -246,10 +246,10 @@
+@@ -247,10 +247,10 @@
  AM_YFLAGS = -d -p${PREFIX}
  AM_LFLAGS = -P${PREFIX} -olex.yy.c
  @RUNLINT_TRUE@SUFFIXES = .ln
@@ -146,7 +146,7 @@ Last-Update: 2010-07-01
  @RUNLINT_TRUE@CLEANFILES = $(LINTFILES)
  all: all-am
  
-@@ -311,8 +311,8 @@
+@@ -312,8 +312,8 @@
  	  echo "rm -f \"$${dir}/so_locations\""; \
  	  rm -f "$${dir}/so_locations"; \
  	done
@@ -191,7 +191,7 @@ Last-Update: 2010-07-01
 @@ -68,7 +68,7 @@
  	Rcompat.lo msproxy_clientprotocol.lo broken.lo hostcache.lo \
  	serr.lo httpproxy.lo tostring.lo addressmatch.lo Rlisten.lo \
- 	upnp.lo gssapi.lo iobuf.lo
+ 	upnp.lo gssapi.lo iobuf.lo Rgetsockopt.lo
 -libdsocks_la_OBJECTS = $(am_libdsocks_la_OBJECTS)
 +libdsocksd_la_OBJECTS = $(am_libdsocksd_la_OBJECTS)
  DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include
@@ -221,7 +221,7 @@ Last-Update: 2010-07-01
  	../lib/Rgetpeername.c ../lib/Rgetsockname.c \
 @@ -238,17 +238,17 @@
  	../lib/addressmatch.c ../lib/Rlisten.c ../lib/upnp.c ../lib/gssapi.c \
- 	../lib/iobuf.c
+ 	../lib/iobuf.c ../lib/Rgetsockopt.c
  
 -libdsocks_la_LDFLAGS = -avoid-version -all-dynamic @MAPOPT@
 -libdsocks_la_LIBADD = ../libscompat/libscompat.la @DLIBDEPS@
@@ -254,7 +254,7 @@ Last-Update: 2010-07-01
  	-rm -f *.$(OBJEXT)
 --- a/include/socks.h
 +++ b/include/socks.h
-@@ -394,7 +394,7 @@
+@@ -403,7 +403,7 @@
  typedef sigset_t addrlockopaque_t;
  
  /*
