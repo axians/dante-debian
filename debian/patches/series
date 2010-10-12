@@ -8,3 +8,4 @@
 12-man-errors.patch
 13-c-warnings.patch
 15-lib-dante-client.patch
+16-sa_siginfo.patch

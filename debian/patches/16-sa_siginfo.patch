@@ -1,0 +1,33 @@
+Description: Only use SA_SIGINFO if available (e.g. not on GNU/Hurd)
+Forwarded: no
+Author: Peter Pentchev <roam@ringlet.net>
+Last-Update: 2010-10-12
+
+--- a/lib/connectchild.c
++++ b/lib/connectchild.c
+@@ -94,6 +94,7 @@
+       return NULL;
+    }
+ 
++#ifdef SA_SIGINFO
+    if (currentsig.sa_flags & SA_SIGINFO) { /* sa_sigaction. */
+       isourhandler = (currentsig.sa_sigaction == sigio);
+ 
+@@ -110,6 +111,7 @@
+       }
+    }
+    else { /* sa_handler. */
++#endif
+       isourhandler = 0; /* we install with SA_SIGINFO. */
+ 
+       if (currentsig.sa_handler != SIG_IGN
+@@ -119,7 +121,9 @@
+       else
+          slog(LOG_DEBUG, "%s: no SIGIO handler previously installed",
+          function);
++#ifdef SA_SIGINFO
+    }
++#endif
+ 
+    if (!isourhandler) {
+       newsig               = currentsig; /* keep same as much as possible. */

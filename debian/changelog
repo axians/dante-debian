@@ -11,6 +11,7 @@ dante (1.2.2+dfsg-1) UNRELEASED; urgency=low
     - add getsockopt() to libsocksd0's symbols files
     - refresh the line numbers in the 03-configure, 11-linux-eccentricities,
       and 13-c-warnings patches
+  * Add the 16-sa_siginfo patch to try to fix the FTBFS on GNU/Hurd.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 12 Oct 2010 10:59:43 +0300
 
