@@ -3,7 +3,7 @@ dante (1.2.2+dfsg-1) UNRELEASED; urgency=low
   TODO: test the build on mips/mipsel
 
   * Another try to get the "Linux eccentricities" code right -
-    fix the FTBFS on mips and mipsel.
+    fix the FTBFS on armel, mips and mipsel.  Closes: #598967
   * New upstream version:
     - refresh the 01-rename-library patch
     - refresh the 15-lib-dante-client and do not let LIBDIR override
