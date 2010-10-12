@@ -1,7 +1,7 @@
 Description: Fix a whole slew of warnings from the C compiler.
 Forwarded: no
 Author: Peter Pentchev <roam@ringlet.net>
-Last-Update: 2010-07-05
+Last-Update: 2010-10-12
 
 --- a/lib/config.c
 +++ b/lib/config.c
@@ -115,7 +115,7 @@ Last-Update: 2010-07-05
        struct rule_t *rule;
 --- a/sockd/sockd.c
 +++ b/sockd/sockd.c
-@@ -1081,7 +1081,7 @@
+@@ -1071,7 +1071,7 @@
  
     sig = -sig;
  
@@ -124,7 +124,7 @@ Last-Update: 2010-07-05
  
     clients = 0;
     clients += childcheck(-CHILD_NEGOTIATE);
-@@ -1200,7 +1200,7 @@
+@@ -1190,7 +1190,7 @@
  
     sig = -sig;
  

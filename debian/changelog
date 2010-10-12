@@ -10,6 +10,8 @@ dante (1.2.2+dfsg-1) UNRELEASED; urgency=low
     - refresh the 15-lib-dante-client and do not let LIBDIR override
       the /usr/lib/dante-client parent path
     - add getsockopt() to libsocksd0's symbols files
+    - refresh the line numbers in the 03-configure, 11-linux-eccentricities,
+      and 13-c-warnings patches
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 12 Oct 2010 10:59:43 +0300
 

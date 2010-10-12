@@ -11,7 +11,7 @@ Last-Update: 2010-10-12
 
 --- a/include/common.h
 +++ b/include/common.h
-@@ -333,8 +333,9 @@
+@@ -338,8 +338,9 @@
   * cast is necessary on AIX, due to buggy headers there?
   * needs additional testing on AIX, disable for now.
   */
@@ -58,7 +58,7 @@ Last-Update: 2010-10-12
  _ACEOF
  
  
-@@ -29203,7 +29203,7 @@
+@@ -29362,7 +29362,7 @@
   LIBS=$tLIBS
   if test x"${ac_cv_search_pthread_mutexattr_init}" = x"-lpthread"; then
      case $host in
@@ -67,7 +67,7 @@ Last-Update: 2010-10-12
  	#XXX  attempt to find latest pthread library
  	  PATH=$PATH:/sbin
  	  export PATH
-@@ -31167,7 +31167,7 @@
+@@ -31326,7 +31326,7 @@
  #set default?
  if test "x${LIBC_NAME}" = x; then
  	case $host in

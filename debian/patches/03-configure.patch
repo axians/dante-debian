@@ -4,7 +4,7 @@ Description: Adapt the configure script for the Debian environment.
 Forwarded: not-needed
 Author: Adrian Bridgett <bridgett@debian.org>,
 	Peter Pentchev <roam@ringlet.net>
-Last-Update: 2010-07-01
+Last-Update: 2010-10-12
 
 --- a/configure
 +++ b/configure
@@ -28,7 +28,7 @@ Last-Update: 2010-07-01
  
  # Prevent multiple expansion
  
-@@ -31128,7 +31128,7 @@
+@@ -31287,7 +31287,7 @@
  		;;
  
  		*)
