@@ -115,6 +115,15 @@ Last-Update: 2010-10-12
        struct rule_t *rule;
 --- a/sockd/sockd.c
 +++ b/sockd/sockd.c
+@@ -472,7 +472,7 @@
+                                   "%lu slot%s free",
+                                   function, childtype2string(child->type),
+                                   (unsigned long)child->pid,
+-                                  child->freec, child->freec == 1 ? "" : "s");
++                                  (unsigned long)child->freec, child->freec == 1 ? "" : "s");
+ 
+                   if (child->type == CHILD_IO) {
+                      /*
 @@ -1071,7 +1071,7 @@
  
     sig = -sig;
@@ -168,3 +177,47 @@ Last-Update: 2010-10-12
  #endif
  
  /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
+--- a/lib/upnp.c
++++ b/lib/upnp.c
+@@ -79,7 +79,7 @@
+    int devtype, rc;
+ #endif /* HAVE_LIBMINIUPNP */
+ 
+-   slog(LOG_DEBUG, function);
++   slog(LOG_DEBUG, "%s", function);
+ 
+ #if !HAVE_LIBMINIUPNP
+    return -1;
+@@ -210,7 +210,7 @@
+    int rc;
+ #endif /* HAVE_LIBMINIUPNP */
+ 
+-   slog(LOG_DEBUG, function);
++   slog(LOG_DEBUG, "%s", function);
+ 
+ #if !HAVE_LIBMINIUPNP
+    SERRX(0);
+--- a/sockd/auth_pam.c
++++ b/sockd/auth_pam.c
+@@ -174,7 +174,7 @@
+    }
+ 
+    if ((rc = pam_end(pamh, rc)) != PAM_SUCCESS)
+-      swarnx("%s: strange ... pam_end() failed: %s", pam_strerror(pamh, rc));
++      swarnx("%s: strange ... pam_end() failed: %s", function, pam_strerror(pamh, rc));
+ 
+    return 0;
+ }
+--- a/sockd/sockd_child.c
++++ b/sockd/sockd_child.c
+@@ -573,8 +573,8 @@
+ 
+    if (type >= 0) {
+        if (proxyc < minfreeslots && sockscf.child.addchild) {
+-         slog(LOG_DEBUG, "%s: current # of free %s-slots is %d, thus less than "
+-                         "configured minimum of %d.  Trying to add a "
++         slog(LOG_DEBUG, "%s: current # of free %s-slots is %lu, thus less than "
++                         "configured minimum of %lu.  Trying to add a "
+                          "%s-child",
+                          function, childtype2string(type),
+                          (unsigned long)proxyc, (unsigned long)minfreeslots,

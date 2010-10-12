@@ -1,7 +1,6 @@
 dante (1.2.2+dfsg-1) UNRELEASED; urgency=low
 
   TODO: test the build on mips/mipsel
-  TODO: fix a couple of warnings on i386
 
   * Another try to get the "Linux eccentricities" code right -
     fix the FTBFS on mips and mipsel.
