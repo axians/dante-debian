@@ -1,7 +1,5 @@
 Description: Fix the build on non-Linux architectures.
  - never build with the "Linux eccentricities" on Debian
-   (FIXME: I think at least kFreeBSD would want it, or
-    maybe another fix)
  - make the CMSG_CONTROLDATA() macro work and introduce
    an lvalue equivalent
  - only use PTHREAD_MUTEX_ERRORCHECK when available
@@ -9,7 +7,7 @@ Description: Fix the build on non-Linux architectures.
  - supply a third argument to open() with O_CREAT
 Forwarded: no
 Author: Peter Pentchev <roam@ringlet.net>
-Last-Update: 2010-10-11
+Last-Update: 2010-10-12
 
 --- a/include/common.h
 +++ b/include/common.h
