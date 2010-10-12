@@ -1,6 +1,4 @@
-dante (1.2.2+dfsg-1) UNRELEASED; urgency=low
-
-  TODO: test the build on mips/mipsel
+dante (1.2.2+dfsg-1) experimental; urgency=low
 
   * Another try to get the "Linux eccentricities" code right -
     fix the FTBFS on armel, mips and mipsel.  Closes: #598967
@@ -13,7 +11,7 @@ dante (1.2.2+dfsg-1) UNRELEASED; urgency=low
       and 13-c-warnings patches
   * Add the 16-sa_siginfo patch to try to fix the FTBFS on GNU/Hurd.
 
- -- Peter Pentchev <roam@ringlet.net>  Tue, 12 Oct 2010 10:59:43 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Tue, 12 Oct 2010 17:34:29 +0300
 
 dante (1.2.1+dfsg-2) experimental; urgency=low
 
