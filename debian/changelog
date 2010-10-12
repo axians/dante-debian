@@ -1,3 +1,10 @@
+dante (1.2.1+dfsg-3) UNRELEASED; urgency=low
+
+  * Another try to get the "Linux eccentricities" code right -
+    fix the FTBFS on mips and mipsel.
+
+ -- Peter Pentchev <roam@ringlet.net>  Tue, 12 Oct 2010 10:59:43 +0300
+
 dante (1.2.1+dfsg-2) experimental; urgency=low
 
   * Drop the automake1.9 build dependency after a discussion with

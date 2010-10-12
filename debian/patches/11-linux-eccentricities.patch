@@ -1,24 +1,16 @@
 Description: Fix the build on non-Linux architectures.
- - always build with the "Linux eccentricities" on Debian
+ - never build with the "Linux eccentricities" on Debian
+   (FIXME: I think at least kFreeBSD would want it, or
+    maybe another fix)
  - make the CMSG_CONTROLDATA() macro work and introduce
    an lvalue equivalent
  - only use PTHREAD_MUTEX_ERRORCHECK when available
  - add two more kFreeBSD tests in the configure script
+ - supply a third argument to open() with O_CREAT
 Forwarded: no
 Author: Peter Pentchev <roam@ringlet.net>
-Last-Update: 2010-09-24
+Last-Update: 2010-10-11
 
---- a/include/osdep.h
-+++ b/include/osdep.h
-@@ -44,7 +44,7 @@
- 
- /* $Id: osdep.h,v 1.51.2.2 2010/05/24 16:38:23 karls Exp $ */
- 
--#if HAVE_LINUX_ECCENTRICITIES
-+#if 1
- /*
-  * XXX This is a hack. Avoid transparent sockaddr union used in Linux
-  *  to avoid the use of the union in the code. Mainly used in
 --- a/include/common.h
 +++ b/include/common.h
 @@ -333,8 +333,9 @@
@@ -59,6 +51,15 @@ Last-Update: 2010-09-24
        /* LINTED pointer casts may be troublesome */
 --- a/configure
 +++ b/configure
+@@ -20085,7 +20085,7 @@
+ 
+ 
+ cat >>confdefs.h <<\_ACEOF
+-#define HAVE_LINUX_ECCENTRICITIES 1
++#define HAVE_LINUX_ECCENTRICITIES 0
+ _ACEOF
+ 
+ 
 @@ -29203,7 +29203,7 @@
   LIBS=$tLIBS
   if test x"${ac_cv_search_pthread_mutexattr_init}" = x"-lpthread"; then
@@ -77,3 +78,14 @@ Last-Update: 2010-09-24
  		#XXX
  		#can't set it to libc.so directly, might be ld script
  		unset LIBC_ALTS
+--- a/lib/util.c
++++ b/lib/util.c
+@@ -874,7 +874,7 @@
+    if (strstr(newtemplate, "XXXXXX") != NULL)
+       s = mkstemp(newtemplate);
+    else
+-      s = open(newtemplate, O_RDWR | O_CREAT | O_EXCL);
++      s = open(newtemplate, O_RDWR | O_CREAT | O_EXCL, 0600);
+ 
+    if (s == -1) {
+       swarn("%s: mkstemp(%s)", function, newtemplate);
