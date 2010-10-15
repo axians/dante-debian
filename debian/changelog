@@ -1,3 +1,12 @@
+dante (1.2.2+dfsg-2) experimental; urgency=low
+
+  * Really fix the FTBFS on GNU/Hurd:
+    - complete my 16-sa_siginfo patch
+    - in the 11-linux-eccentricities patch add GNU/Hurd, too, to
+      the list of architectures where the shared library search is done
+
+ -- Peter Pentchev <roam@ringlet.net>  Fri, 15 Oct 2010 17:23:21 +0300
+
 dante (1.2.2+dfsg-1) experimental; urgency=low
 
   * Another try to get the "Linux eccentricities" code right -

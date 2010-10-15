@@ -1,7 +1,7 @@
 Description: Only use SA_SIGINFO if available (e.g. not on GNU/Hurd)
 Forwarded: no
 Author: Peter Pentchev <roam@ringlet.net>
-Last-Update: 2010-10-12
+Last-Update: 2010-10-14
 
 --- a/lib/connectchild.c
 +++ b/lib/connectchild.c
@@ -21,7 +21,7 @@ Last-Update: 2010-10-12
        isourhandler = 0; /* we install with SA_SIGINFO. */
  
        if (currentsig.sa_handler != SIG_IGN
-@@ -119,7 +121,9 @@
+@@ -119,12 +121,16 @@
        else
           slog(LOG_DEBUG, "%s: no SIGIO handler previously installed",
           function);
@@ -31,3 +31,33 @@ Last-Update: 2010-10-12
  
     if (!isourhandler) {
        newsig               = currentsig; /* keep same as much as possible. */
+       newsig.sa_sigaction  = sigio;
++#ifdef SA_SIGINFO
+       newsig.sa_flags     |= SA_SIGINFO;
++#endif
+ 
+       slog(LOG_DEBUG, "%s: our signal handler is not installed, installing ...",
+       function);
+@@ -974,18 +980,22 @@
+       return;
+    }
+ 
++#ifdef SA_SIGINFO
+    if (originalsig.sa_flags & SA_SIGINFO
+    &&  originalsig.sa_sigaction != NULL) {
+       slog(LOG_DEBUG, "%s: calling original sa_sigaction()", function);
+       originalsig.sa_sigaction(sig, sip, scp);
+    }
+    else {
++#endif
+       if (originalsig.sa_handler != SIG_IGN
+       &&  originalsig.sa_handler != SIG_DFL) {
+          slog(LOG_DEBUG, "%s: calling original sa_handler()", function);
+          originalsig.sa_handler(sig);
+       }
++#ifdef SA_SIGINFO
+    }
++#endif
+ 
+    if (sockscf.connectchild == 0) {
+       sockscf.state.insignal = 0;
