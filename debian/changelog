@@ -1,4 +1,4 @@
-dante (1.2.2+dfsg-3) UNRELEASED; urgency=low
+dante (1.2.2+dfsg-3) experimental; urgency=low
 
   * Depend on a hardening package so that the build hardening is actually
     done in the automated builds, and use the hardening-includes package
@@ -7,7 +7,7 @@ dante (1.2.2+dfsg-3) UNRELEASED; urgency=low
   * Add the 17-cppcheck patch to fix two errors pointed out by cppcheck
     and to silence two of its false-positive warnings.
 
- -- Peter Pentchev <roam@ringlet.net>  Fri, 24 Dec 2010 16:43:17 +0200
+ -- Peter Pentchev <roam@ringlet.net>  Fri, 24 Dec 2010 18:05:16 +0200
 
 dante (1.2.2+dfsg-2) experimental; urgency=low
 
