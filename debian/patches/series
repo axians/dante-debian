@@ -9,3 +9,4 @@
 13-c-warnings.patch
 15-lib-dante-client.patch
 16-sa_siginfo.patch
+17-cppcheck.patch
