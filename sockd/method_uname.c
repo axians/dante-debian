@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2005, 2008, 2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,253 +44,248 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: method_uname.c,v 1.51 2005/10/28 13:33:42 michaels Exp $";
-
-__BEGIN_DECLS
+"$Id: method_uname.c,v 1.69 2009/10/23 10:37:26 karls Exp $";
 
 static int
-recv_unamever __P((int s, struct request_t *request,
-						 struct negotiate_state_t *state));
+recv_unamever(int s, struct request_t *request,
+      struct negotiate_state_t *state);
 
 static int
-recv_ulen __P((int s, struct request_t *request,
-					struct negotiate_state_t *state));
+recv_ulen(int s, struct request_t *request, struct negotiate_state_t *state);
 
 static int
-recv_uname __P((int s, struct request_t *request,
-					 struct negotiate_state_t *state));
+recv_uname(int s, struct request_t *request, struct negotiate_state_t *state);
 
 static int
-recv_plen __P((int s, struct request_t *request,
-					struct negotiate_state_t *state));
+recv_plen(int s, struct request_t *request, struct negotiate_state_t *state);
 
 static int
-recv_passwd __P((int s, struct request_t *request,
-					  struct negotiate_state_t *state));
+recv_passwd(int s, struct request_t *request, struct negotiate_state_t *state);
+
 static int
-passworddbisunique __P((void));
+passworddbisunique(void);
 /*
  * If it's possible for us to fail username/password authentication
  * on one rule, and succeed at another, returns false.
  * Otherwise returns the unique authmethod that would be used.
  */
- 
 
-__END_DECLS
 
 static int
 passworddbisunique(void)
 {
-	if (methodisset(AUTHMETHOD_UNAME, sockscf.methodv, sockscf.methodc))
-	  if (!methodisset(AUTHMETHOD_PAM, sockscf.methodv, sockscf.methodc))
-			return AUTHMETHOD_UNAME;
-		else
-			return 0;
+   if (methodisset(AUTHMETHOD_UNAME, sockscf.methodv, sockscf.methodc)) {
+     if (!methodisset(AUTHMETHOD_PAM, sockscf.methodv, sockscf.methodc))
+         return AUTHMETHOD_UNAME;
+      else
+         return 0;
+   }
 
 #if HAVE_PAM
-	if (methodisset(AUTHMETHOD_PAM, sockscf.methodv, sockscf.methodc))
-		if (!methodisset(AUTHMETHOD_UNAME, sockscf.methodv, sockscf.methodc)
-	  	&& sockscf.state.pamservicename != NULL)
-			return AUTHMETHOD_PAM;
-		else
-			return 0;
-#endif
+   if (methodisset(AUTHMETHOD_PAM, sockscf.methodv, sockscf.methodc)) {
+      if (!methodisset(AUTHMETHOD_UNAME, sockscf.methodv, sockscf.methodc)
+        && sockscf.state.pamservicename != NULL)
+         return AUTHMETHOD_PAM;
+      else
+         return 0;
+   }
+#endif /* HAVE_PAM */
 
-	/* no passworddb-based methods set.  Return true. */
-	return -1;
+   /* no passworddb-based methods set.  Should not have been called. */
+   return -1;
 }
 
 int
 method_uname(s, request, state)
-	int s;
-	struct request_t *request;
-	struct negotiate_state_t *state;
+   int s;
+   struct request_t *request;
+   struct negotiate_state_t *state;
 
 {
 
-	state->rcurrent = recv_unamever;
-	return state->rcurrent(s, request, state);
+   state->rcurrent = recv_unamever;
+   return state->rcurrent(s, request, state);
 }
 
 static int
 recv_unamever(s, request, state)
-	int s;
-	struct request_t *request;
-	struct negotiate_state_t *state;
+   int s;
+   struct request_t *request;
+   struct negotiate_state_t *state;
 {
 
-	INIT(sizeof(request->auth->mdata.uname.version));
-	CHECK(&request->auth->mdata.uname.version, request->auth, NULL);
+   INIT(sizeof(request->auth->mdata.uname.version));
+   CHECK(&request->auth->mdata.uname.version, request->auth, NULL);
 
-	switch (request->auth->mdata.uname.version) {
-		case SOCKS_UNAMEVERSION:
-			break;
+   switch (request->auth->mdata.uname.version) {
+      case SOCKS_UNAMEVERSION:
+         break;
 
-		default:
-			slog(LOG_DEBUG, "unknown version on uname packet from client: %d",
-			request->auth->mdata.uname.version);
-			return -1;
-	}
+      default:
+         slog(LOG_DEBUG, "unknown version on uname packet from client: %d",
+         request->auth->mdata.uname.version);
+         return -1;
+   }
 
-	state->rcurrent = recv_ulen;
-	return state->rcurrent(s, request, state);
+   state->rcurrent = recv_ulen;
+   return state->rcurrent(s, request, state);
 }
-
 
 static int
 recv_ulen(s, request, state)
-	int s;
-	struct request_t *request;
-	struct negotiate_state_t *state;
+   int s;
+   struct request_t *request;
+   struct negotiate_state_t *state;
 {
 
-	INIT(sizeof(*request->auth->mdata.uname.name));
-	CHECK(request->auth->mdata.uname.name, request->auth, NULL);
+   INIT(sizeof(*request->auth->mdata.uname.name));
+   CHECK(request->auth->mdata.uname.name, request->auth, NULL);
 
-	/* LINTED conversion from 'int' may lose accuracy */
-	OCTETIFY(*request->auth->mdata.uname.name);
+   /* LINTED conversion from 'int' may lose accuracy */
+   OCTETIFY(*request->auth->mdata.uname.name);
 
-	state->rcurrent = recv_uname;
+   state->rcurrent = recv_uname;
 
-	return state->rcurrent(s, request, state);
+   return state->rcurrent(s, request, state);
 }
-
 
 static int
 recv_uname(s, request, state)
-	int s;
-	struct request_t *request;
-	struct negotiate_state_t *state;
+   int s;
+   struct request_t *request;
+   struct negotiate_state_t *state;
 {
-	const size_t ulen = (size_t)*request->auth->mdata.uname.name;
+   const size_t ulen = (size_t)*request->auth->mdata.uname.name;
 
-	INIT(ulen);
-	CHECK(request->auth->mdata.uname.name + 1, request->auth, NULL);
+   INIT(ulen);
+   CHECK(request->auth->mdata.uname.name + 1, request->auth, NULL);
 
-	/* convert to string. */
-	memcpy(request->auth->mdata.uname.name, request->auth->mdata.uname.name + 1,
-	ulen);
-	request->auth->mdata.uname.name[ulen] = NUL;
+   /* convert to string. */
+   memcpy(request->auth->mdata.uname.name, request->auth->mdata.uname.name + 1,
+   ulen);
+   request->auth->mdata.uname.name[ulen] = NUL;
 
-	state->rcurrent = recv_plen;
+   state->rcurrent = recv_plen;
 
-	return state->rcurrent(s, request, state);
+   return state->rcurrent(s, request, state);
 }
 
 static int
 recv_plen(s, request, state)
-	int s;
-	struct request_t *request;
-	struct negotiate_state_t *state;
+   int s;
+   struct request_t *request;
+   struct negotiate_state_t *state;
 {
 
-	INIT(sizeof(*request->auth->mdata.uname.password));
-	CHECK(request->auth->mdata.uname.password, request->auth, NULL);
+   INIT(sizeof(*request->auth->mdata.uname.password));
+   CHECK(request->auth->mdata.uname.password, request->auth, NULL);
 
-	/* LINTED conversion from 'int' may lose accuracy */
-	OCTETIFY(*request->auth->mdata.uname.password);
+   /* LINTED conversion from 'int' may lose accuracy */
+   OCTETIFY(*request->auth->mdata.uname.password);
 
-	state->rcurrent = recv_passwd;
+   state->rcurrent = recv_passwd;
 
-	return state->rcurrent(s, request, state);
+   return state->rcurrent(s, request, state);
 }
-
 
 static int
 recv_passwd(s, request, state)
-	int s;
-	struct request_t *request;
-	struct negotiate_state_t *state;
+   int s;
+   struct request_t *request;
+   struct negotiate_state_t *state;
 {
-/*	const char *function = "recv_passwd()"; */
-	const size_t plen = (size_t)*request->auth->mdata.uname.password;
-	unsigned char response[1				/* version. */
-								+ 1				/* status.	*/
-	];
+/*   const char *function = "recv_passwd()"; */
+   const size_t plen = (size_t)*request->auth->mdata.uname.password;
+   unsigned char response[1            /* version. */
+                        + 1            /* status.   */
+   ];
 
-	INIT(plen);
-	CHECK(request->auth->mdata.uname.password + 1, request->auth, NULL);
+   INIT(plen);
+   CHECK(request->auth->mdata.uname.password + 1, request->auth, NULL);
 
-	/* convert to string. */
-	memcpy(request->auth->mdata.uname.password,
-	request->auth->mdata.uname.password + 1, plen);
-	request->auth->mdata.uname.password[plen] = NUL;
+   /* convert to string. */
+   memcpy(request->auth->mdata.uname.password,
+   request->auth->mdata.uname.password + 1, plen);
+   request->auth->mdata.uname.password[plen] = NUL;
 
-	/*
-	 * Very sadly we can't do checking of the username/password here 
-	 * since we don't know what authentication to use yet.  It could
-	 * be username, but it could also be PAM, or some future method. 
-	 * It depends on what the socks request is.  We therfor would have
-	 * liked to give the client success status back no matter what 
-	 * the username/password is, and later deny the connection if need be.
-	 *
-	 * This however creates problems with clients that, naturally, cache
-	 * the wrong username/password if they get success. 
-	 * We therfor check if we have a unique passworddb to use, and if so,
-	 * check it here so we can return an immediate error to client.
-	 * If the database is not unique, we go with returning an 
-	 * unconditional success at this point, and deny it later if need be.
-	*/
-	response[UNAME_VERSION] = request->auth->mdata.uname.version;
-	switch (passworddbisunique()) {
-		case 0:
-			/* Return ok, check correct db later. . */
-			response[UNAME_STATUS] = (unsigned char)0;
-			break;
+   /*
+    * Very sadly we can't do checking of the username/password here
+    * since we don't know what authentication to use yet.  It could
+    * be username, but it could also be PAM, or some future method.
+    * It depends on what the socks request is.  We therefor would have
+    * liked to give the client success status back no matter what
+    * the username/password is, and later deny the connection if need be.
+    *
+    * That however creates problems with clients that, naturally, cache
+    * the wrong username/password if they get success.
+    * We therefor check if we have a unique passworddb to use, and if so,
+    * check the password here so we can return an immediate error to client.
+    * This we can do because the passworddb is unique, i.e. there is
+    * no chance of the result varying according to the clients request.
+    *
+    * If the database is not unique, we go with returning a success at
+    * this point, and deny it later if need be, even though this might
+    * create problems for the clients that cache the result.
+   */
+   response[UNAME_VERSION] = request->auth->mdata.uname.version;
+   switch (passworddbisunique()) {
+      case 0:
+         /* Return ok, check correct db later, when we know what correct is. */
+         response[UNAME_STATUS] = (unsigned char)0;
+         break;
 
 #if HAVE_PAM
-		case AUTHMETHOD_PAM: {
-			/* it's a union, make a copy first. */
-			const struct authmethod_uname_t uname
-			= request->auth->mdata.uname;
+      case AUTHMETHOD_PAM: {
+         /*
+          * it's a union, make a copy before moving into pam object.
+          */
+         const struct authmethod_uname_t uname
+         = request->auth->mdata.uname;
 
-			request->auth->method = AUTHMETHOD_PAM;
+         request->auth->method = AUTHMETHOD_PAM;
 
-			/* move from uname object into pam object. */
-			strcpy((char *)request->auth->mdata.pam.name,
-			(const char *)uname.name);
-			strcpy((char *)request->auth->mdata.pam.password,
-			(const char *)uname.password);
+         strcpy((char *)request->auth->mdata.pam.servicename,
+         sockscf.state.pamservicename);
 
-        	SASSERTX(strlen(sockscf.state.pamservicename)
-        	< sizeof(request->auth->mdata.pam.servicename));
+         strcpy((char *)request->auth->mdata.pam.name,
+         (const char *)uname.name);
 
-			strcpy(request->auth->mdata.pam.servicename,
-			sockscf.state.pamservicename);
-			/* FALLTHROUGH */
-		}
-#endif
+         strcpy((char *)request->auth->mdata.pam.password,
+         (const char *)uname.password);
+         /* FALLTHROUGH */
+      }
+#endif /* HAVE_PAM */
 
-		case AUTHMETHOD_UNAME: {
-			struct sockaddr src, dst;
+      case AUTHMETHOD_UNAME: {
+         struct sockaddr src, dst;
 
-			
-			sockshost2sockaddr(&state->src, &src);
-			sockshost2sockaddr(&state->src, &dst);
+         sockshost2sockaddr(&state->src, &src);
+         sockshost2sockaddr(&state->src, &dst);
 
-			if (accesscheck(s, request->auth, &src, &dst, state->emsg,
-			sizeof(state->emsg)))
-				response[UNAME_STATUS] = (unsigned char)0; /* OK. */
-			else
-				response[UNAME_STATUS] = (unsigned char)1; /* Not OK. */
+         if (accesscheck(s, request->auth, &src, &dst, state->emsg,
+         sizeof(state->emsg)))
+            response[UNAME_STATUS] = (unsigned char)0; /* OK. */
+         else
+            response[UNAME_STATUS] = (unsigned char)1; /* Not OK. */
 
-			break;
-		}
+         break;
+      }
 
-		default:
-			SERRX(passworddbisunique);
-	}
+      default:
+         SERRX(passworddbisunique);
+   }
 
-	if (writen(s, response, sizeof(response), request->auth) != sizeof(response))
-		return -1;
+   if (socks_sendton(s, response, sizeof(response), 0, 0, NULL, 0,
+   request->auth) != sizeof(response))
+      return -1;
 
-	if (response[UNAME_STATUS] == 0) { /* 0 is success */
-		state->rcurrent = recv_sockspacket;
-		return state->rcurrent(s, request, state);
-	}
+   if (response[UNAME_STATUS] == 0) { /* 0 is success */
+      state->rcurrent = recv_sockspacket;
+      return state->rcurrent(s, request, state);
+   }
 
-	/* else; failed authentication. */
-	errno = 0;
-	return -1;
+   /* else; failed authentication. */
+   errno = 0;
+   return -1;
 
 }

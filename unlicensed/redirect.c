@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, 2003
+ * Copyright (c) 2001, 2008, 2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,11 +43,11 @@
 
 #include "common.h"
 
-static const char rcsid[] =
-"$Id: redirect.c,v 1.4 2003/07/01 13:21:53 michaels Exp $";
+static const char rcsid[] = 
+"$Id: redirect.c,v 1.9 2009/10/22 17:36:12 karls Exp $";
 
 const char module_redirect_version[] =
-"$Id: redirect.c,v 1.4 2003/07/01 13:21:53 michaels Exp $";
+"$Id: redirect.c,v 1.9 2009/10/22 17:36:12 karls Exp $";
 
 
 void
@@ -58,13 +58,13 @@ redirectsetup(void)
 
 int
 redirect(s, addr, host, command, from, to)
-	int s;
-	struct sockaddr *addr;
-	struct sockshost_t *host;
-	int command;
-	const struct ruleaddress_t *from;
-	const struct ruleaddress_t *to;
+   int s;
+   struct sockaddr *addr;
+   struct sockshost_t *host;
+   int command;
+   const struct ruleaddr_t *from;
+   const struct ruleaddr_t *to;
 {
 
-	return 0;
+   return 0;
 }

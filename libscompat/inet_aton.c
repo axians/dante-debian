@@ -1,21 +1,17 @@
-/* $Id: inet_aton.c,v 1.3 1999/05/13 16:35:56 karls Exp $ */
+/* $Id: inet_aton.c,v 1.8 2009/07/07 09:07:12 karls Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "autoconf.h"
-#endif  /* HAVE_CONFIG_H */
+#endif /* HAVE_CONFIG_H */
 
-#include "common.h"
-
-#if !HAVE_INET_ATON
-
-/*	$OpenBSD: inet_addr.c,v 1.5 1997/04/05 21:13:10 millert Exp $	*/
+/*	$OpenBSD: inet_addr.c,v 1.9 2005/08/06 20:30:03 espie Exp $	*/
 
 /*
  * ++Copyright++ 1983, 1990, 1993
  * -
  * Copyright (c) 1983, 1990, 1993
  *    The Regents of the University of California.  All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -24,14 +20,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -45,14 +37,14 @@
  * SUCH DAMAGE.
  * -
  * Portions Copyright (c) 1993 by Digital Equipment Corporation.
- *
+ * 
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies, and that
  * the name of Digital Equipment Corporation not be used in advertising or
  * publicity pertaining to distribution of the document or software without
  * specific, written prior permission.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
  * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
@@ -65,21 +57,10 @@
  * --Copyright--
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-#if 0
-static char sccsid[] = "@(#)inet_addr.c	8.1 (Berkeley) 6/17/93";
-static char rcsid[] = "$From: inet_addr.c,v 8.5 1996/08/05 08:31:35 vixie Exp $";
-#else
-static char rcsid[] = "$OpenBSD: inet_addr.c,v 1.5 1997/04/05 21:13:10 millert Exp $";
-#endif
-#endif /* LIBC_SCCS and not lint */
-
-#ifndef _COMMON_H_
 #include <sys/types.h>
 #include <sys/param.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif  /* !_COMMON_H_ */
 #include <ctype.h>
 
 /*
@@ -88,8 +69,7 @@ static char rcsid[] = "$OpenBSD: inet_addr.c,v 1.5 1997/04/05 21:13:10 millert E
  */
 #if 0
 in_addr_t
-inet_addr(cp)
-	register const char *cp;
+inet_addr(const char *cp)
 {
 	struct in_addr val;
 
@@ -106,15 +86,13 @@ inet_addr(cp)
  * cannot distinguish between failure and a local broadcast address.
  */
 int
-inet_aton(cp, addr)
-	register const char *cp;
-	struct in_addr *addr;
+inet_aton(const char *cp, struct in_addr *addr)
 {
-	register in_addr_t val;
-	register int base, n;
-	register char c;
+	in_addr_t val;
+	int base, n;
+	char c;
 	u_int parts[4];
-	register u_int *pp = parts;
+	u_int *pp = parts;
 
 	c = *cp;
 	for (;;) {
@@ -123,7 +101,7 @@ inet_aton(cp, addr)
 		 * Values are specified as for C:
 		 * 0x=hex, 0=octal, isdigit=decimal.
 		 */
-		if (!isdigit((int)c))
+		if (!isdigit(c))
 			return (0);
 		val = 0; base = 10;
 		if (c == '0') {
@@ -134,12 +112,12 @@ inet_aton(cp, addr)
 				base = 8;
 		}
 		for (;;) {
-			if (isascii((int)c) && isdigit((int)c)) {
+			if (isascii(c) && isdigit(c)) {
 				val = (val * base) + (c - '0');
 				c = *++cp;
-			} else if (base == 16 && isascii((int)c) && isxdigit((int)c)) {
+			} else if (base == 16 && isascii(c) && isxdigit(c)) {
 				val = (val << 4) |
-					(c + 10 - (islower((int)c) ? 'a' : 'A'));
+					(c + 10 - (islower(c) ? 'a' : 'A'));
 				c = *++cp;
 			} else
 				break;
@@ -161,7 +139,7 @@ inet_aton(cp, addr)
 	/*
 	 * Check for trailing characters.
 	 */
-	if (c != '\0' && (!isascii((int)c) || !isspace((int)c)))
+	if (c != '\0' && (!isascii(c) || !isspace(c)))
 		return (0);
 	/*
 	 * Concoct the address according to
@@ -177,19 +155,19 @@ inet_aton(cp, addr)
 		break;
 
 	case 2:				/* a.b -- 8.24 bits */
-		if (val > 0xffffff)
+		if ((val > 0xffffff) || (parts[0] > 0xff))
 			return (0);
 		val |= parts[0] << 24;
 		break;
 
 	case 3:				/* a.b.c -- 8.8.16 bits */
-		if (val > 0xffff)
+		if ((val > 0xffff) || (parts[0] > 0xff) || (parts[1] > 0xff))
 			return (0);
 		val |= (parts[0] << 24) | (parts[1] << 16);
 		break;
 
 	case 4:				/* a.b.c.d -- 8.8.8.8 bits */
-		if (val > 0xff)
+		if ((val > 0xff) || (parts[0] > 0xff) || (parts[1] > 0xff) || (parts[2] > 0xff))
 			return (0);
 		val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
 		break;
@@ -198,10 +176,3 @@ inet_aton(cp, addr)
 		addr->s_addr = htonl(val);
 	return (1);
 }
-#else
-static void avoid_error __P((void));
-static void avoid_error()
-{
-	avoid_error();
-}
-#endif  /* !HAVE_INET_ATON */

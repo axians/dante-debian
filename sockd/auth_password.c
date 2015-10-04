@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2005, 2008, 2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,42 +44,52 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: auth_password.c,v 1.9 2005/06/06 11:26:59 michaels Exp $";
+"$Id: auth_password.c,v 1.24 2009/10/23 10:37:26 karls Exp $";
 
 int
 passwordcheck(name, clearpassword, emsg, emsglen)
-	const char *name;
-	const char *clearpassword;
-	char *emsg;
-	size_t emsglen;
+   const char *name;
+   const char *clearpassword;
+   char *emsg;
+   size_t emsglen;
 {
-/*	const char *function = "passwordcheck()"; */
-	struct passwd *pw;
-	char *salt, *password;
-	uid_t euid;
+   const char *function = "passwordcheck()";
+   struct passwd *pw;
+   char password[MAXPWLEN];
+   int rc;
 
-	socks_seteuid(&euid, sockscf.uid.privileged);
-	pw = socks_getpwnam(name);
-	socks_reseteuid(sockscf.uid.privileged, euid);
+   slog(LOG_DEBUG, "%s: name = %s", function, name);
 
-	if (pw == NULL) {
-		snprintfn(emsg, emsglen, "system username/password failed");
-		return -1;
-	}
+   if (clearpassword != NULL) /* don't need privileges to lookup name. */
+      sockd_priv(SOCKD_PRIV_FILE_READ, PRIV_ON);
 
-	if (clearpassword != NULL) {
-		salt		= pw->pw_passwd;
-		password = pw->pw_passwd;
+   if ((pw = socks_getpwnam(name)) == NULL) {
+      sockd_priv(SOCKD_PRIV_FILE_READ, PRIV_OFF);
+      snprintfn(emsg, emsglen, "no such user on system: %s", name);
 
-		if (strcmp(crypt(clearpassword, salt), password) == 0)
-			return 0;
-		else {
-			snprintfn(emsg, emsglen, "system password userauthentication failed");
-			return -1;
-		}
-	}
-	else
-		return 0;
+      return -1;
+   }
 
-	return -1;
+   /* copy it before the PRIV_OFF changes it. */
+   strncpy(password, pw->pw_passwd, sizeof(password) - 1);
+   password[sizeof(password) - 1] = NUL;
+
+   if (clearpassword != NULL)
+      sockd_priv(SOCKD_PRIV_FILE_READ, PRIV_OFF);
+
+   if (clearpassword == NULL) /* no password to check. */
+      rc = 0;
+   else {
+      const char *salt = password;
+
+      if (strcmp(crypt(clearpassword, salt), password) == 0)
+         rc = 0;
+      else {
+         snprintfn(emsg, emsglen, "system password authentication failed");
+         rc = -1;
+      }
+   }
+
+   bzero(password, sizeof(password));
+   return rc;
 }

@@ -1,7 +1,5 @@
 /*
- * $Id: session.c,v 1.2 2006/01/08 18:26:32 karls Exp $
- *
- * Copyright (c) 2005, 2006
+ * Copyright (c) 2005, 2006, 2008, 2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,26 +39,30 @@
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
  * the rights to redistribute these changes.
  *
+ * $Id: session.c,v 1.7 2009/10/22 17:36:13 karls Exp $
  */
 
 #include "common.h"
 
-static const char rcsid[] =
-"$Id: session.c,v 1.2 2006/01/08 18:26:32 karls Exp $";
+static const char rcsid[] = 
+"$Id: session.c,v 1.7 2009/10/22 17:36:13 karls Exp $";
+
+const char module_session_version[] =
+"$Id: session.c,v 1.7 2009/10/22 17:36:13 karls Exp $";
 
 extern const char *module_session_ipaddrv[];
 extern const int module_session_ipaddrc;
 
 void
 session_unuse(ss)
-	session_t *ss;
+   session_t *ss;
 {
 }
 
 
 int
 session_use(ss)
-	session_t *ss;
+   session_t *ss;
 {
-	return 1;
+   return 1;
 }

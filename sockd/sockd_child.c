@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2004, 2005, 2008, 2009,
+ *               2010
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,995 +45,1249 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: sockd_child.c,v 1.146 2005/12/25 17:22:17 michaels Exp $";
+"$Id: sockd_child.c,v 1.211.2.8 2010/05/24 16:39:12 karls Exp $";
 
-#define MOTHER	0	/* descriptor mother reads/writes on.	*/
-#define CHILD	1	/* descriptor child reads/writes on.	*/
-
-__BEGIN_DECLS
+#define MOTHER  (0)  /* descriptor mother reads/writes on.   */
+#define CHILD   (1)   /* descriptor child reads/writes on.   */
 
 static int
-setchildtype __P((int type, struct sockd_child_t ***childv, int **childc,
-						void (**function)(struct sockd_mother_t *mother)));
+setchildtype(int type, struct sockd_child_t ***childv, size_t **childc,
+      void (**function)(struct sockd_mother_t *mother));
 /*
  * Sets "childv", "childc" and "function" to the correct value depending
  * on "type".
  */
 
-
 static int
-findchild __P((pid_t pid, int childc, const struct sockd_child_t *childv));
+findchild(pid_t pid, int childc, const struct sockd_child_t *childv);
 /*
  * Finds the child with pid "pid" in the array "childv".  Searching
  * Elements in "childv" is given by "childc".
  * Returns:
- *		On success: the index of the child in "childv".
- *		On failure: -1.
+ *      On success: the index of the child in "childv".
+ *      On failure: -1.
  */
 
-__END_DECLS
+static struct sockd_child_t *
+addchild(const int type);
+/*
+ * Adds a new child that can accept objects of type "type" from mother.
+ * Returns:
+ *    On success: a pointer to the added child.
+ *    On failure: NULL.  (resource shortage.)
+ */
 
 
-static struct sockd_child_t *iochildv;				/* all our iochildren			*/
-static int iochildc;
+static struct sockd_child_t *iochildv;          /* all our iochildren         */
+static size_t iochildc;
 
-static struct sockd_child_t *negchildv;			/* all our negotiatorchildren */
-static int negchildc;
+static struct sockd_child_t *negchildv;         /* all our negotiatorchildren */
+static size_t negchildc;
 
-static struct sockd_child_t *reqchildv;			/* all our requestchildren		*/
-static int reqchildc;
+static struct sockd_child_t *reqchildv;         /* all our requestchildren    */
+static size_t reqchildc;
 
-
-struct sockd_child_t *
+static struct sockd_child_t *
 addchild(type)
-	int type;
+   const int type;
 {
-	const char *function = "addchild()";
-	/*
-	 * It is better to reserve some descriptors for temporary use
-	 * than to get errors when passing them and thus lose clients.
-	 */
-	const int reserved = FDPASS_MAX	/* max descriptors we pass.			*/
-							 + 1				/* need a descriptor for accept().	*/
-							 + 2;				/* for each new child.					*/
-	struct sockd_mother_t mother;
-	struct sockd_child_t **childv;
-	int *childc;
-	void (*childfunction)(struct sockd_mother_t *mother);
-	pid_t pid;
-	const pid_t ourpid = sockscf.state.pid;
-	int optval, flags;
-	int pipev[] = { -1, -1 };
-	int ackpipev[] = { -1, -1 };
+   const char *function = "addchild()";
+   void (*childfunction)(struct sockd_mother_t *mother);
+   struct sockd_mother_t mother;
+   struct sockd_child_t **childv;
+   pid_t ourpid, pid;
+   socklen_t optlen;
+   size_t *childc;
+   int p, bufval, bufset, bufset2,
+       datapipev[] = { -1, -1 }, ackpipev[] = { -1, -1 };
+   /*
+    * It is better to reserve some descriptors for temporary use
+    * than to get errors when receiving from a child, and lose clients
+    * that way, so make sure we always have some descriptors available.
+    */
+   const int reserved = FDPASS_MAX   /* max descriptors we receive/pass.  */
+                      + 1            /* need a descriptor for accept().   */
+                      + 2;           /* pipe to child.                    */
 
-	/*
-	 * XXX This is a expensive test which shouldn't be hard to optimize
-	 * away.  It only happens when we are running low on slots though,
-	 * so assume it's "good enough" until I get the time to fix it.
-	 */
-	if (freedescriptors(NULL) < reserved) {
-		errno = EMFILE;
-		swarn(function);
-		return NULL;
-	}
+   /*
+    * XXX This is an expensive test which shouldn't be hard to optimize away.
+    */
+   if ((p = freedescriptors(NULL)) < reserved) {
+      swarnx("%s: only have %d free file descriptors left, need at least %d "
+             "for a new process", function, p, reserved);
+      errno = EMFILE;
+      return NULL;
+   }
 
-	/* create datapipe. */
-	if (socketpair(AF_LOCAL, SOCK_STREAM, 0, pipev) != 0) {
-		swarn("%s: socketpair(AF_LOCAL, SOCK_STREAM)", function);
-		return NULL;
-	}
+   /*
+    * create datapipe ...
+    */
+   if (socketpair(AF_LOCAL, SOCK_DGRAM, 0, datapipev) != 0) {
+      swarn("%s: socketpair(AF_LOCAL, SOCK_DGRAM)", function);
+      return NULL;
+   }
 
-	/* and ackpipe. */
-	if (pipe(ackpipev) != 0) {
-		swarn("%s: pipe()", function);
-		closev(pipev, ELEMENTS(pipev));
-		return NULL;
-	}
+   /* ... and ackpipe. */
+   if (socketpair(AF_LOCAL, SOCK_STREAM, 0, ackpipev) != 0) {
+      swarn("%s: socketpair(AF_LOCAL, SOCK_STREAM)", function);
+      closev(ackpipev, ELEMENTS(ackpipev));
+      return NULL;
+   }
 
-	/*
-	 * Try to set socketbuffer and watermarks to a optimal size.
-	 */
-	switch (type = setchildtype(type, &childv, &childc, &childfunction)) {
-		case CHILD_NEGOTIATE:
-			/*
-			 * A negotiator child receives only descriptors, so mothers
-			 * send buffer can be small, and so can the child's receive buffer.
-			 * The child sends a sockd_request_t struct back to mother, so
-			 * mothers recv buffer has to be considerably bigger, as does
-			 * childs send buffer.
-			 */
+   /*
+    * Try to set socket buffer and watermarks to a optimal size depending
+    * on what kind of data passes over the pipes.
+    */
+   switch (setchildtype(type, &childv, &childc, &childfunction)) {
+      case CHILD_NEGOTIATE:
+         /*
+          * A negotiator child receives only descriptors, so mothers
+          * send buffer can be small, and so can the child's receive buffer.
+          * The child sends a sockd_request_t struct back to mother, so
+          * mothers recv buffer has to be considerably bigger, as does
+          * childs send buffer.
+          */
+         bufval = (sizeof(struct sockd_request_t)
+                + sizeof(struct msghdr)
+                + CMSG_SPACE(sizeof(int)) * FDPASS_MAX)
+                * SOCKD_NEGOTIATEMAX;
+#if HAVE_GSSAPI
+         bufval += (MAX_GSS_STATE + sizeof(struct iovec)) * SOCKD_NEGOTIATEMAX;
+#endif /* HAVE_GSSAPI */
 
-			/* negotiator shouldn't block on sending to mother. */
-			if ((flags = fcntl(pipev[CHILD], F_GETFL, 0)) == -1
-			||  fcntl(pipev[CHILD], F_SETFL, flags | O_NONBLOCK) == -1)
-				swarn("%s: fcntl()", function);
-
-#if HAVE_SENDMSG_DEADLOCK
-			if ((mother.lock = socks_mklock(SOCKS_LOCKFILE)) == -1) {
-				swarn("%s: socks_mklock()", function);
-				closev(pipev, ELEMENTS(pipev));
-				closev(ackpipev, ELEMENTS(ackpipev));
-				return NULL;
-			}
-#endif /* HAVE_SENDMSG_DEADLOCK */
-
-			optval = sizeof(struct sockd_request_t) * (SOCKD_NEGOTIATEMAX + 1);
-			if (setsockopt(pipev[MOTHER], SOL_SOCKET, SO_RCVBUF, &optval,
-			sizeof(optval)) != 0
-			||  setsockopt(pipev[CHILD], SOL_SOCKET, SO_SNDBUF, &optval,
-			sizeof(optval)) != 0)
-				swarn("%s: setsockopt(SO_RCVBUF/SO_SNDBUF)", function);
-
-#if HAVE_SO_SNDLOWAT
-			optval = sizeof(struct sockd_request_t) * LOWATSKEW;
-			if (setsockopt(pipev[CHILD], SOL_SOCKET, SO_SNDLOWAT, &optval,
-			sizeof(optval)) != 0
-			|| setsockopt(pipev[MOTHER], SOL_SOCKET, SO_RCVLOWAT, &optval,
-			sizeof(optval)) != 0)
-				swarn("%s: setsockopt(SO_SNDLOWAT/SO_RCVLOWAT)", function);
-#endif
-			break;
-
-		case CHILD_REQUEST:
-			/*
-			 * A request child receives a sockd_request_t structure,
-			 * it sends back a sockd_io_t structure.
-			 */
+         bufval += SENDMSG_PADBYTES * SOCKD_NEGOTIATEMAX;
 
 #if HAVE_SENDMSG_DEADLOCK
-			mother.lock = -1;	/* doesn't need lock. */
+         if ((mother.lock = socks_mklock(SOCKS_LOCKFILE)) == -1) {
+            swarn("%s: socks_mklock()", function);
+            closev(datapipev, ELEMENTS(datapipev));
+            closev(ackpipev, ELEMENTS(ackpipev));
+            return NULL;
+         }
 #endif /* HAVE_SENDMSG_DEADLOCK */
 
-			optval = sizeof(struct sockd_request_t) * (SOCKD_REQUESTMAX + 1);
-			if (setsockopt(pipev[MOTHER], SOL_SOCKET, SO_SNDBUF, &optval,
-			sizeof(optval)) != 0
-			||  setsockopt(pipev[CHILD], SOL_SOCKET, SO_RCVBUF, &optval,
-			sizeof(optval)) != 0)
-				swarn("%s: setsockopt()", function);
+         break;
 
-			optval = sizeof(struct sockd_io_t) * (SOCKD_REQUESTMAX + 1);
-			if (setsockopt(pipev[MOTHER], SOL_SOCKET, SO_RCVBUF, &optval,
-			sizeof(optval)) != 0
-			||  setsockopt(pipev[CHILD], SOL_SOCKET, SO_SNDBUF, &optval,
-			sizeof(optval)) != 0)
-				swarn("%s: setsockopt()", function);
+      case CHILD_REQUEST:
+         /*
+          * A request child receives a sockd_request_t structure,
+          * it sends back a sockd_io_t structure.
+          */
 
-#if HAVE_SO_SNDLOWAT
-			optval = sizeof(struct sockd_request_t) * LOWATSKEW;
-			if (setsockopt(pipev[CHILD], SOL_SOCKET, SO_RCVLOWAT, &optval,
-			sizeof(optval)) != 0
-			|| setsockopt(pipev[MOTHER], SOL_SOCKET, SO_SNDLOWAT, &optval,
-			sizeof(optval)) != 0)
-				swarn("%s: setsockopt(SO_RCVLOWAT)", function);
+         bufval = (MAX(sizeof(struct sockd_request_t),
+                       sizeof(struct sockd_io_t))
+                + sizeof(struct msghdr)
+                + CMSG_SPACE(sizeof(int)) * FDPASS_MAX)
+                * SOCKD_REQUESTMAX;
+#if HAVE_GSSAPI
+         bufval += (MAX_GSS_STATE + sizeof(struct iovec)) * SOCKD_REQUESTMAX;
+#endif /* HAVE_GSSAPI */
 
-			optval = sizeof(struct sockd_io_t) * LOWATSKEW;
-			if (setsockopt(pipev[CHILD], SOL_SOCKET, SO_SNDLOWAT, &optval,
-			sizeof(optval)) != 0
-			|| setsockopt(pipev[MOTHER], SOL_SOCKET, SO_RCVLOWAT, &optval,
-			sizeof(optval)) != 0)
-				swarn("%s: setsockopt(SO_RCVLOWAT/SO_SNDLOWAT)", function);
-#endif
-			break;
+         bufval += SENDMSG_PADBYTES * SOCKD_REQUESTMAX;
 
-		case CHILD_IO:
-			/*
-			 * A io child receives a sockd_io_t structure,
-			 * it sends back only a ack.
-			 */
 
 #if HAVE_SENDMSG_DEADLOCK
-			mother.lock = -1;	/* doesn't need lock. */
+         mother.lock = -1;   /* doesn't need lock. */
 #endif /* HAVE_SENDMSG_DEADLOCK */
 
-			optval = sizeof(struct sockd_io_t) * (SOCKD_IOMAX + 1);
-			if (setsockopt(pipev[MOTHER], SOL_SOCKET, SO_SNDBUF, &optval,
-			sizeof(optval)) != 0
-			||  setsockopt(pipev[CHILD], SOL_SOCKET, SO_RCVBUF, &optval,
-			sizeof(optval)) != 0)
-				swarn("%s: setsockopt(SO_SNDBUF/SO_RCVBUF)", function);
+      case CHILD_IO:
+         /*
+          * A io child receives a sockd_io_t structure,
+          * it sends back only an ack-byte.
+          */
 
-			optval = sizeof(int) * (SOCKD_IOMAX + 1);
-			if (setsockopt(pipev[MOTHER], SOL_SOCKET, SO_RCVBUF, &optval,
-			sizeof(optval)) != 0
-			||  setsockopt(pipev[CHILD], SOL_SOCKET, SO_SNDBUF, &optval,
-			sizeof(optval)) != 0)
-				swarn("%s: setsockopt(SO_RCVBUF/SO_SNDBUF)", function);
+         bufval = (sizeof(struct sockd_io_t)
+                +  sizeof(struct msghdr)
+                +  CMSG_SPACE(sizeof(int)) * FDPASS_MAX)
+                * SOCKD_IOMAX;
+#if HAVE_GSSAPI
+         bufval += (MAX_GSS_STATE + sizeof(struct iovec)) * SOCKD_IOMAX;
+#endif /* HAVE_GSSAPI */
 
-#if HAVE_SO_SNDLOWAT
-			optval = sizeof(struct sockd_io_t) * LOWATSKEW;
-			if (setsockopt(pipev[CHILD], SOL_SOCKET, SO_RCVLOWAT, &optval,
-			sizeof(optval)) != 0
-			|| setsockopt(pipev[MOTHER], SOL_SOCKET, SO_SNDLOWAT, &optval,
-			sizeof(optval)) != 0)
-				swarn("%s: setsockopt(SO_RCVLOWAT)", function);
-#endif
-			break;
-
-		default:
-			SERRX(type);
-	}
-
-	/* so slog() doesn't log wrong pid if we termintate here. */
-	sockscf.state.pid = 0;
-
-	switch ((pid = fork())) {
-		case -1:
-			sockscf.state.pid = ourpid;
-
-			swarn("%s: fork()", function);
-			closev(pipev, ELEMENTS(pipev));
-			closev(ackpipev, ELEMENTS(ackpipev));
+         bufval += SENDMSG_PADBYTES * SOCKD_REQUESTMAX;
 
 #if HAVE_SENDMSG_DEADLOCK
-			if (mother.lock != -1)
-				close(mother.lock);
+         mother.lock = -1;   /* doesn't need lock. */
 #endif /* HAVE_SENDMSG_DEADLOCK */
 
-			return NULL;
+         break;
 
-		case 0: {
-			size_t i, maxfd;
-			struct sigaction sigact;
+      default:
+         SERRX(type);
+   }
 
-			newprocinit();
+   if (setsockopt(datapipev[MOTHER], SOL_SOCKET, SO_RCVBUF, &bufval,
+   sizeof(bufval)) != 0
+   ||  setsockopt(datapipev[MOTHER], SOL_SOCKET, SO_SNDBUF, &bufval,
+   sizeof(bufval)) != 0
+   ||  setsockopt(datapipev[CHILD],  SOL_SOCKET, SO_RCVBUF, &bufval,
+   sizeof(bufval)) != 0
+   ||  setsockopt(datapipev[CHILD],  SOL_SOCKET, SO_SNDBUF, &bufval,
+   sizeof(bufval)) != 0)
+      swarn("%s: setsockopt(SO_RCVBUF/SO_SNDBUF)", function);
 
-			sockscf.state.type	= type;
-			slog(LOG_INFO, "created new %schild", childtype2string(type));
-#if 0
-			slog(LOG_DEBUG, "sleeping...");
-			sleep(20);
-#endif
+   optlen = sizeof(bufset);
+   if (getsockopt(datapipev[MOTHER], SOL_SOCKET, SO_RCVBUF, &bufset, &optlen)
+   != 0
+   ||  getsockopt(datapipev[CHILD], SOL_SOCKET, SO_SNDBUF, &bufset2, &optlen)
+   != 0){
+      swarn("%s: getsockopt(SO_RCVBUF/SO_SNDBUF)", function);
+      closev(datapipev, ELEMENTS(datapipev));
+      return NULL;
+   }
 
-			mother.s		= pipev[CHILD];
-			mother.ack	= ackpipev[CHILD];
+   if (bufset < bufval || bufset2 < bufval) {
+      swarnx("%s: getsockopt(SO_RCVBUF/SO_SNDBUF) did not return "
+             "requested value.  Requested: %d and %d, is: %d and %d",
+             function, bufval, bufval, bufset, bufset2);
+      closev(datapipev, ELEMENTS(datapipev));
+      return NULL;
+   }
 
-			/*
-			 * It would be nice to be able to lose all privileges here
-			 * but unfortunately we can't, yet.
-			 *
-			 * negotiation children:
-			 *		could need privileges to check password.
-			 *
-			 * request children:
-			 *		could need privileges to bind port.
-			 *
-			 * io children:
-			 *		could need privileges to bind port if using redirect()
-			 *		module, also SIGHUP performs misc. seteuid() tests that
-			 *    could fail if we lose privileges.
-			 */
+   if (sockscf.option.debug > 1) {
+      slog(LOG_DEBUG, "%s: minimum rcvbuf for mother and sndbuf for %s child: "
+                      "%d and %d, set: %d and %d",
+      function, childtype2string(type),
+      bufval, bufval, bufset, bufset2);
+   }
 
-			switch (type) {
-				case CHILD_NEGOTIATE:
-#if HAVE_LIBWRAP
-#if SOCKD_NEGOTIATEMAX > 1
-					resident = 1;
-#endif /* SOCKD_NEGOTIATEMAX > 1 */
-#endif  /* HAVE_LIBWRAP */
-					break;
+   /* so slog() doesn't log wrong pid if we crash here. */
+   ourpid            =  sockscf.state.pid;
+   sockscf.state.pid = 0;
 
-				case CHILD_REQUEST:
-#if HAVE_LIBWRAP
-#if SOCKD_REQUESTMAX > 1
-					resident = 1;
-#endif /* SOCKD_REQUESTMAX > 1 */
-#endif  /* HAVE_LIBWRAP */
-					break;
+   switch ((pid = fork())) {
+      case -1:
+         sockscf.state.pid = ourpid;
 
-				case CHILD_IO:
-#if HAVE_LIBWRAP
-#if SOCKD_IOMAX > 1
-					resident = 1;
-#endif /* SOCKD_IOMAX > 1 */
-#endif  /* HAVE_LIBWRAP */
-					break;
+         swarn("%s: fork()", function);
+         closev(datapipev, ELEMENTS(datapipev));
+         closev(ackpipev, ELEMENTS(ackpipev));
 
-				default:
-					SERRX(type);
-			}
+#if HAVE_SENDMSG_DEADLOCK
+         if (mother.lock != -1)
+            close(mother.lock);
+#endif /* HAVE_SENDMSG_DEADLOCK */
 
-			sigemptyset(&sigact.sa_mask);
-			sigact.sa_flags	= 0;
+         return NULL;
 
-			/* signals mother has set up but which we ignore at this point. */
-			sigact.sa_handler = SIG_IGN;
+      case 0: {
+         size_t i, maxfd;
+         struct sigaction sigact;
+
+         bzero(&sigact, sizeof(sigact));
+
+         /*
+          * signals mother has set up but which we need ignore at this
+          * point, lest we accidentally run mothers signalhandler if the
+          * child does not install it's own signalhandler for the
+          * particular signal.
+          */
+         sigact.sa_handler = SIG_IGN;
 
 #if HAVE_SIGNAL_SIGINFO
-			if (sigaction(SIGINFO, &sigact, NULL) != 0)
-				swarn("%s: sigaction(SIGINFO)", function);
-#endif  /* HAVE_SIGNAL_SIGINFO */
+         if (sigaction(SIGINFO, &sigact, NULL) != 0)
+            swarn("%s: sigaction(SIGINFO)", function);
+#endif /* HAVE_SIGNAL_SIGINFO */
 
-			if (sigaction(SIGUSR1, &sigact, NULL) != 0)
-				swarn("%s: sigaction(USR1)", function);
+         if (sigaction(SIGUSR1, &sigact, NULL) != 0)
+            swarn("%s: sigaction(USR1)", function);
 
-			/* delete everything we got from parent. */
-			for (i = 0, maxfd = getdtablesize(); i < maxfd; ++i) {
-				/* exceptions */
-				if (i == (size_t)mother.s
+#if HAVE_PROFILING /* XXX is this only needed on linux? */
+         moncontrol(1);
+#endif /* HAVE_PROFILING */
+
+         newprocinit();
+
+         sockscf.state.type = type;
+         slog(LOG_INFO, "created new %schild", childtype2string(type));
+#if 0
+         slog(LOG_DEBUG, "sleeping...");
+         sleep(10);
+#endif
+
+#if HAVE_PRIVILEGES
+      /* don't need this privilege any more, permanently loose it. */
+      if (!sockscf.privileges.noprivs) {
+         priv_delset(sockscf.privileges.privileged, PRIV_FILE_DAC_WRITE);
+         if (setppriv(PRIV_SET, PRIV_PERMITTED, sockscf.privileges.privileged)
+         != 0)
+            swarn("%s: setppriv() to relinquish PRIV_FILE_DAC_WRITE failed",
+            function);
+      }
+#endif /* HAVE_PRIVILEGES */
+
+         mother.s   = datapipev[CHILD];
+         mother.ack = ackpipev[CHILD];
+
+         /*
+          * It would be nice to be able to lose all root privileges here
+          * but unfortunately we can't;
+          *
+          * negotiation children:
+          *      - could need privileges to check password.
+          *
+          * request children:
+          *      - could need privileges to bind port.
+          *      - could need privileges to check password.
+          *
+          * io children:
+          *      - could need privileges to listen for icmp errors.
+          *      - could need privileges to bind port if using the
+          *        redirect() module.
+          *
+          * Also, all may need privileges to re-read sockd.conf.
+          *
+          * If we have privilege-support, give up what we can though.
+          */
+
+         switch (type) {
+            case CHILD_NEGOTIATE:
+#if HAVE_LIBWRAP
+#if SOCKD_NEGOTIATEMAX > 1
+               resident = 1;
+#endif /* SOCKD_NEGOTIATEMAX > 1 */
+#endif /* HAVE_LIBWRAP */
+
+#if HAVE_PRIVILEGES
+               /* doesn't need this privilege so permanently loose it. */
+
+               if (!sockscf.privileges.noprivs) {
+                  priv_delset(sockscf.privileges.privileged, PRIV_NET_PRIVADDR);
+                  if (setppriv(PRIV_SET, PRIV_PERMITTED,
+                  sockscf.privileges.privileged) != 0)
+                     swarn("%s: setppriv() to relinquish PRIV_NET_PRIVADDR "
+                           "failed",
+                           function);
+               }
+#endif /* HAVE_PRIVILEGES */
+
+               break;
+
+            case CHILD_REQUEST:
+#if HAVE_LIBWRAP
+#if SOCKD_REQUESTMAX > 1
+               resident = 1;
+#endif /* SOCKD_REQUESTMAX > 1 */
+#endif /* HAVE_LIBWRAP */
+               break;
+
+            case CHILD_IO:
+#if HAVE_LIBWRAP
+#if SOCKD_IOMAX > 1
+               resident = 1;
+#endif /* SOCKD_IOMAX > 1 */
+#endif /* HAVE_LIBWRAP */
+               break;
+
+            default:
+               SERRX(type);
+         }
+
+         /* delete everything we got from parent. */
+         for (i = 0, maxfd = sockscf.state.maxopenfiles; i < maxfd; ++i) {
+            /* exceptions */
+            if (i == (size_t)mother.s
 #if HAVE_SENDMSG_DEADLOCK
-				||	i == (size_t)mother.lock
+            ||   i == (size_t)mother.lock
 #endif /* HAVE_SENDMSG_DEADLOCK */
-				||	i == (size_t)mother.ack)
-					continue;
+            ||   i == (size_t)mother.ack)
+               continue;
 
-				if (descriptorisreserved((int)i))
-					continue;
+            if (descriptorisreserved((int)i))
+               continue;
 
-				close((int)i);
-			}
-			errno = 0;
-			newprocinit(); /* called after closing, since it may open it's own. */
+            close((int)i);
+         }
 
-			childfunction(&mother);
-			/* NOTREACHED */
-		}
+         /*
+          * Needs to be called again after closing, since if using syslog we
+          * don't know what descriptor that uses, so it will have been closed
+          * in the above close(2) loop.
+          * This needs to happen as the first thing after the above loop,
+          * as newprocinit() will close the old syslog descriptor, if any,
+          * before opening a new one.  If we have started to use the
+          * descriptor for something else already (e.g. due to dup(2)),
+          * newprocinit(), will still close the old descriptor, even
+          * though it's no longer a syslog descriptor.
+          */
+         newprocinit();
 
-		default: {
-			struct sockd_child_t *newchildv;
 
-			sockscf.state.pid = ourpid;
+         /*
+          * This is minor optimization to make things faster for select(2)
+          * by avoiding having two increasingly high-numbered descriptors
+          * to check for, with most of the other descriptors in the lower-end.
+          */
 
-			if ((newchildv = (struct sockd_child_t *)realloc(*childv,
-			sizeof(**childv) * (*childc + 1))) == NULL) {
-				slog(LOG_WARNING, "%s: %s", function, NOMEM);
-				closev(pipev, ELEMENTS(pipev));
-				closev(ackpipev, ELEMENTS(ackpipev));
-				return NULL;
-			}
-			*childv = newchildv;
+          datapipev[0] = mother.s;
+          datapipev[1] = mother.ack;
 
-			(*childv)[*childc].type	= type;
-			(*childv)[*childc].pid	= pid;
-			(*childv)[*childc].s		= pipev[MOTHER];
+          if ((mother.s   = dup(mother.s))   == -1
+          ||  (mother.ack = dup(mother.ack)) == -1)
+            serr(EXIT_FAILURE, "%s: failed to dup(2) pipe to mother", function);
+
+          close(datapipev[0]);
+          close(datapipev[1]);
+
+         /*
+          * Ok, all set for this process.
+          */
+
+         errno = 0;
+
+         time(&sockscf.stat.boot);
+
+         childfunction(&mother);
+         /* NOTREACHED */
+      }
+
+      default: {
+         struct sockd_child_t *newchildv;
+
+         sockscf.state.pid = ourpid;
+
+         if ((newchildv = realloc(*childv,
+         sizeof(**childv) * (*childc + 1))) == NULL) {
+            slog(LOG_WARNING, "%s: %s", function, NOMEM);
+            closev(datapipev, ELEMENTS(datapipev));
+            closev(ackpipev, ELEMENTS(ackpipev));
+            return NULL;
+         }
+         *childv = newchildv;
+
+         (*childv)[*childc].type   = type;
+         (*childv)[*childc].pid    = pid;
+         (*childv)[*childc].s      = datapipev[MOTHER];
+         (*childv)[*childc].ack    = ackpipev[MOTHER];
+         (*childv)[*childc].sentc  = 0;
 #if HAVE_SENDMSG_DEADLOCK
-			(*childv)[*childc].lock	= mother.lock;
+         (*childv)[*childc].lock   = mother.lock;
 #endif /* HAVE_SENDMSG_DEADLOCK */
-			(*childv)[*childc].ack	= ackpipev[MOTHER];
 
-			close(pipev[CHILD]);
-			close(ackpipev[CHILD]);
+         close(datapipev[CHILD]);
+         close(ackpipev[CHILD]);
 
-			switch ((*childv)[*childc].type) {
-				case CHILD_NEGOTIATE:
-					(*childv)[*childc].freec = SOCKD_NEGOTIATEMAX;
-					break;
+         switch ((*childv)[*childc].type) {
+            case CHILD_NEGOTIATE:
+               (*childv)[*childc].freec = SOCKD_NEGOTIATEMAX;
+               break;
 
-				case CHILD_REQUEST:
-					(*childv)[*childc].freec = SOCKD_REQUESTMAX;
-					break;
+            case CHILD_REQUEST:
+               (*childv)[*childc].freec = SOCKD_REQUESTMAX;
+               break;
 
-				case CHILD_IO:
-					(*childv)[*childc].freec = SOCKD_IOMAX;
-					break;
+            case CHILD_IO:
+               (*childv)[*childc].freec = SOCKD_IOMAX;
+               break;
 
-				default:
-					SERRX((*childv)[*childc].type);
-			}
+            default:
+               SERRX((*childv)[*childc].type);
+         }
 
-			return &(*childv)[(*childc)++];
-		}
-	}
+         return &(*childv)[(*childc)++];
+      }
+   }
 }
 
 int
 childcheck(type)
-	int type;
+   int type;
 {
-	int child, proxyc;
-	int min, max, idle;
-	struct sockd_child_t **childv;
-	int *childc;
+   const char *function = "childcheck()"; 
+   struct sockd_child_t **childv;
+   size_t child, *childc, minfreeslots, maxslotsperproc, idle, proxyc;
 
-	switch (type) {
-		case -CHILD_NEGOTIATE:
-		case CHILD_NEGOTIATE:
-			childc	= &negchildc;
-			childv	= &negchildv;
-			min		= SOCKD_FREESLOTS;
-			max		= SOCKD_NEGOTIATEMAX;
-			break;
+   switch (type) {
+      case -CHILD_NEGOTIATE:
+      case CHILD_NEGOTIATE:
+         childc          = &negchildc;
+         childv          = &negchildv;
+         minfreeslots    = SOCKD_FREESLOTS;
+         maxslotsperproc = SOCKD_NEGOTIATEMAX;
+         break;
 
-		case -CHILD_REQUEST:
-		case CHILD_REQUEST:
-			childc	= &reqchildc;
-			childv	= &reqchildv;
-			min		= SOCKD_FREESLOTS;
-			max		= SOCKD_REQUESTMAX;
-			break;
+      case -CHILD_REQUEST:
+      case CHILD_REQUEST:
+         childc          = &reqchildc;
+         childv          = &reqchildv;
+         minfreeslots    = SOCKD_FREESLOTS;
+         maxslotsperproc = SOCKD_REQUESTMAX;
+         break;
 
-		case -CHILD_IO:
-		case CHILD_IO:
-			childc	= &iochildc;
-			childv	= &iochildv;
-			/* attempt to keep in a state where we can accept all requests. */
-			min		= MAX(SOCKD_FREESLOTS, childcheck(-CHILD_REQUEST));
-			max		= SOCKD_IOMAX;
-			break;
+      case -CHILD_IO:
+      case CHILD_IO:
+         childc          = &iochildc;
+         childv          = &iochildv;
+         minfreeslots    = SOCKD_FREESLOTS;
+         maxslotsperproc = SOCKD_IOMAX;
+         break;
 
-		default:
-			SERRX(type);
-	}
+      default:
+         SERRX(type);
+   }
 
-	/*
-	 * get a estimate over how many (new) clients our children are able to
-	 * accept in total.
+   /*
+    * get a estimate over how many (new) clients our children are able to
+    * accept in total, so we know if we need to create more children,
+    * or if we can remove some.
     */
-	for (child = idle = proxyc = 0; child < *childc; ++child) {
-		SASSERTX((*childv)[child].freec <= max);
-		proxyc += type < 0 ? max : (*childv)[child].freec;
+   for (child = idle = proxyc = 0; child < *childc; ++child) {
+      SASSERTX((*childv)[child].freec <= maxslotsperproc);
 
-		if ((*childv)[child].freec == max) {
-			++idle;
+      if (sockscf.child.maxrequests != 0)
+         if ((*childv)[child].sentc == sockscf.child.maxrequests) {
+            slog(LOG_DEBUG, "%s: not counting child %lu.  Should be removed "
+                            "when possible as it has already served %lu "
+                            "requests (currently has %lu/%lu slots free).",
+                            function,
+                            (unsigned long)(*childv)[child].pid,
+                            (unsigned long)(*childv)[child].sentc,
+                            (unsigned long)(*childv)[child].freec,
+                            (unsigned long)maxfreeslots((*childv)[child].type));
+            continue; 
+         }
 
-			if (sockscf.child.maxidle > 0 && idle > sockscf.child.maxidle) {
-				/* will remove this next, no longer part of free slots pool. */
-				proxyc -= type < 0 ? max : (*childv)[child].freec;
+      proxyc += type < 0 ? maxslotsperproc : (*childv)[child].freec;
 
-				removechild((*childv)[child].pid);
-				--idle;
-				--child; /* everything was shifted once to the left. */
-			}
-		}
-	}
+      if ((*childv)[child].freec == maxslotsperproc) {
+         /* all slots in this child idle. */
+         ++idle;
 
-	if (type >= 0)
-		if (proxyc < min && sockscf.child.addchild)
-			if (addchild(type) != NULL)
-				return childcheck(type);
-			else
-				sockscf.child.addchild = 0;	/* don't retry until a child dies. */
+         if (sockscf.child.maxidle > 0 && idle > sockscf.child.maxidle) {
+            slog(LOG_DEBUG, "%s: already counted %d idle %s-children, "
+                            "removing %s-child with pid %lu",
+                            function, idle - 1,
+                            childtype2string(type < 0 ? -type : type),
+                            childtype2string(type < 0 ? -type : type),
+                            (unsigned long)(*childv)[child].pid);
 
-	return proxyc;
+            /* will remove this now, no longer part of free slots pool. */
+            proxyc -= type < 0 ? maxslotsperproc : (*childv)[child].freec;
+
+            removechild((*childv)[child].pid);
+            --idle;
+            --child; /* everything was shifted one to the left. */
+         }
+      }
+   }
+
+   if (type >= 0) {
+       if (proxyc < minfreeslots && sockscf.child.addchild) {
+         slog(LOG_DEBUG, "%s: current # of free %s-slots is %d, thus less than "
+                         "configured minimum of %d.  Trying to add a "
+                         "%s-child",
+                         function, childtype2string(type), 
+                         (unsigned long)proxyc, (unsigned long)minfreeslots,
+                         childtype2string(type));
+
+         if (addchild(type) != NULL)
+            return childcheck(type);
+         else 
+            sockscf.child.addchild = 0;   /* don't retry until a child dies. */
+      }
+   }
+
+   return proxyc;
 }
 
 int
 fillset(set)
-	fd_set *set;
+   fd_set *set;
 {
-	const char *function = "fillset()";
-	int negc, reqc, ioc;
-	int i, dbits;
+/*   const char *function = "fillset()"; */
+   size_t i;
+   int negc, reqc, ioc, dbits;
 
-	/*
-	 * There is no point in setting data descriptor of child N unless
-	 * child N+1 is able to accept the data from child N.  So find
-	 * out if we have slots of the various types available .
-	 */
+   /*
+    * There is no point in setting data descriptor of child type N unless
+    * child type N+1 is able to accept the data from child N.  So find
+    * out if we have slots of the various types available .
+    */
 
-	ioc	= childcheck(CHILD_IO);
-	reqc	= childcheck(CHILD_REQUEST);
-	negc	= childcheck(CHILD_NEGOTIATE);
+   ioc  = childcheck(CHILD_IO);
+   reqc = childcheck(CHILD_REQUEST);
+   negc = childcheck(CHILD_NEGOTIATE);
 
-	FD_ZERO(set);
-	dbits = -1;
+   FD_ZERO(set);
+   dbits = -1;
 
-	/* new clients we accept. */
-	if (negc > 0)
-		for (i = 0; i < sockscf.internalc; ++i) {
-			SASSERTX(sockscf.internalv[i].s >= 0);
-			FD_SET(sockscf.internalv[i].s, set);
-			dbits = MAX(dbits, sockscf.internalv[i].s);
-		}
-	else
-		swarn("can't accept new clients, no free negotiate slots");
+   for (i = 0; i < sockscf.internalc; ++i) {
+      SASSERTX(sockscf.internalv[i].s >= 0);
+      FD_SET(sockscf.internalv[i].s, set);
+      dbits = MAX(dbits, sockscf.internalv[i].s);
+   }
 
-	/* negotiator children. */
-	for (i = 0; i < negchildc; ++i) {
-		if (reqc > 0) {
-			SASSERTX(negchildv[i].s >= 0);
-			FD_SET(negchildv[i].s, set);
-			dbits = MAX(dbits, negchildv[i].s);
-		}
+   /* negotiator children. */
+   for (i = 0; i < negchildc; ++i) {
+      if (reqc > 0) {
+         SASSERTX(negchildv[i].s >= 0);
+         FD_SET(negchildv[i].s, set);
+         dbits = MAX(dbits, negchildv[i].s);
+      }
 
-		/* we can always accept an ack ofcourse. */
-		SASSERTX(negchildv[i].ack >= 0);
-		FD_SET(negchildv[i].ack, set);
-		dbits = MAX(dbits, negchildv[i].ack);
-	}
+      /* we can always accept an ack of course. */
+      SASSERTX(negchildv[i].ack >= 0);
+      FD_SET(negchildv[i].ack, set);
+      dbits = MAX(dbits, negchildv[i].ack);
+   }
 
-	/* request children. */
-	for (i = 0; i < reqchildc; ++i) {
-		if (ioc > 0) {
-			SASSERTX(reqchildv[i].s >= 0);
-			FD_SET(reqchildv[i].s, set);
-			dbits = MAX(dbits, reqchildv[i].s);
-		}
+   /* request children. */
+   for (i = 0; i < reqchildc; ++i) {
+      if (ioc > 0) {
+         SASSERTX(reqchildv[i].s >= 0);
+         FD_SET(reqchildv[i].s, set);
+         dbits = MAX(dbits, reqchildv[i].s);
+      }
 
-		/* we can always accept an ack ofcourse. */
-		SASSERTX(reqchildv[i].ack >= 0);
-		FD_SET(reqchildv[i].ack, set);
-		dbits = MAX(dbits, reqchildv[i].ack);
-	}
+      /* we can always accept an ack of course. */
+      SASSERTX(reqchildv[i].ack >= 0);
+      FD_SET(reqchildv[i].ack, set);
+      dbits = MAX(dbits, reqchildv[i].ack);
+   }
 
-	/* io children, last in chain. */
-	for (i = 0; i < iochildc; ++i) {
-		SASSERTX(iochildv[i].s >= 0);
-		FD_SET(iochildv[i].s, set);
-		dbits = MAX(dbits, iochildv[i].s);
+   /* io children, last in chain. */
+   for (i = 0; i < iochildc; ++i) {
+      SASSERTX(iochildv[i].s >= 0);
+      FD_SET(iochildv[i].s, set);
+      dbits = MAX(dbits, iochildv[i].s);
 
-		SASSERTX(iochildv[i].ack >= 0);
-		FD_SET(iochildv[i].ack, set);
-		dbits = MAX(dbits, iochildv[i].ack);
-	}
+      SASSERTX(iochildv[i].ack >= 0);
+      FD_SET(iochildv[i].ack, set);
+      dbits = MAX(dbits, iochildv[i].ack);
+   }
 
-	return dbits;
+   return dbits;
 }
 
 void
 clearset(type, child, set)
-	int type;
-	const struct sockd_child_t *child;
-	fd_set *set;
+   whichpipe_t type;
+   const struct sockd_child_t *child;
+   fd_set *set;
 {
 
-	switch (type) {
-		case SOCKD_FREESLOT:
-			FD_CLR(child->ack, set);
-			break;
+   switch (type) {
+      case ACKPIPE:
+         FD_CLR(child->ack, set);
+         break;
 
-		case SOCKD_NEWREQUEST:
-			FD_CLR(child->s, set);
-			break;
+      case DATAPIPE:
+         FD_CLR(child->s, set);
+         break;
 
-		default:
-			SERRX(type);
-	}
+      default:
+         SERRX(type);
+   }
 }
-
 
 struct sockd_child_t *
 getset(type, set)
-	int type;
-	fd_set *set;
+   whichpipe_t type;
+   fd_set *set;
 {
-	int i;
+/*   const char *function = "getset()"; */
+   size_t i;
 
-	/* check negotiator children for match. */
-	for (i = 0; i < negchildc; ++i)
-		switch (type) {
-			case SOCKD_NEWREQUEST:
-				if (FD_ISSET(negchildv[i].s, set))
-					return &negchildv[i];
-				break;
+   /* check negotiator children for match. */
+   for (i = 0; i < negchildc; ++i)
+      switch (type) {
+         case DATAPIPE:
+#if BAREFOOTD
+            if (!sockscf.state.alludpbounced) { /* have some left to fake. */
+               static fd_set *zero;
 
-			case SOCKD_FREESLOT:
-				if (FD_ISSET(negchildv[i].ack, set))
-					return &negchildv[i];
-				break;
-		}
+               if (zero == NULL) {
+                  zero = allocate_maxsize_fdset();
+                  FD_ZERO(zero);
+               }
 
-	/* check request children for match. */
-	for (i = 0; i < reqchildc; ++i)
-		switch (type) {
-			case SOCKD_NEWREQUEST:
-				if (FD_ISSET(reqchildv[i].s, set))
-					return &reqchildv[i];
-				break;
+               if (FD_CMP(zero, set) == 0)
+                  return &negchildv[i];
+            }
+#endif /* BAREFOOTD */
 
-			case SOCKD_FREESLOT:
-				if (FD_ISSET(reqchildv[i].ack, set))
-					return &reqchildv[i];
-				break;
-		}
+            if (FD_ISSET(negchildv[i].s, set))
+               return &negchildv[i];
+            break;
 
-	/* check io children for match. */
-	for (i = 0; i < iochildc; ++i)
-		switch (type) {
-			case SOCKD_NEWREQUEST:
-				if (FD_ISSET(iochildv[i].s, set))
-					return &iochildv[i];
-				break;
+         case ACKPIPE:
+            if (FD_ISSET(negchildv[i].ack, set))
+               return &negchildv[i];
+            break;
+      }
 
-			case SOCKD_FREESLOT:
-				if (FD_ISSET(iochildv[i].ack, set))
-					return &iochildv[i];
-				break;
-		}
+   /* check request children for match. */
+   for (i = 0; i < reqchildc; ++i)
+      switch (type) {
+         case DATAPIPE:
+            if (FD_ISSET(reqchildv[i].s, set))
+               return &reqchildv[i];
+            break;
 
-	return NULL;
+         case ACKPIPE:
+            if (FD_ISSET(reqchildv[i].ack, set))
+               return &reqchildv[i];
+            break;
+      }
+
+   /* check io children for match. */
+   for (i = 0; i < iochildc; ++i)
+      switch (type) {
+         case DATAPIPE:
+            if (FD_ISSET(iochildv[i].s, set))
+               return &iochildv[i];
+            break;
+
+         case ACKPIPE:
+            if (FD_ISSET(iochildv[i].ack, set))
+               return &iochildv[i];
+            break;
+      }
+
+   return NULL;
 }
 
-
-int
+void
 removechild(pid)
-	pid_t pid;
+   pid_t pid;
 {
-	const char *function = "removechild()";
-	struct sockd_child_t **childv;
-	struct sockd_child_t *newchildv;
-	int *childc;
-	int child;
+   const char *function = "removechild()"; 
+   struct sockd_child_t **childv;
+   size_t *childc;
+   int child;
 
-	slog(LOG_DEBUG, "%s: %d", function, (int)pid);
+   slog(LOG_DEBUG, "%s: pid %lu", function, (unsigned long)pid);
 
-	setchildtype(childtype(pid), &childv, &childc, NULL);
+   if (pid == 0) {
+      int childtypev[] = {CHILD_IO, CHILD_NEGOTIATE, CHILD_REQUEST};
+      size_t i;
 
-	child = findchild(pid, *childc, *childv);
-	SASSERTX(child >= 0);
+      for (i = 0; i < ELEMENTS(childtypev); ++i) {
+         setchildtype(childtypev[i], &childv, &childc, NULL);
 
-	close((*childv)[child].s);
-	close((*childv)[child].ack);
+         while (*childc != 0) {
+            SASSERTX((*childv)[0].pid != 0);
+            removechild((*childv)[0].pid);
+            setchildtype(childtypev[i], &childv, &childc, NULL);
+         }
+      }
 
-	/* shift all following one down */
-	while (child < *childc - 1) {
-		(*childv)[child] = (*childv)[child + 1];
-		++child;
-	}
-	--*childc;
+      return;
+   }
 
-	if ((newchildv = (struct sockd_child_t *)realloc(*childv,
-	sizeof(**childv) * (*childc + 1))) == NULL) {
-		slog(LOG_WARNING, NOMEM);
-		return -1;
-	}
-	*childv = newchildv;
+   setchildtype(childtype(pid), &childv, &childc, NULL);
+   child = findchild(pid, *childc, *childv);
+   SASSERTX(child != -1);
 
-	return 0;
+   close((*childv)[child].s);
+   close((*childv)[child].ack);
+
+   /* shift all following one down */
+   while ((size_t)child < *childc - 1) {
+      (*childv)[child] = (*childv)[child + 1];
+      ++child;
+   }
+   --(*childc);
+
+   /*
+    * Don't bother with realloc(3) when reducing size.
+    */
+#if 0
+   if ((newchildv = realloc(*childv, sizeof(**childv) * (*childc + 1)))
+   == NULL) {
+      slog(LOG_WARNING, NOMEM);
+      return;
+   }
+   *childv = newchildv;
+#endif
 }
 
 struct sockd_child_t *
 nextchild(type)
-	int type;
+   int type;
 {
-	const char *function = "nextchild()";
-	struct timeval timeout;
-	struct sockd_child_t **childv;
-	int *childc;
-	int i, maxd;
-	fd_set wset;
+   const char *function = "nextchild()";
+   static fd_set *wset;
+   struct timeval timeout;
+   struct sockd_child_t **childv;
+   size_t i, *childc;
+   int maxd;
 
-	setchildtype(type, &childv, &childc, NULL);
+   setchildtype(type, &childv, &childc, NULL);
 
-	FD_ZERO(&wset);
-	for (i = 0, maxd = -1; i < *childc; ++i)
-		if ((*childv)[i].freec > 0) {
-			FD_SET((*childv)[i].s, &wset);
-			maxd = MAX(maxd, (*childv)[i].s);
-		}
+   if (wset == NULL)
+      wset = allocate_maxsize_fdset();
 
-	if (maxd < 0)
-		return NULL;
-	++maxd;
+   FD_ZERO(wset);
+   for (i = 0, maxd = -1; i < *childc; ++i) {
+      if ((*childv)[i].freec > 0) {
+         FD_SET((*childv)[i].s, wset);
+         maxd = MAX(maxd, (*childv)[i].s);
+      }
+   }
 
-	timeout.tv_sec		= 0;
-	timeout.tv_usec	= 0;
+   if (maxd < 0) {
+      slog(LOG_DEBUG, "%s: no free %s slots", function, childtype2string(type));
+      return NULL;
+   }
 
-	switch (selectn(maxd, NULL, &wset, NULL, &timeout)) {
-		case -1:
-			SERR(-1);
-			/* NOTREACHED */
+   ++maxd;
 
-		case 0:
-			slog(LOG_DEBUG, "%s: no child writable", function);
-			return NULL;
-	}
+   timeout.tv_sec  = 0;
+   timeout.tv_usec = 0;
 
-	return getset(SOCKD_NEWREQUEST, &wset);
+   switch (selectn(maxd, NULL, NULL, wset, NULL, NULL, &timeout)) {
+      case -1:
+         if (errno == EINTR) /* can happen if checkforsignal() closes fd. */
+            return nextchild(type);
+
+         SERR(-1);
+         /* NOTREACHED */
+
+      case 0:
+         slog(LOG_DEBUG, "%s: no child writable", function);
+         return NULL;
+   }
+
+   return getset(DATAPIPE, wset);
 }
-
 
 static int
 setchildtype(type, childv, childc, function)
-	int type;
-	struct sockd_child_t ***childv;
-	int **childc;
-	void (**function)(struct sockd_mother_t *mother);
+   int type;
+   struct sockd_child_t ***childv;
+   size_t **childc;
+   void (**function)(struct sockd_mother_t *mother);
 {
 
-	switch (type) {
-		case CHILD_IO:
-			if (childv != NULL)
-				*childv = &iochildv;
+   switch (type) {
+      case CHILD_IO:
+         if (childv != NULL)
+            *childv = &iochildv;
 
-			if (childc != NULL)
-				*childc = &iochildc;
+         if (childc != NULL)
+            *childc = &iochildc;
 
-			if (function != NULL)
-				*function = &run_io;
+         if (function != NULL)
+            *function = &run_io;
 
-			break;
+         break;
 
-		case CHILD_NEGOTIATE:
-			if (childv != NULL)
-				*childv = &negchildv;
+      case CHILD_NEGOTIATE:
+         if (childv != NULL)
+            *childv = &negchildv;
 
-			if (childc != NULL)
-				*childc = &negchildc;
+         if (childc != NULL)
+            *childc = &negchildc;
 
-			if (function != NULL)
-				*function = &run_negotiate;
+         if (function != NULL)
+            *function = &run_negotiate;
 
-			break;
+         break;
 
-		case CHILD_REQUEST:
-			if (childv != NULL)
-				*childv = &reqchildv;
+      case CHILD_REQUEST:
+         if (childv != NULL)
+            *childv = &reqchildv;
 
-			if (childc != NULL)
-				*childc = &reqchildc;
+         if (childc != NULL)
+            *childc = &reqchildc;
 
-			if (function != NULL)
-				*function = &run_request;
+         if (function != NULL)
+            *function = &run_request;
 
-			break;
+         break;
 
-		default:
-			SASSERTX(type);
-	}
+      default:
+         SASSERTX(type);
+   }
 
-	return type;
+   return type;
 }
 
 int
 childtype(pid)
-	pid_t pid;
+   pid_t pid;
 {
 
-	if (findchild(pid, iochildc, iochildv) != -1)
-		return CHILD_IO;
+   if (findchild(pid, iochildc, iochildv) != -1)
+      return CHILD_IO;
 
-	if (findchild(pid, negchildc, negchildv) != -1)
-		return CHILD_NEGOTIATE;
+   if (findchild(pid, negchildc, negchildv) != -1)
+      return CHILD_NEGOTIATE;
 
-	if (findchild(pid, reqchildc, reqchildv) != -1)
-		return CHILD_REQUEST;
+   if (findchild(pid, reqchildc, reqchildv) != -1)
+      return CHILD_REQUEST;
 
-	if (pidismother(pid))
-		return CHILD_MOTHER;
+   if (pidismother(pid))
+      return CHILD_MOTHER;
 
-	SERRX(pid);
-	/* NOTREACHED */
+   SERRX(pid);
+   /* NOTREACHED */
 }
 
 static int
 findchild(pid, childc, childv)
-	pid_t pid;
-	int childc;
-	const struct sockd_child_t *childv;
+   pid_t pid;
+   int childc;
+   const struct sockd_child_t *childv;
 {
-	int i;
+   int i;
 
-	for (i = 0; i < childc; ++i)
-		if (childv[i].pid == pid)
-			return i;
+   for (i = 0; i < childc; ++i)
+      if (childv[i].pid == pid)
+         return i;
 
-	return -1;
+   return -1;
 }
 
 struct sockd_child_t *
 getchild(pid)
-	pid_t pid;
+   pid_t pid;
 {
-	int child, type;
-	int *childc;
-	struct sockd_child_t **childv;
+   int child, type;
+   size_t *childc;
+   struct sockd_child_t **childv;
 
-	switch (type = childtype(pid)) {
-		case CHILD_IO:
-		case CHILD_NEGOTIATE:
-		case CHILD_REQUEST:
-			break;
+   switch (type = childtype(pid)) {
+      case CHILD_IO:
+      case CHILD_NEGOTIATE:
+      case CHILD_REQUEST:
+         break;
 
-		case CHILD_MOTHER:
-			return NULL;
+      case CHILD_MOTHER:
+         return NULL;
 
-		default:
-			SERRX(type);
-	}
+      default:
+         SERRX(type);
+   }
 
-	setchildtype(type, &childv, &childc, NULL);
+   setchildtype(type, &childv, &childc, NULL);
 
-	if ((child = findchild(pid, *childc, *childv)) != -1)
-		return &(*childv)[child];
-	return NULL;
+   if ((child = findchild(pid, *childc, *childv)) != -1)
+      return &(*childv)[child];
+   return NULL;
 }
 
 int
 send_io(s, io)
-	int s;
-	const struct sockd_io_t *io;
+   int s;
+   struct sockd_io_t *io;
 {
-	const char *function = "send_io()";
-	struct iovec iovec[1];
-	struct msghdr msg;
-	int w, fdsent, length;
-	CMSG_AALLOC(cmsg, sizeof(int) * FDPASS_MAX);
+   const char *function = "send_io()";
+   struct iovec iov[2];
+   struct msghdr msg;
+   int ioc, w, fdsent, length;
+#if HAVE_GSSAPI
+   gss_buffer_desc gssapistate;
+   gss_ctx_id_t gssid = GSS_C_NO_CONTEXT;
+   char gssapistatemem[MAXGSSAPITOKENLEN];
+#endif /* HAVE_GSSAPI */
+   CMSG_AALLOC(cmsg, sizeof(int) * FDPASS_MAX);
 
+   bzero(iov, sizeof(iov));
+   length = 0;
+   ioc    = 0;
 
-	length = 0;
-	/* LINTED operands have incompatible pointer types */
-	iovec[0].iov_base		= (void *)io;
-	iovec[0].iov_len		= sizeof(*io);
-	length				  += iovec[0].iov_len;
+   iov[ioc].iov_base  = io;
+   iov[ioc].iov_len   = sizeof(*io);
+   length            += iov[ioc].iov_len;
+   ++ioc;
 
-	fdsent = 0;
-	CMSG_ADDOBJECT(io->src.s, cmsg, sizeof(io->src.s) * fdsent++);
-	CMSG_ADDOBJECT(io->dst.s, cmsg, sizeof(io->dst.s) * fdsent++);
+   fdsent = 0;
+   CMSG_ADDOBJECT(io->src.s, cmsg, sizeof(io->src.s) * fdsent++);
+   CMSG_ADDOBJECT(io->dst.s, cmsg, sizeof(io->dst.s) * fdsent++);
 
-	switch (io->state.command) {
-		case SOCKS_BIND:
-		case SOCKS_BINDREPLY:
-			if (!io->state.extension.bind)
-				break;
-			/* else: */ /* FALLTHROUGH */
+#if HAVE_GSSAPI
+   gssapistate.value  = gssapistatemem;
+   gssapistate.length = sizeof(gssapistatemem);
+#endif /* HAVE_GSSAPI */
 
-		case SOCKS_UDPASSOCIATE:
-			CMSG_ADDOBJECT(io->control.s, cmsg, sizeof(io->control.s) * fdsent++);
-			break;
+   switch (io->state.command) {
+      case SOCKS_BIND:
+#if HAVE_GSSAPI
+         if (io->src.auth.method == AUTHMETHOD_GSSAPI)
+            gssid = io->src.auth.mdata.gssapi.state.id;
+#endif /* HAVE_GSSAPI */
 
-		case SOCKS_CONNECT:
-			break;
+         if (io->state.extension.bind)
+            CMSG_ADDOBJECT(io->control.s, cmsg,
+            sizeof(io->control.s) * fdsent++);
+         break;
 
-		default:
-			SERRX(io->state.command);
-	}
+      case SOCKS_BINDREPLY:
+#if HAVE_GSSAPI
+         if (io->dst.auth.method == AUTHMETHOD_GSSAPI)
+            gssid = io->dst.auth.mdata.gssapi.state.id;
+#endif /* HAVE_GSSAPI */
 
-	msg.msg_iov				= iovec;
-	msg.msg_iovlen			= ELEMENTS(iovec);
-	msg.msg_name			= NULL;
-	msg.msg_namelen		= 0;
+         if (io->state.extension.bind)
+            CMSG_ADDOBJECT(io->control.s, cmsg,
+            sizeof(io->control.s) * fdsent++);
+         break;
 
-	CMSG_SETHDR_SEND(msg, cmsg, sizeof(int) * fdsent);
+      case SOCKS_UDPASSOCIATE:
+#if HAVE_GSSAPI
+         if (io->src.auth.method == AUTHMETHOD_GSSAPI)
+            gssid = io->src.auth.mdata.gssapi.state.id;
+#endif /* HAVE_GSSAPI */
 
-	if ((w = sendmsg(s, &msg, 0)) != length)	{
-		swarn("%s: sendmsg(): %d of %d", function, w, length);
-		return -1;
-	}
+#if !BAREFOOTD /* no control. */
+         CMSG_ADDOBJECT(io->control.s, cmsg, sizeof(io->control.s) * fdsent++);
+#endif /* !BAREFOOTD */
+         break;
 
-#if HARDCORE_DEBUG
-	printfd(io, "sent");
-#endif
+      case SOCKS_CONNECT:
+#if HAVE_GSSAPI
+         if (io->src.auth.method == AUTHMETHOD_GSSAPI)
+            gssid = io->src.auth.mdata.gssapi.state.id;
+#endif /* HAVE_GSSAPI */
+         break;
 
-	return 0;
+      default:
+         SERRX(io->state.command);
+   }
+
+#if HAVE_GSSAPI
+   if (gssid != GSS_C_NO_CONTEXT) {
+      if (gssapi_export_state(&gssid, &gssapistate) != 0)
+         return -1;
+
+      iov[ioc].iov_base = gssapistate.value;
+      iov[ioc].iov_len  = gssapistate.length;
+      ++ioc;
+      length += gssapistate.length;
+
+      slog(LOG_DEBUG, "%s: gssapistate has length %lu",
+      function, (long unsigned)gssapistate.length);
+   }
+#endif /* HAVE_GSSAPI */
+
+   bzero(&msg, sizeof(msg));
+   msg.msg_iov     = iov;
+   msg.msg_iovlen  = ioc;
+   msg.msg_name    = NULL;
+   msg.msg_namelen = 0;
+
+   CMSG_SETHDR_SEND(msg, cmsg, sizeof(int) * fdsent);
+
+   if ((w = sendmsgn(s, &msg, 0)) != length)   {
+      swarn("%s: sendmsg(): %d of %d", function, w, length);
+      return -1;
+   }
+
+   slog(LOG_DEBUG, "%s: sent %d descriptors for command %d.  "
+                   "Control: %d, src: %d, dst: %d",
+                   function, fdsent, io->state.command,
+                   io->control.s, io->src.s, io->dst.s);
+
+   return 0;
 }
-
 
 int
 send_client(s, client)
-	int s;
-	int client;
+   int s;
+   const struct sockd_client_t *client;
 {
-	const char *function = "send_client()";
-	const char command = SOCKD_NEWREQUEST;
-	struct iovec iovec[1];
-	struct msghdr msg;
-	CMSG_AALLOC(cmsg, sizeof(int));
-	int fdsent;
+   const char *function = "send_client()";
+   struct iovec iovec[1];
+   struct msghdr msg;
+   CMSG_AALLOC(cmsg, sizeof(int));
+   ssize_t rc;
+   int fdsent;
 
-	/* LINTED operands have incompatible pointer types */
-	iovec[0].iov_base		= (void *)&command;
-	iovec[0].iov_len		= sizeof(command);
+   bzero(iovec, sizeof(iovec));
+   iovec[0].iov_base = client;
+   iovec[0].iov_len  = sizeof(*client);
 
-	fdsent = 0;
-	CMSG_ADDOBJECT(client, cmsg, sizeof(client) * fdsent++);
+   fdsent = 0;
+   CMSG_ADDOBJECT(client->s, cmsg, sizeof(client->s) * fdsent++);
 
-	msg.msg_iov				= iovec;
-	msg.msg_iovlen			= ELEMENTS(iovec);
-	msg.msg_name			= NULL;
-	msg.msg_namelen		= 0;
+   bzero(&msg, sizeof(msg));
+   msg.msg_iov     = iovec;
+   msg.msg_iovlen  = ELEMENTS(iovec);
+   msg.msg_name    = NULL;
+   msg.msg_namelen = 0;
 
-	CMSG_SETHDR_SEND(msg, cmsg, sizeof(int) * fdsent);
+   CMSG_SETHDR_SEND(msg, cmsg, sizeof(int) * fdsent);
 
-	if (sendmsg(s, &msg, 0) != sizeof(command))	{
-		swarn("%s: sendmsg()", function);
-		return -1;
-	}
+   if ((rc = sendmsgn(s, &msg, 0)) != sizeof(*client))   {
+      swarn("%s: sendmsg(): sent %ld/%ld",
+      function, (long)rc, (long)sizeof(*client));
 
-	return 0;
+      return -1;
+   }
+
+   return 0;
 }
 
 int
 send_req(s, req)
-	int s;
-	const struct sockd_request_t *req;
+   int s;
+   struct sockd_request_t *req;
 {
-	const char *function = "send_req()";
-	struct iovec iovec[1];
-	struct msghdr msg;
-	int fdsent;
-	CMSG_AALLOC(cmsg, sizeof(int));
+   const char *function = "send_req()";
+   struct iovec iov[2];
+   struct msghdr msg;
+   int fdsent, ioc, length;
+#if HAVE_GSSAPI
+   gss_buffer_desc gssapistate;
+   char gssapistatemem[MAXGSSAPITOKENLEN];
+#endif /* HAVE_GSSAPI */
+   CMSG_AALLOC(cmsg, sizeof(int));
 
-	/* LINTED operands have incompatible pointer types */
-	iovec[0].iov_base		= (void *)req;
-	iovec[0].iov_len		= sizeof(*req);
+   ioc    = 0;
+   length = 0;
 
-	fdsent = 0;
-	CMSG_ADDOBJECT(req->s, cmsg, sizeof(req->s) * fdsent++);
+   bzero(iov, sizeof(iov));
+   iov[ioc].iov_base = req;
+   iov[ioc].iov_len  = sizeof(*req);
+   length           += iov[ioc].iov_len;
+   ++ioc;
 
-	msg.msg_iov				= iovec;
-	msg.msg_iovlen			= ELEMENTS(iovec);
-	msg.msg_name			= NULL;
-	msg.msg_namelen		= 0;
+#if HAVE_GSSAPI
+   if (req->socksauth.method == AUTHMETHOD_GSSAPI) {
+      gssapistate.value   = gssapistatemem;
+      gssapistate.length  = sizeof(gssapistatemem);
 
-	CMSG_SETHDR_SEND(msg, cmsg, sizeof(int) * fdsent);
+      if (gssapi_export_state(&req->socksauth.mdata.gssapi.state.id,
+      &gssapistate) != 0)
+         return 1;
 
-	if (sendmsg(s, &msg, 0) != sizeof(*req))	{
-		swarn("%s: sendmsg()", function);
-		return -1;
-	}
+      iov[ioc].iov_base = gssapistate.value;
+      iov[ioc].iov_len  = gssapistate.length;
+      length += iov[ioc].iov_len;
+      ++ioc;
 
-	return 0;
+      slog(LOG_DEBUG, "%s: gssapistate has length %lu",
+      function, (long unsigned)gssapistate.length);
+   }
+#endif /* HAVE_GSSAPI */
+
+   fdsent = 0;
+
+   if (req->s == -1)
+      SASSERTX(BAREFOOTD && req->req.command == SOCKS_UDPASSOCIATE);
+   else
+      CMSG_ADDOBJECT(req->s, cmsg, sizeof(req->s) * fdsent++);
+
+   bzero(&msg, sizeof(msg));
+   msg.msg_iov     = iov;
+   msg.msg_iovlen  = ELEMENTS(iov);
+   msg.msg_name    = NULL;
+   msg.msg_namelen = 0;
+
+   CMSG_SETHDR_SEND(msg, cmsg, sizeof(int) * fdsent);
+
+   if (sendmsgn(s, &msg, 0) != length)   {
+      swarn("%s: sendmsg()", function);
+      return -1;
+   }
+
+   return 0;
 }
 
 void
 sigchildbroadcast(sig, childtype)
-	int sig;
-	int childtype;
+   int sig;
+   int childtype;
 {
-	int i;
+   size_t i;
 
-	if (childtype & CHILD_NEGOTIATE)
-		for (i = 0; i < negchildc; ++i)
-			kill(negchildv[i].pid, sig);
+   if (childtype & CHILD_NEGOTIATE)
+      for (i = 0; i < negchildc; ++i)
+         kill(negchildv[i].pid, sig);
 
-	if (childtype & CHILD_REQUEST)
-		for (i = 0; i < reqchildc; ++i)
-			kill(reqchildv[i].pid, sig);
+   if (childtype & CHILD_REQUEST)
+      for (i = 0; i < reqchildc; ++i)
+         kill(reqchildv[i].pid, sig);
 
-	if (childtype & CHILD_IO)
-		for (i = 0; i < iochildc; ++i)
-			kill(iochildv[i].pid, sig);
+   if (childtype & CHILD_IO)
+      for (i = 0; i < iochildc; ++i)
+         kill(iochildv[i].pid, sig);
 }
+
+size_t
+maxfreeslots(childtype)
+   const int childtype;
+{
+
+   switch (childtype) {
+      case CHILD_NEGOTIATE:
+         return SOCKD_NEGOTIATEMAX;
+
+      case CHILD_REQUEST:
+         return SOCKD_REQUESTMAX;
+
+      case CHILD_IO:
+         return SOCKD_IOMAX;
+
+      default:
+         SERRX(childtype);
+   }
+
+   return 0; /* NOTREACHED */
+}
+
 
 #if DEBUG
 void
 printfd(io, prefix)
-	const struct sockd_io_t *io;
-	const char *prefix;
+   const struct sockd_io_t *io;
+   const char *prefix;
 {
-	const char *function = "printfd()";
-	struct sockaddr name;
-	socklen_t namelen;
-	char namestring[MAXSOCKADDRSTRING];
+   const char *function = "printfd()";
+   struct sockaddr name;
+   socklen_t namelen;
+   char namestring[MAXSOCKADDRSTRING];
 
-	bzero(&name, sizeof(name));
-	namelen = sizeof(name);
-	/* LINTED pointer casts may be troublesome */
-	if (getsockname(io->src.s, &name, &namelen) != 0)
-		swarn("%s: getsockname(io->src)", function);
-	else
-		slog(LOG_DEBUG, "%s: io->src (%d), name: %s", prefix,
-		io->src.s, sockaddr2string(&name, namestring, sizeof(namestring)));
+   bzero(&name, sizeof(name));
+   namelen = sizeof(name);
+   /* LINTED pointer casts may be troublesome */
+   if (getsockname(io->src.s, &name, &namelen) != 0)
+      swarn("%s: getsockname(io->src)", function);
+   else
+      slog(LOG_DEBUG, "%s: io->src (%d), name: %s", prefix,
+      io->src.s, sockaddr2string(&name, namestring, sizeof(namestring)));
 
-	bzero(&name, sizeof(name));
-	namelen = sizeof(name);
-	/* LINTED pointer casts may be troublesome */
-	if (getsockname(io->dst.s, &name, &namelen) != 0)
-		swarn("%s: getsockname(io->dst)", function);
-	else
-		slog(LOG_DEBUG, "%s: io->dst (%d), name: %s", prefix, io->dst.s,
-		sockaddr2string(&name, namestring, sizeof(namestring)));
+   bzero(&name, sizeof(name));
+   namelen = sizeof(name);
+   /* LINTED pointer casts may be troublesome */
+   if (getsockname(io->dst.s, &name, &namelen) != 0)
+      swarn("%s: getsockname(io->dst)", function);
+   else
+      slog(LOG_DEBUG, "%s: io->dst (%d), name: %s", prefix, io->dst.s,
+      sockaddr2string(&name, namestring, sizeof(namestring)));
 
-	switch (io->state.command) {
-		case SOCKS_BIND:
-		case SOCKS_BINDREPLY:
-			if (!io->state.extension.bind)
-				break;
-			/* else: */ /* FALLTHROUGH */
+   switch (io->state.command) {
+      case SOCKS_BIND:
+      case SOCKS_BINDREPLY:
+         if (!io->state.extension.bind)
+            break;
+         /* else: */ /* FALLTHROUGH */
 
-		case SOCKS_UDPASSOCIATE:
-			bzero(&name, sizeof(name));
-			namelen = sizeof(name);
-			/* LINTED pointer casts may be troublesome */
-			if (getpeername(io->control.s, &name, &namelen)
-			!= 0)
-				swarn("%s: getpeername(io->control)", function);
-			else  {
-				if (namelen == 0)
-					slog(LOG_DEBUG, "%s: io->control (%d), name: <none>",
-					prefix, io->control.s);
-				else
-					slog(LOG_DEBUG, "%s: io->control (%d), name: %s",
-					prefix, io->control.s,
-					sockaddr2string(&name, namestring, sizeof(namestring)));
-			}
-			break;
+      case SOCKS_UDPASSOCIATE:
+         bzero(&name, sizeof(name));
+         namelen = sizeof(name);
+         /* LINTED pointer casts may be troublesome */
+         if (getpeername(io->control.s, &name, &namelen)
+         != 0)
+            swarn("%s: getpeername(io->control)", function);
+         else  {
+            if (namelen == 0)
+               slog(LOG_DEBUG, "%s: io->control (%d), name: <none>",
+               prefix, io->control.s);
+            else
+               slog(LOG_DEBUG, "%s: io->control (%d), name: %s",
+               prefix, io->control.s,
+               sockaddr2string(&name, namestring, sizeof(namestring)));
+         }
+         break;
 
-		case SOCKS_CONNECT:
-			break;
+      case SOCKS_CONNECT:
+         break;
 
-		default:
-			SERRX(io->state.command);
-	}
+      default:
+         SERRX(io->state.command);
+   }
 }
-#endif
+#endif /* DEBUG */

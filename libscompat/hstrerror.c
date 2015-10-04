@@ -1,21 +1,17 @@
-/* $Id: hstrerror.c,v 1.3 1999/05/13 16:35:55 karls Exp $ */
+/* $Id: hstrerror.c,v 1.10 2009/09/15 09:52:31 karls Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "autoconf.h"
-#endif  /* HAVE_CONFIG_H */
+#endif /* HAVE_CONFIG_H */
 
-#include "common.h"
-
-#if !HAVE_HSTRERROR
-
-/*	$OpenBSD: herror.c,v 1.4 1997/03/13 19:07:28 downsj Exp $	*/
+/*	$OpenBSD: herror.c,v 1.8 2005/08/06 20:30:03 espie Exp $	*/
 
 /*
  * ++Copyright++ 1987, 1993
  * -
  * Copyright (c) 1987, 1993
  *    The Regents of the University of California.  All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -24,14 +20,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -45,14 +37,14 @@
  * SUCH DAMAGE.
  * -
  * Portions Copyright (c) 1993 by Digital Equipment Corporation.
- *
+ * 
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies, and that
  * the name of Digital Equipment Corporation not be used in advertising or
  * publicity pertaining to distribution of the document or software without
  * specific, written prior permission.
- *
+ * 
  * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
  * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
@@ -65,34 +57,23 @@
  * --Copyright--
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-#if 0
-static char sccsid[] = "@(#)herror.c	8.1 (Berkeley) 6/4/93";
-static char rcsid[] = "$From: herror.c,v 8.3 1996/08/05 08:31:35 vixie Exp $";
-#else
-static char rcsid[] = "$OpenBSD: herror.c,v 1.4 1997/03/13 19:07:28 downsj Exp $";
-#endif
-#endif /* LIBC_SCCS and not lint */
-
-#ifndef _COMMON_H_
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/uio.h>
 #include <netdb.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
-#endif  /* HAVE_UNISTD_H */
+#endif /* HAVE_UNISTD_H */
 #include <string.h>
-#endif  /* !_COMMON_H_ */
 
-const char *h_errlist[] = {
+const char * const h_errlist[] = {
 	"Resolver Error 0 (no error)",
 	"Unknown host",				/* 1 HOST_NOT_FOUND */
 	"Host name lookup failure",		/* 2 TRY_AGAIN */
 	"Unknown server error",			/* 3 NO_RECOVERY */
 	"No address associated with name",	/* 4 NO_ADDRESS */
 };
-int	h_nerr = { sizeof h_errlist / sizeof h_errlist[0] };
+const int	h_nerr = { sizeof h_errlist / sizeof h_errlist[0] };
 
 extern int	h_errno;
 
@@ -102,11 +83,10 @@ extern int	h_errno;
  *	print the error indicated by the h_errno value.
  */
 void
-herror(s)
-	const char *s;
+herror(const char *s)
 {
 	struct iovec iov[4];
-	register struct iovec *v = iov;
+	struct iovec *v = iov;
 
 	if (s && *s) {
 		v->iov_base = (char *)s;
@@ -126,20 +106,13 @@ herror(s)
 #endif
 
 const char *
-hstrerror(err)
-	int err;
+hstrerror(int err)
 {
+#if 0 /* can't know what values correspond to on a different platform */
 	if (err < 0)
 		return ("Resolver internal error");
 	else if (err < h_nerr)
 		return (h_errlist[err]);
+#endif
 	return ("Unknown resolver error");
 }
-
-#else
-static void avoid_error __P((void));
-static void avoid_error()
-{
-	avoid_error();
-}
-#endif  /* !HAVE_HSTRERROR */
