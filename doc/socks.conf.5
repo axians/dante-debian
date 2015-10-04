@@ -1,0 +1,107 @@
+.\" $Id: socks.conf.5,v 1.14 1999/07/10 13:52:23 karls Exp $
+.\"
+.\" Copyright (c) 1997, 1998, 1999
+.\"      Inferno Nettverk A/S, Norway.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. The above copyright notice, this list of conditions and the following
+.\"    disclaimer must appear in all copies of the software, derivative works
+.\"    or modified versions, and any portions thereof, aswell as in all
+.\"    supporting documentation.
+.\" 2. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"      This product includes software developed by
+.\"      Inferno Nettverk A/S, Norway.
+.\" 3. The name of the author may not be used to endorse or promote products
+.\"    derived from this software without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+.\" NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+.\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\" Inferno Nettverk A/S requests users of this software to return to
+.\"
+.\"  Software Distribution Coordinator  or  sdc@inet.no
+.\"  Inferno Nettverk A/S
+.\"  Oslo Research Park
+.\"  Gaustadaléen 21
+.\"  N-0349 Oslo
+.\"  Norway
+.\"
+.\" any improvements or extensions that they make and grant Inferno Nettverk A/S
+.\" the rights to redistribute these changes.
+.\"
+.TH SOCKS.CONF 5 "December 7, 1998"
+.SH NAME
+socks.conf \- socks client configuration file syntax
+.SH DESCRIPTION
+The configuration file for the socks client library allow control over
+logging and server selection.  It is divided into two parts,
+miscellaneous settings and routes.  A line can be commented using the
+standard comment character \fB#\fP.
+.SH FORMAT
+The miscellaneous settings have a keyword followed by a colon and the
+value.
+.TP
+\fBlogouput\fP
+This value controls where the sends logoutput.  It can
+be either \fBsyslog\fP, \fBstdout\fP, \fBstderr\fP, a filename, or
+a combination.
+.TP
+\fBdebug\fP
+Setting this field to 1 turns on debugging.
+.TP
+.SH ROUTES
+The routes are specified with a \fBroute\fP keyword.  Inside a pair of
+parens ({}) a set of keywords control the behavior of the route.  A
+route is selected for a connection based on the values within the
+\fBroute\fP block.  The \fBroute\fP block can contain the following:
+.TP
+.SH ADDRESSES
+Each address specification consists of a ipaddress/netmask or a hostname
+and a optional \fBport\fP specifier.  Each \fBroute\fP can contain
+three address specifications; \fBfrom\fP, \fBto\fP and \fBvia\fP.
+.IP \fBfrom\fP
+The route is used only by requests coming from the address given as value.
+.IP \fBto\fP
+The route is used only by requests going to the address given as value.
+.IP \fBvia\fP
+Address of socks server to be used for the connection.
+.IP \fBport\fP
+Parameter to \fBfrom\fP, \fBto\fP and \fBvia\fP.  Accepts the keywords
+\fBeq/=, neq/!=, ge/>=, le/<=, gt/>, lt/<\fP followed by a number.
+A portrange can also be given as "port <start #> - <end #>", which
+will match all port numbers within the range <start #> and <end #>.
+.IP \fBprotocol\fP
+The protocols the server supports.
+Currently supported values are \fBtcp\fP and \fBudp\fP.
+.IP \fBresolveprotocol\fP
+The protocol used to resolve hostnames.
+Valid values are \fBudp\fP (default), \fBtcp\fP and \fBfake\fP.
+.IP \fBproxyprotocol\fP
+The proxy protocols the server supports.
+Currently supported values are \fBsocks_v4\fP, \fBsocks_v5\fP
+and \fBmsproxy_v2\fP.
+.IP \fBmethod\fP
+List of authentication methods the \fBclient\fP supports and which to
+offer the server.  Currently supported values are \fBnone\fP and
+\fBusername\fP.
+.SH EXAMPLES
+See the example directory in the distribution.
+.SH FILES
+.I /etc/socks.conf
+.SH AUTHORS
+For Inferno Nettverk A/S, Norway:
+ Michael Shuldman <michaels@inet.no>: Design and implementation.
+ Karl-Andre' Skevik <karls@inet.no>: Autoconf and porting.
+.SH SEE ALSO
+sockd(8)
