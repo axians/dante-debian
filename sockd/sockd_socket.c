@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2001, 2003, 2008, 2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,65 +44,161 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: sockd_socket.c,v 1.36 2003/07/01 13:21:49 michaels Exp $";
+"$Id: sockd_socket.c,v 1.55 2009/10/23 10:37:27 karls Exp $";
 
 int
 sockd_bind(s, addr, retries)
-	int s;
-	struct sockaddr *addr;
-	size_t retries;
+   int s;
+   struct sockaddr *addr;
+   size_t retries;
 {
-/*	const char *function = "sockd_bind()"; */
-	size_t tries;
-	int p;
+   const char *function = "sockd_bind()";
+   int p;
 
-	errno = 0;
-	tries = 0;
-	do {
-		if (tries++ > 0)
-			sleep(tries - 1);
+   slog(LOG_DEBUG, "%s: trying to bind address %s",
+   function, sockaddr2string(addr, NULL, 0));
 
-		/* LINTED pointer casts may be troublesome */
-		if (PORTISRESERVED(TOIN(addr)->sin_port) && sockscf.compat.sameport) {
-			uid_t euid;
+   errno = 0;
+   while (1) { /* CONSTCOND */
+      /* LINTED pointer casts may be troublesome */
+      if (PORTISRESERVED(TOIN(addr)->sin_port)) {
+         sockd_priv(SOCKD_PRIV_NET_ADDR, PRIV_ON);
+         p = bind(s, addr, sizeof(*addr));
+         sockd_priv(SOCKD_PRIV_NET_ADDR, PRIV_OFF);
+      }
+      else
+         p = bind(s, addr, sizeof(*addr));
 
-			socks_seteuid(&euid, sockscf.uid.privileged);
-			/* LINTED pointer casts may be troublesome */
-			if ((p = bind(s, addr, sizeof(*addr))) == -1 && errno == EADDRINUSE) {
-#if HAVE_BINDRESVPORT
-				/*
-				 * There are some differences in whether bindresvport()
-				 * retries or not on different systems, and Linux
-				 * ignores the portnumber altogether, so we have to
-				 * do two calls.
-				 */
-				TOIN(addr)->sin_port = htons(0);
-				p = bindresvport(s, TOIN(addr));
-#endif /* HAVE_BINDRESVPORT */
-			}
-			socks_reseteuid(sockscf.uid.privileged, euid);
-		}
-		else if ((p = bind(s, addr, sizeof(*addr))) == 0) {
-			socklen_t addrlen;
+      if (p == 0) {
+         socklen_t addrlen = sizeof(*addr);
+         p = getsockname(s, addr, &addrlen);
 
-			addrlen = sizeof(*addr);
-			p = getsockname(s, addr, &addrlen);
-		}
+         break;
+      }
 
-		if (p == 0)
-			break;
-		else {
-			/* non-fatal error? */
-			switch (errno) {
-				case EADDRINUSE:
-					continue;
+      /* else;  non-fatal error and retry? */
+      switch (errno) {
+         case EINTR:
+            continue; /* don't count this attempt. */
 
-				case EINTR:
-					continue;
-			}
-			break; /* fatal error. */
-		}
-	} while (tries <= retries);
+         case EADDRINUSE:
+            slog(LOG_DEBUG, "%s: failed to bind %s: %s%s",
+            function, sockaddr2string(addr, NULL, 0), strerror(errno),
+            retries ? ", retrying" : "");
 
-	return p;
+            if (retries--) {
+               sleep(1);
+               continue;
+            }
+            break;
+
+         case EACCES:
+            slog(LOG_DEBUG,
+                 "%s: failed to bind %s: %s",
+                 function, sockaddr2string(addr, NULL, 0), strerror(errno));
+            break;
+      }
+
+      break;
+   }
+
+   return p;
+}
+
+int
+sockd_bindinrange(s, addr, first, last, op)
+   int s;
+   struct sockaddr *addr;
+   in_port_t first, last;
+   const enum operator_t op;
+{
+   const char *function = "sockd_bindinrange()";
+   in_port_t port;
+   int exhausted;
+
+   slog(LOG_DEBUG, "%s: %s %u %s %u",
+                   function, sockaddr2string(addr, NULL, 0),
+                   ntohs(first), operator2string(op), ntohs(last));
+
+
+   /*
+    * use them in host order to make it easier, only convert before bind.
+    */
+   port       = 0;
+   first      = ntohs(first);
+   last       = ntohs(last);
+   exhausted  = 0;
+   do {
+      if (port + 1 == 0) /* wrapped. */
+         exhausted = 1;
+
+      /* find next port to try. */
+      switch (op) {
+         case none:
+            port = 0; /* any port is good. */
+            break;
+
+         case eq:
+            port = first;
+            break;
+
+         case neq:
+            if (++port == first)
+               ++port;
+            break;
+
+         case ge:
+            if (port < first)
+               port = first;
+            else
+               ++port;
+            break;
+
+         case gt:
+            if (port <= first)
+               port = first + 1;
+            else
+               ++port;
+            break;
+
+         case le:
+            if (++port > first)
+               exhausted = 1;
+            break;
+
+         case lt:
+            if (++port >= first)
+               exhausted = 1;
+            break;
+
+         case range:
+            if (port < first)
+               port = first;
+            else
+               ++port;
+
+            if (port > last)
+               exhausted = 1;
+            break;
+
+         default:
+            SERRX(op);
+      }
+
+      if (exhausted) {
+         slog(LOG_DEBUG, "%s: exhausted search for port to bind in range "
+                         "%u %s %u",
+                         function, first, operator2string(op), last);
+         return -1;
+      }
+
+      TOIN(addr)->sin_port = htons(port);
+      if (sockd_bind(s, addr, 0) == 0)
+         return 0;
+
+      if (op == eq || op == none)
+         break; /* nothing to retry for these. */
+   } while (!exhausted);
+
+   return -1;
 }

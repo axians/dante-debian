@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,60 +44,57 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: udp_util.c,v 1.48 2003/07/01 13:21:33 michaels Exp $";
+"$Id: udp_util.c,v 1.57 2009/10/23 11:43:37 karls Exp $";
 
 struct udpheader_t *
 sockaddr2udpheader(to, header)
-	const struct sockaddr *to;
-	struct udpheader_t *header;
+   const struct sockaddr *to;
+   struct udpheader_t *header;
 {
 
-	SASSERTX(to->sa_family == AF_INET);
+   SASSERTX(to->sa_family == AF_INET);
 
-	bzero(header, sizeof(*header));
+   bzero(header, sizeof(*header));
 
-	fakesockaddr2sockshost(to, &header->host);
+   fakesockaddr2sockshost(to, &header->host);
 
-	return header;
+   return header;
 }
 
-char *
+void *
 udpheader_add(host, msg, len, msgsize)
-	const struct sockshost_t *host;
-	char *msg;
-	size_t *len;
-	size_t msgsize;
+   const struct sockshost_t *host;
+   const void *msg;
+   size_t *len;
+   const size_t msgsize;
 {
-/*	const char *function = "udpheader_add()"; */
-	struct udpheader_t header;
-	unsigned char *newmsg, *offset;
+/*   const char *function = "udpheader_add()"; */
+   struct udpheader_t header;
+   unsigned char *newmsg, *offset;
 
-	bzero(&header, sizeof(header));
-	header.host = *host;
+   bzero(&header, sizeof(header));
+   header.host = *host;
 
-	if (msgsize >= sizeof(*newmsg) * (*len + PACKETSIZE_UDP(&header)))
-		newmsg = (unsigned char *)msg;
-	else
-		if ((newmsg = (unsigned char *)malloc(sizeof(*newmsg)
-		* (*len + PACKETSIZE_UDP(&header)))) == NULL)
-			return NULL;
+   if (msgsize >= *len + PACKETSIZE_UDP(&header))
+      newmsg = (unsigned char *)msg;
+   else
+      if ((newmsg = malloc(*len + PACKETSIZE_UDP(&header))) == NULL)
+         return NULL;
 
-	/* offset old contents by size of header we are about to prefix. */
-	memmove(newmsg + PACKETSIZE_UDP(&header), msg, *len);
+   /* offset old contents by size of header we are about to prefix. */
+   memmove(newmsg + PACKETSIZE_UDP(&header), msg, *len);
+   offset = newmsg;
 
-	offset = newmsg;
+   memcpy(offset, &header.flag, sizeof(header.flag));
+   offset += sizeof(header.flag);
 
-	memcpy(offset, &header.flag, sizeof(header.flag));
-	offset += sizeof(header.flag);
+   memcpy(offset, &header.frag, sizeof(header.frag));
+   offset += sizeof(header.frag);
 
-	memcpy(offset, &header.frag, sizeof(header.frag));
-	offset += sizeof(header.frag);
+   offset = sockshost2mem(&header.host, offset, PROXY_SOCKS_V5);
+   offset += *len; /* len bytes copied above. */
 
-	offset = sockshost2mem(&header.host, offset, SOCKS_V5);
+   *len = offset - newmsg;
 
-	offset += *len; /* len bytes copied above. */
-
-	*len = offset - newmsg;
-
-	return (char *)newmsg;
+   return newmsg;
 }

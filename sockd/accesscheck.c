@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2005, 2006, 2008,
+ *               2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,158 +45,203 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: accesscheck.c,v 1.23 2005/10/28 13:33:04 michaels Exp $";
-
+"$Id: accesscheck.c,v 1.43 2009/10/23 10:37:26 karls Exp $";
 
 int
 usermatch(auth, userlist)
-	const struct authmethod_t *auth;
-	const struct linkedname_t *userlist;
+   const struct authmethod_t *auth;
+   const struct linkedname_t *userlist;
 {
-/*	const char *function = "usermatch()"; */
-	const char *name;
+/*   const char *function = "usermatch()"; */
+   const char *name;
 
-	switch (auth->method) {
-		case AUTHMETHOD_UNAME:
-			name		= (const char *)auth->mdata.uname.name;
-			break;
+   if ((name = authname(auth)) == NULL)
+      return 0; /* no username, no match. */
 
-		case AUTHMETHOD_RFC931:
-			name		= (const char *)auth->mdata.rfc931.name;
-			break;
+   do
+      if (strcmp(name, userlist->name) == 0)
+         break;
+   while ((userlist = userlist->next) != NULL);
 
-		case AUTHMETHOD_PAM:
-			name		= (const char *)auth->mdata.pam.name;
-			break;
-
-		default:
-			/*
-			 * adding non-username based methods to rules requiring usernames
-			 * should not be possible.
-			*/
-			SERRX(auth->method);
-	}
-
-	do
-		if (strcmp(name, userlist->name) == 0)
-			break;
-	while ((userlist = userlist->next) != NULL);
-
-	if (userlist == NULL)
-		return 0; /* no match. */
-	return 1;
+   if (userlist == NULL)
+      return 0; /* no match. */
+   return 1;
 }
 
+int
+groupmatch(auth, grouplist)
+   const struct authmethod_t *auth;
+   const struct linkedname_t *grouplist;
+{
+   const char *function = "groupmatch()";
+   const char *username;
+
+   if ((username = authname(auth)) == NULL)
+      return 0; /* no username, no match. */
+
+   /* go through grouplist, matching username against members of each group. */
+   do {
+      struct group *groupent;
+      char **groupname;
+
+      if ((groupent = getgrnam(grouplist->name)) == NULL) {
+         swarn("%s: unknown groupname \"%s\"", function, grouplist->name);
+         continue;
+      }
+
+      groupname = groupent->gr_mem;
+
+      while (*groupname != NULL) {
+         if (strcmp(username, *groupname) == 0)
+            return 1; /* match. */
+
+         ++groupname;
+      }
+   } while ((grouplist = grouplist->next) != NULL);
+
+   return 0;
+}
 
 /* ARGSUSED */
 int
 accesscheck(s, auth, src, dst, emsg, emsgsize)
-	int s;
-	struct authmethod_t *auth;
-	const struct sockaddr *src, *dst;
-	char *emsg;
-	size_t emsgsize;
+   int s;
+   struct authmethod_t *auth;
+   const struct sockaddr *src, *dst;
+   char *emsg;
+   size_t emsgsize;
 {
-	const char *function = "accesscheck()";
-	char srcstr[MAXSOCKADDRSTRING], dststr[sizeof(srcstr)];
-	int match;
+   const char *function = "accesscheck()";
+   char srcstr[MAXSOCKADDRSTRING], dststr[sizeof(srcstr)];
+   int match, authresultisfixed;
 
-	slog(LOG_DEBUG, "%s: method: %s, %s -> %s ",
-	function, method2string(auth->method),
-	src == NULL ? "<unknown>" : sockaddr2string(src, srcstr, sizeof(srcstr)),
-	dst == NULL ? "<unknown>" : sockaddr2string(dst, dststr, sizeof(dststr)));
+   slog(LOG_DEBUG, "%s: method: %s, %s -> %s ",
+   function, method2string(auth->method),
+   src == NULL ? "<unknown>" : sockaddr2string(src, srcstr, sizeof(srcstr)),
+   dst == NULL ? "<unknown>" : sockaddr2string(dst, dststr, sizeof(dststr)));
 
-	/*
-	 * We don't want to re-check the same method.  This could
-	 * happen in several cases:
-	 *  - was checked as client-rule, is now checked as socks-rule.
-	 *  - a different rule with the same method.
-	*/
+   /*
+    * We don't want to re-check the same method.  This could
+    * happen in several cases:
+    *  - was checked as client-rule, is now checked as socks-rule.
+    *  - a different rule with the same method.  The client is however
+    *    the same, so if the auth failed on the method before, it will
+    *    fail next time also.
+   */
 
-	if (methodisset(auth->method, auth->methodv, (size_t)auth->methodc))
-		return 1; /* already checked, matches. */
+   if (methodisset(auth->method, auth->methodv, (size_t)auth->methodc))
+      return 1; /* already checked, matches. */
 
-	if (methodisset(auth->method, auth->badmethodv, (size_t)auth->badmethodc))
-		return 0; /* already checked, won't match. */
+   if (methodisset(auth->method, auth->badmethodv, (size_t)auth->badmethodc))
+      return 0; /* already checked, won't match. */
 
-	match = 0;
-	switch (auth->method) {
-		case AUTHMETHOD_NONE:
-			match = 1;
-			break;
+   match = 0;
+   switch (auth->method) {
+      /*
+       * Methods where no further checking is done at this point, either
+       * because there's nothing to check, or it has already been checked.
+       */
+      case AUTHMETHOD_NONE:
+#if HAVE_GSSAPI
+      case AUTHMETHOD_GSSAPI:
+#endif /* HAVE_GSSAPI */
+         match = 1;
+         break;
 
-		case AUTHMETHOD_UNAME:
-			if (passwordcheck((const char *)auth->mdata.uname.name,
-			(const char *)auth->mdata.uname.password, emsg, emsgsize) == 0)
-				match = 1;
-			break;
+      case AUTHMETHOD_UNAME:
+         if (passwordcheck((const char *)auth->mdata.uname.name,
+         (const char *)auth->mdata.uname.password, emsg, emsgsize) == 0)
+            match = 1;
+         break;
 
-		case AUTHMETHOD_RFC931:
-			if (passwordcheck((const char *)auth->mdata.rfc931.name, NULL, emsg,
-			emsgsize) == 0)
-				match = 1;
-			break;
+#if HAVE_LIBWRAP
+      case AUTHMETHOD_RFC931:
+         if (passwordcheck((const char *)auth->mdata.rfc931.name, NULL, emsg,
+         emsgsize) == 0)
+            match = 1;
+         break;
+#endif /* HAVE_LIBWRAP */
 
 #if HAVE_PAM
-		case AUTHMETHOD_PAM: {
+      case AUTHMETHOD_PAM: {
 #if DIAGNOSTIC
-			const int freec = freedescriptors(sockscf.option.debug ?
-			"start" : NULL);
+         const int freec = freedescriptors(sockscf.option.debug ?
+         "start" : NULL);
 #endif /* DIAGNOSTIC */
 
-			if (pam_passwordcheck(s, src, dst, &auth->mdata.pam, emsg, emsgsize)
-			== 0)
-				match = 1;
+         if (pam_passwordcheck(s, src, dst, &auth->mdata.pam, emsg, emsgsize)
+         == 0)
+            match = 1;
 
 #if DIAGNOSTIC
-			if (freec != freedescriptors(sockscf.option.debug ?  "end" : NULL))
-				serrx(EXIT_FAILURE,
-				"the PAM library/module code on your system seems to be messing "
-				"with our descriptors, can't cope with that.  Get the PAM code "
-				"on your system fixed");
+         if (freec != freedescriptors(sockscf.option.debug ?  "end" : NULL))
+            swarnx("%s: lost %d file descriptor%s in pam_passwordcheck()",
+            function, freec - freedescriptors(NULL),
+            (freec - freedescriptors(NULL)) == 1 ? "" : "s");
 #endif /* DIAGNOSTIC */
-			break;
-		}
+         break;
+      }
 #endif /* HAVE_PAM */
 
-		default:
-			SERRX(auth->method);
-	}
+      default:
+         SERRX(auth->method);
+   }
 
-	switch (auth->method) {
-		/*
-		 * Some methods can be called with different values for the
-		 * same client, others can not.  Mark those who can't as
-		 * "tried" so we don't waste time on re-trying them.
-		 */
+   /*
+    * Some methods can be called with different values for the
+    * same client, based on values configured in the rules.
+    * Others can not and we want to mark those who can not as
+    * "tried", so we don't waste time on re-trying them.
+    */
+   switch (auth->method) {
 #if HAVE_PAM
-		case AUTHMETHOD_PAM:
-			if (sockscf.state.pamservicename == NULL) /* varies. */
-				break;
-			/* else; */ /* FALLTHROUGH */
-#endif
+      case AUTHMETHOD_PAM:
+         if (sockscf.state.pamservicename == NULL)
+            authresultisfixed = 0;
+         else
+            authresultisfixed = 1;
+         break;
+#endif /* HAVE_PAM */
 
-		case AUTHMETHOD_NONE:
-		case AUTHMETHOD_UNAME:
-		case AUTHMETHOD_RFC931:
-			if (match) {
-				SASSERTX(auth->methodc + 1 <= sizeof(auth->methodv));
-				auth->methodv[auth->methodc++] = auth->method;
-			}
-			else {
-				SASSERTX(auth->badmethodc + 1 <= sizeof(auth->badmethodv));
-				auth->badmethodv[auth->badmethodc++] = auth->method;
-			}
+#if HAVE_GSSAPI
+      case AUTHMETHOD_GSSAPI:
+         if (sockscf.state.gssapiservicename == NULL
+         ||  sockscf.state.gssapikeytab      == NULL)
+            authresultisfixed = 0;
+         else
+            authresultisfixed = 1;
+         break;
+#endif /* HAVE_GSSAPI */
 
-			/*
-			 * We might have wanted to bzero() the password here, but
-			 * then we wouldn't be able to use the password if we
-			 * at a later point needed to check for access against
-			 * a different method.  (For instance, PAM on setup,
-			 * UNAME on UDP packet.  Strange, but in theory possible.)
-			 */
-			break;
-	}
+      case AUTHMETHOD_NONE:
+      case AUTHMETHOD_UNAME:
+      case AUTHMETHOD_RFC931:
+         authresultisfixed = 1;
+         break;
 
-	return match;
+      default:
+         SERRX(auth->method);
+   }
+
+   if (authresultisfixed) {
+      if (match) {
+         SASSERTX(auth->methodc + 1 <= sizeof(auth->methodv));
+         auth->methodv[auth->methodc++] = auth->method;
+      }
+      else {
+         SASSERTX(auth->badmethodc + 1 <= sizeof(auth->badmethodv));
+         auth->badmethodv[auth->badmethodc++] = auth->method;
+      }
+
+      /*
+       * We might have wanted to bzero() the password here, but
+       * then we wouldn't be able to use the password if we
+       * at a later point needed to check for access against
+       * a different method.  (For instance, PAM on setup,
+       * UNAME on UDP packet.  Strange, but in theory possible.)
+       */
+   }
+
+
+   return match;
 }

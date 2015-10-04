@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2008, 2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,139 +44,106 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: serr.c,v 1.7 2003/07/01 13:21:31 michaels Exp $";
+"$Id: serr.c,v 1.30 2009/10/23 11:43:37 karls Exp $";
+
+#if SOCKS_CLIENT
+/* for errors, we want it logged. */
+#undef SOCKS_IGNORE_SIGNALSAFETY
+#define SOCKS_IGNORE_SIGNALSAFETY (1)
+#endif /* SOCKS_CLIENT */
 
 void
-#ifdef STDC_HEADERS
 serr(int eval, const char *fmt, ...)
-#else
-serr(eval, fmt, va_alist)
-	int eval;
-	const char *fmt;
-	va_dcl
-#endif  /* STDC_HEADERS */
 {
 
-	if (fmt != NULL) {
-		va_list ap;
-		char buf[2048];
-		size_t bufused;
+   if (fmt != NULL) {
+      va_list ap;
+      char buf[2048];
+      int bufused;
 
-#ifdef STDC_HEADERS
-		/* LINTED pointer casts may be troublesome */
-		va_start(ap, fmt);
+      va_start(ap, fmt);
+
+      bufused = vsnprintf(buf, sizeof(buf), fmt, ap);
+      va_end(ap);
+
+      if (errno != 0)
+         bufused += snprintfn(&buf[bufused], sizeof(buf) - bufused,
+         ": %s (errno = %d)", strerror(errno), errno);
+
+      slog(LOG_ERR, "%s", buf);
+   }
+
+#if SOCKS_CLIENT
+   exit(eval);
 #else
-		va_start(ap);
-#endif  /* STDC_HEADERS */
-
-		bufused = vsnprintf(buf, sizeof(buf), fmt, ap);
-
-		bufused += snprintfn(&buf[bufused], sizeof(buf) - bufused,
-		": %s (errno = %d)", strerror(errno), errno);
-
-		slog(LOG_ERR, "%s", buf);
-
-		/* LINTED expression has null effect */
-		va_end(ap);
-	}
-
-#if SOCKS_SERVER
-	sockdexit(-eval);
-#else
-	exit(eval);
-#endif
+   sockdexit(eval);
+#endif /* SOCKS_CLIENT */
 }
 
 void
-#ifdef STDC_HEADERS
 serrx(int eval, const char *fmt, ...)
-#else
-serrx(eval, fmt, va_alist)
-      int eval;
-      const char *fmt;
-      va_dcl
-#endif  /* STDC_HEADERS */
 {
 
-	if (fmt != NULL) {
-		va_list ap;
+   if (fmt != NULL) {
+      va_list ap, apcopy;
 
-#ifdef STDC_HEADERS
-		/* LINTED pointer casts may be troublesome */
-		va_start(ap, fmt);
+      va_start(ap, fmt);
+      va_start(apcopy, fmt);
+
+      vslog(LOG_ERR, fmt, ap, apcopy);
+
+      /* LINTED expression has null effect */
+      va_end(ap);
+      va_end(apcopy);
+   }
+
+#if SOCKS_CLIENT
+   exit(eval);
 #else
-		va_start(ap);
-#endif  /* STDC_HEADERS */
-		vslog(LOG_ERR, fmt, ap);
-
-		/* LINTED expression has null effect */
-		va_end(ap);
-	}
-
-#if SOCKS_SERVER
-	sockdexit(-eval);
-#else
-	exit(eval);
-#endif
+   sockdexit(eval);
+#endif /* SOCKS_CLIENT */
 }
 
 void
-#ifdef STDC_HEADERS
 swarn(const char *fmt, ...)
-#else
-swarn(fmt, va_alist)
-	const char *fmt;
-	va_dcl
-#endif  /* STDC_HEADERS */
 {
 
-	if (fmt != NULL) {
-		va_list ap;
-		char buf[2048];
-		size_t bufused;
+   if (fmt != NULL) {
+      va_list ap;
+      char buf[2048];
+      int bufused;
 
-#ifdef STDC_HEADERS
-	/* LINTED pointer casts may be troublesome */
-		va_start(ap, fmt);
-#else
-		va_start(ap);
-#endif  /* STDC_HEADERS */
+   /* LINTED pointer casts may be troublesome */
+      va_start(ap, fmt);
 
-		bufused = vsnprintf(buf, sizeof(buf), fmt, ap);
+      bufused = vsnprintf(buf, sizeof(buf), fmt, ap);
 
-		bufused += snprintfn(&buf[bufused], sizeof(buf) - bufused,
-		": %s (errno = %d)", strerror(errno), errno);
+      if (errno != 0)
+         bufused += snprintfn(&buf[bufused], sizeof(buf) - bufused,
+         ": %s (errno = %d)", strerror(errno), errno);
 
-		slog(LOG_ERR, "%s", buf);
+      slog(LOG_ERR, "%s", buf);
 
-		/* LINTED expression has null effect */
-		va_end(ap);
-	}
+      /* LINTED expression has null effect */
+      va_end(ap);
+   }
 }
 
 void
-#ifdef STDC_HEADERS
 swarnx(const char *fmt, ...)
-#else
-swarnx(fmt, va_alist)
-	const char *fmt;
-	va_dcl
-#endif  /* STDC_HEADERS */
 {
 
-	if (fmt != NULL) {
-		va_list ap;
+   if (fmt != NULL) {
+      va_list ap, apcopy;
 
-#ifdef STDC_HEADERS
-		/* LINTED pointer casts may be troublesome */
-		va_start(ap, fmt);
-#else
-		va_start(ap);
-#endif  /* STDC_HEADERS */
+      /* LINTED pointer casts may be troublesome */
+      va_start(ap, fmt);
+      va_start(apcopy, fmt);
 
-		vslog(LOG_ERR, fmt, ap);
+      vslog(LOG_ERR, fmt, ap, apcopy);
 
-		/* LINTED expression has null effect */
-		va_end(ap);
-	}
+      /* LINTED expression has null effect */
+      va_end(ap);
+      va_end(apcopy);
+   }
 }

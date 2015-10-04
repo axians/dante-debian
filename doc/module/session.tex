@@ -1,6 +1,6 @@
-%@(#)$Id: session.tex,v 1.3 2006/01/10 12:24:24 michaels Exp $
+%@(#)$Id: session.tex,v 1.6 2009/10/22 18:17:09 karls Exp $
 %/*
-% * Copyright (c) 2005
+% * Copyright (c) 2005, 2006, 2009
 % *      Inferno Nettverk A/S, Norway.  All rights reserved.
 % *
 % * Redistribution and use in source and binary forms, with or without
@@ -52,10 +52,10 @@
 \author{
 	Inferno Nettverk A/S \\
 	Oslo Research Park   \\
-	Gaustadalléen 21	\\
+	Gaustadalleen 21	\\
 	NO-0349 Oslo          \\
 	Norway}
-\date{$$$$Date: 2006/01/10 12:24:24 $$$$}
+\date{$$$$Date: 2009/10/22 18:17:09 $$$$}
 
 \makeindex
 
@@ -101,7 +101,7 @@
 \section{Special notes}
  Sending the \emph{Dante} server a \texttt{SIGHUP} signal forces a reload
  of the configuration file.  It should be noted that this
- does not affect current sessions. 
+ does not affect current sessions.
 
  Changing e.g. a \emph{pass} statement to a \emph{block} statement,
  does not terminate the session of any existing client.
@@ -115,18 +115,18 @@
  Eventually the old sessions will finish however, and the maximal
  number of sessions will be the the number currently configured,
  until a new reload of the configuration-file occurs.
- 
+
 \section{Examples}
  This section shows some examples of how one could use this module.
 
  \subsection{Limiting the number of clients negotiating}
   The below rule shows how one can limit the number of clients
   on the 10.0.0.0/24 net con-currently negotiating with the
-  \emph{Dante} server to a total 10.  
+  \emph{Dante} server to a total 10.
 
   \begin{verbatim}
 client-pass {
-   from: 10.0.0.0/24 to: 0.0.0.0/0 
+   from: 10.0.0.0/24 to: 0.0.0.0/0
    maxsessions: 10
 }
   \end{verbatim}
@@ -146,7 +146,7 @@ pass {
    maxsessions: 10
 }
   \end{verbatim}
-   
+
 	Since this is a socks-rule, it takes action when the clients
 	have finished negotiating with the \emph{Dante} server.
 

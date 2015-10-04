@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2004, 2008, 2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,107 +43,154 @@
 
 #include "common.h"
 
+#if HAVE_LIBMINIUPNP
+#include <miniupnpc/miniupnpc.h>
+#include <miniupnpc/upnpcommands.h>
+#include <miniupnpc/upnperrors.h>
+#else
+#include "upnp.h"
+#endif /* HAVE_LIBMINIUPNP */
+
 static const char rcsid[] =
-"$Id: Rgetsockname.c,v 1.44 2005/01/24 10:24:21 karls Exp $";
+"$Id: Rgetsockname.c,v 1.68 2009/10/23 11:43:34 karls Exp $";
 
 int
 Rgetsockname(s, name, namelen)
-	int s;
-	struct sockaddr *name;
-	socklen_t *namelen;
+   int s;
+   struct sockaddr *name;
+   socklen_t *namelen;
 {
-	const char *function = "Rgetsockname()";
-	struct socksfd_t *socksfd;
-	struct sockaddr *addr;
+   const char *function = "Rgetsockname()";
+   struct socksfd_t socksfd;
+   struct sockaddr addr;
 
-	clientinit();
+   clientinit();
 
-	slog(LOG_DEBUG, "%s", function);
+   slog(LOG_DEBUG, "%s, socket %d", function, s);
 
-	if (!socks_addrisok((unsigned int)s)) {
-		socks_rmaddr((unsigned int)s);
-		return getsockname(s, name, namelen);
-	}
+   if (!socks_addrisours(s, 1)) {
+      socks_rmaddr(s, 1);
+      return getsockname(s, name, namelen);
+   }
 
-	socksfd = socks_getaddr((unsigned int)s);
-	SASSERTX(socksfd != NULL);
+   socksfd = *socks_getaddr(s, 1);
 
-	switch (socksfd->state.command) {
-		case SOCKS_CONNECT: {
-			sigset_t set, oset;
+   if (socksfd.state.version == PROXY_UPNP) {
+#if HAVE_LIBMINIUPNP
+      if (ADDRISBOUND(TOIN(&socksfd.remote)))
+         addr = socksfd.remote; /* already have it. */
+      else {
+         char straddr[INET_ADDRSTRLEN];
+         int rc;
 
-			/* for non-blocking connect, we get a SIGCHLD upon completion. */
-			sigemptyset(&set);
-			sigaddset(&set, SIGCHLD);
-			if (sigprocmask(SIG_BLOCK, &set, &oset) != 0) {
-				swarn("%s: sigprocmask()", function);
-				return -1;
-			}
+         socksfd = *socks_getaddr(s, 1);
 
-			if (socksfd->state.inprogress) { /* non-blocking connect. */
-				/*
-				 * this is bad.  We don't know what address the socksserver
-				 * will use on our behalf yet.  Lets wait for a SIGCHLD
-				 * and then retry, unless client is blocking that signal,
-				 * then we can only hope the client will retry on ENOBUFS,
-				 * but we are probably screwed anyway.
-				*/
-				if (sigismember(&oset, SIGCHLD)) {
-					slog(LOG_DEBUG, "%s: SIGCHLD blocked by client", function);
+         if ((rc = UPNP_GetExternalIPAddress(socksfd.route->gw.state.data.upnp
+         .controlurl, socksfd.route->gw.state.data.upnp.servicetype, straddr))
+         != UPNPCOMMAND_SUCCESS) {
+            swarnx("%s: failed to get external ip address of upnp device: %d",
+            function, rc);
+            return -1;
+         }
 
-					if (sigprocmask(SIG_BLOCK, &oset, NULL) != 0) {
-						swarn("%s: sigprocmask()", function);
-						return -1;
-					}
+         slog(LOG_DEBUG, "%s: upnp controlpoint's external ip address is %s",
+         function, straddr);
 
-					errno = ENOBUFS;
-					return -1;
-				}
+         if (inet_pton(socksfd.remote.sa_family,
+         straddr, &TOIN(&socksfd.remote)->sin_addr) != 1) {
+            swarn("%s: could not convert %s, af %d, to network address",
+            function, straddr, socksfd.remote.sa_family);
+            return -1;
+         }
 
-				sigsuspend(&oset);
-				if (sigprocmask(SIG_BLOCK, &oset, NULL) != 0) {
-					swarn("%s: sigprocmask()", function);
-					return -1;
-				}
+         addr = socksfd.remote;
+         socks_addaddr(s, &socksfd, 1);
+      }
+#else
+     SERRX(socksfd.state.version);
+#endif /* HAVE_LIBMINIUPNP */
+   }
+   else {
+      switch (socksfd.state.command) {
+         case SOCKS_CONNECT: {
+            sigset_t set, oset;
 
-				return Rgetsockname(s, name, namelen);
-			}
+            /* for non-blocking connect, we get a SIGCHLD upon completion. */
+            (void)sigemptyset(&set);
+            (void)sigaddset(&set, SIGCHLD);
+            if (sigprocmask(SIG_BLOCK, &set, &oset) != 0) {
+               swarn("%s: sigprocmask()", function);
+               return -1;
+            }
 
-			if (sigprocmask(SIG_SETMASK, &oset, NULL) != 0)
-				swarn("%s: sigprocmask()", function);
-			addr = &socksfd->remote;
-			break;
-		}
+            if (socksfd.state.inprogress) { /* non-blocking connect. */
+               /*
+                * this is bad.  We don't know what address the socks server
+                * will use on our behalf yet.  Lets wait for a SIGCHLD
+                * and then retry, unless client is blocking that signal,
+                * then we can only hope the client will retry on ENOBUFS,
+                * but we are probably screwed anyway.
+               */
+               if (sigismember(&oset, SIGCHLD)) {
+                  slog(LOG_DEBUG, "%s: SIGCHLD blocked by client", function);
 
-		case SOCKS_BIND:
-			addr = &socksfd->remote;
-			break;
+                  if (sigprocmask(SIG_BLOCK, &oset, NULL) != 0) {
+                     swarn("%s: sigprocmask()", function);
+                     return -1;
+                  }
 
-		case SOCKS_UDPASSOCIATE:
-			swarnx("%s: getsockname() on udp sockets is not supported by the "
-			"socks protocol, trying to fake it.", function);
+                  errno = ENOBUFS;
+                  return -1;
+               }
 
-			/*
-			 * some clients might call this for no good reason, try to
-			 * help them by returning a invalid address; if they are
-			 * going to use it for anything, they will fail later though.
-			 */
 
-			addr = &socksfd->remote;
-			/* LINTED pointer casts may be troublesome */
-			TOIN(addr)->sin_family			= AF_INET;
-			/* LINTED pointer casts may be troublesome */
-			TOIN(addr)->sin_addr.s_addr	= htonl(INADDR_ANY);
-			/* LINTED pointer casts may be troublesome */
-			TOIN(addr)->sin_port				= htons(0);
-			break;
+               slog(LOG_DEBUG, "%s: waiting for signal from child", function);
+               sigsuspend(&oset); /* wait for sigchld. */
 
-		default:
-			SERRX(socksfd->state.command);
-	}
+               if (sigprocmask(SIG_BLOCK, &oset, NULL) != 0) {
+                  swarn("%s: sigprocmask()", function);
+                  return -1;
+               }
 
-	*namelen = MIN(*namelen, (socklen_t)sizeof(*addr));
-	memcpy(name, addr, (size_t)*namelen);
+               return Rgetsockname(s, name, namelen);
+            }
 
-	return 0;
+            if (sigprocmask(SIG_SETMASK, &oset, NULL) != 0)
+               swarn("%s: sigprocmask()", function);
+            addr = socksfd.remote;
+            break;
+         }
+
+         case SOCKS_BIND:
+            addr = socksfd.remote;
+            break;
+
+         case SOCKS_UDPASSOCIATE:
+            swarnx("%s: getsockname() on udp sockets is not supported by the "
+            "socks protocol, trying to fake it.", function);
+
+            /*
+             * some clients might call this for no good reason, try to
+             * help them by returning a invalid address; if they are
+             * going to use it for anything, they will fail later though.
+             */
+
+            addr = socksfd.remote;
+            /* LINTED pointer casts may be troublesome */
+            TOIN(&addr)->sin_family      = AF_INET;
+            /* LINTED pointer casts may be troublesome */
+            TOIN(&addr)->sin_addr.s_addr = htonl(INADDR_ANY);
+            /* LINTED pointer casts may be troublesome */
+            TOIN(&addr)->sin_port        = htons(0);
+            break;
+
+         default:
+            SERRX(socksfd.state.command);
+      }
+   }
+
+   *namelen = MIN(*namelen, (socklen_t)sizeof(addr));
+   memcpy(name, &addr, (size_t)*namelen);
+
+   return 0;
 }

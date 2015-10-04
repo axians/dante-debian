@@ -1,10 +1,10 @@
-Summary: A free Socks v4/v5 client implementation
+Summary: A free SOCKS v4/v5 client implementation
 Name: dante
 %define version @VERSION@
 %define prefix /usr
 Version: %{version}
 Release: 1
-Copyright: BSD-type
+License: BSD-type
 Group: Networking/Utilities
 URL: http://www.inet.no/dante/
 Vendor: Inferno Nettverk A/S
@@ -18,31 +18,33 @@ BuildRequires: pam-devel
 %endif
 
 %description
-Dante is a free implementation of the proxy protocols socks version 4,
-socks version 5 (rfc1928) and msproxy. It can be used as a firewall
-between networks. It is being developed by Inferno Nettverk A/S, a
-Norwegian consulting company. Commercial support is available.
+Dante is a free implementation of the SOCKS proxy protocol, version 4,
+and version 5 (rfc1928). It can be used as a firewall between
+networks. It is being developed by Inferno Nettverk A/S, a Norwegian
+consulting company. Commercial support is available.
 
 This package contains the dynamic libraries required to "socksify"
-existing applications to become socks clients.
+existing applications, allowing them to automatically use the SOCKS
+protocol.
 
 %package server
-Summary: A free Socks v4/v5 server implementation
+Summary: A free SOCKS v4/v5 server implementation
 Group: Networking/Daemons
 Requires: dante
 
 %description server
-This package contains the socks proxy daemon and its documentation.
-The sockd is the server part of the Dante socks proxy package and
-allows socks clients to connect through it to the network.
+This package contains "sockd", the SOCKS proxy daemon and its
+documentation.  This is the server part of the Dante SOCKS proxy
+package and allows SOCKS clients to connect through it to the external
+network.
 
 %package devel
-Summary: development libraries for socks
+Summary: development libraries for SOCKS
 Group: Development/Libraries
 Requires: dante
 
 %description devel
-Additional libraries required to compile programs that use socks.
+Additional libraries required to compile programs that use SOCKS.
 
 %prep
 %setup
@@ -56,7 +58,7 @@ cat >sockd.init <<EOF
 #               the Dante server.
 #
 # chkconfig: 2345 65 35
-# description: sockd implements a socks v4/v5 proxy server
+# description: sockd implements a SOCKS v4/v5 proxy server
 
 # Source function library.
 . %{_initrddir}/functions
@@ -135,15 +137,14 @@ fi
 
 %files
 %defattr(-, root, root, 0755)
-%doc BUGS CREDITS NEWS README SUPPORT TODO doc/README* doc/faq.tex example/socks.conf example/socks-simple-withoutnameserver.conf example/sockd.conf example/socks-simple.conf
+%doc BUGS CREDITS NEWS README SUPPORT TODO doc/README* example/socks.conf example/socks-simple-withoutnameserver.conf example/sockd.conf example/socks-simple.conf
 %config %{_sysconfdir}/socks.conf
-%{_libdir}/libsocks.so.0.1.0
+%{_libdir}/libsocks.so.0.1.1
 %{_libdir}/libsocks.so.0
 %{_libdir}/libsocks.so
-%{_libdir}/libdsocks.so.0.1.0
-%{_libdir}/libdsocks.so.0
 %{_libdir}/libdsocks.so
 %{_bindir}/socksify
+%{_mandir}/man1/socksify.1*
 %{_mandir}/man5/socks.conf.5*
 
 %files server
@@ -163,6 +164,9 @@ fi
 %{_includedir}/socks.h
 
 %changelog
+* Sat Dec 19 2009 Karl-Andre' Skevik <karls@inet.no>
+-Minor tweaking for fedora + add socksify manual page.
+
 * Wed Mar 26 2003 Karl-Andre' Skevik <karls@inet.no>
 -Integrated changes from spec file by <dag@wieers.com>, located
  at <URL:ftp://dag.wieers.com/home-made/dante/dante.spec>.

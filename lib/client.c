@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2005, 2008, 2009
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,48 +44,88 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: client.c,v 1.57 2005/10/07 12:31:47 michaels Exp $";
+"$Id: client.c,v 1.87 2009/10/23 11:43:35 karls Exp $";
 
 #if !HAVE_PROGNAME
-	char *__progname = "danteclient";
-#endif
+   char *__progname = "danteclient";
+#endif /* !HAVE_PROGNAME */
 
 int
 SOCKSinit(progname)
-	char *progname;
+   char *progname;
 {
 
-	__progname = progname;
-	return 0;
+   __progname = progname;
+   return 0;
 }
 
 void
 clientinit(void)
 {
-/*	const char *function = "clientinit()"; */
-	static int initing;
+#ifdef HAVE_VOLATILE_SIG_ATOMIC_T
+   static sig_atomic_t initing;
+#else
+   static volatile sig_atomic_t initing;
+#endif /* HAVE_VOLATILE_SIG_ATOMIC_T */
+/*   const char *function = "clientinit()"; */
 
-	if (sockscf.state.init)
-		return;
+   if (sockscf.state.init)
+      return;
 
-	if (initing)
-		return;
-	initing = 1;
+/*   sleep(20);  */
 
-	if (issetugid())
-		sockscf.option.configfile = SOCKS_CONFIGFILE;
-	else
-		if ((sockscf.option.configfile = getenv("SOCKS_CONF")) == NULL)
-			sockscf.option.configfile = SOCKS_CONFIGFILE;
+   if (initing)
+      return; /* in case of same process/thread trying to get the lock. */
+   initing = 1;
 
-	/*
-	 * initialize misc. options to sensible default.
-	 */
-	sockscf.resolveprotocol	= RESOLVEPROTOCOL_UDP;
+   if (sockscf.state.init) {
+      /* somebody else inited while we were waiting for the lock. */
+      initing = 0;
+      return;
+   }
 
-	genericinit();
+   /*
+    * need to know max number of open files so we can allocate correctly
+    * sized fd_set.
+    */
+   sockscf.state.maxopenfiles = getmaxofiles(hardlimit);
 
-	slog(LOG_INFO, "%s/client v%s running", PACKAGE, VERSION);
-	initing = 0;
+
+   if ((sockscf.option.configfile = socks_getenv("SOCKS_CONF", dontcare))
+   == NULL)
+      sockscf.option.configfile = SOCKS_CONFIGFILE;
+
+   /*
+    * initialize misc. options to sensible default.
+    */
+
+   sockscf.resolveprotocol = RESOLVEPROTOCOL_UDP;
+
+#if HAVE_SOCKADDR_SA_LEN
+   sockscf.state.lastconnect.sa_len    = sizeof(sockscf.state.lastconnect);
+#endif /* HAVE_SOCKADDR_SA_LEN */
+   sockscf.state.lastconnect.sa_family = AF_INET;
+   bzero(&sockscf.state.lastconnect.sa_data,
+   sizeof(sockscf.state.lastconnect.sa_data));
+
+   genericinit();
+   newprocinit();
+   addrlockinit();
+
+#if SOCKS_DIRECTROUTE_FALLBACK
+   if (socks_getenv("SOCKS_DIRECTROUTE_FALLBACK", isfalse) == NULL)
+      sockscf.option.directfallback = 1;
+   else
+      sockscf.option.directfallback = 0;
+#else /* !SOCKS_DIRECTROUTE_FALLBACK */
+   if (socks_getenv("SOCKS_DIRECTROUTE_FALLBACK", istrue) == NULL)
+      sockscf.option.directfallback = 1;
+   else
+      sockscf.option.directfallback = 0;
+#endif /* SOCKS_DIRECTROUTE_FALLBACK */
+
+   slog(LOG_INFO, "%s/client v%s running", PACKAGE, VERSION);
+/*   sleep(20);                          */
+
+   initing = 0;
 }
-

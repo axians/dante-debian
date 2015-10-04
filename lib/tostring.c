@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2003, 2005, 2006, 2008, 2009,
+ *               2010
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,927 +46,1183 @@
 #include "config_parse.h"
 
 static const char rcsid[] =
-"$Id: tostring.c,v 1.15 2006/01/01 16:45:02 michaels Exp $";
+"$Id: tostring.c,v 1.57.2.2 2010/05/24 16:38:36 karls Exp $";
 
 char *
 proxyprotocols2string(proxyprotocols, str, strsize)
-	const struct proxyprotocol_t *proxyprotocols;
-	char *str;
-	size_t strsize;
+   const struct proxyprotocol_t *proxyprotocols;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[256];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	if (proxyprotocols->socks_v4)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(SOCKS_V4s));
+   *str    = NUL;
+   strused = 0;
 
-	if (proxyprotocols->socks_v5)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(SOCKS_V5s));
+   if (proxyprotocols->socks_v4)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(PROXY_SOCKS_V4s));
 
-	if (proxyprotocols->msproxy_v2)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(MSPROXY_V2s));
+   if (proxyprotocols->socks_v5)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(PROXY_SOCKS_V5s));
 
-	if (proxyprotocols->http_v1_0)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(HTTP_V1_0s));
+   if (proxyprotocols->msproxy_v2)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(PROXY_MSPROXY_V2s));
 
-	return str;
+   if (proxyprotocols->http_v1_0)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(PROXY_HTTP_V1_0s));
+
+   if (proxyprotocols->upnp)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(PROXY_UPNPs));
+
+   if (proxyprotocols->direct)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(PROXY_DIRECTs));
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
 
 char *
 protocols2string(protocols, str, strsize)
-	const struct protocol_t *protocols;
-	char *str;
-	size_t strsize;
+   const struct protocol_t *protocols;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[16];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	if (protocols->tcp)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(PROTOCOL_TCPs));
+   *str    = NUL;
+   strused = 0;
 
-	if (protocols->udp)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(PROTOCOL_UDPs));
+   if (protocols->tcp)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(PROTOCOL_TCPs));
 
-	return str;
+   if (protocols->udp)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(PROTOCOL_UDPs));
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
-
 
 const char *
 socks_packet2string(packet, type)
-	  const void *packet;
-	  int type;
+     const void *packet;
+     int type;
 {
-	static char buf[1024];
-	char hstring[MAXSOCKSHOSTSTRING];
-	unsigned char version;
-	const struct request_t *request = NULL;
-	const struct response_t *response = NULL;
+   static char buf[1024];
+   char hstring[MAXSOCKSHOSTSTRING];
+   unsigned char version;
+   const struct request_t *request = NULL;
+   const struct response_t *response = NULL;
 
-	switch (type) {
-		case SOCKS_REQUEST:
-			request = (const struct request_t *)packet;
-			version = request->version;
-			break;
+   switch (type) {
+      case SOCKS_REQUEST:
+         request = (const struct request_t *)packet;
+         version = request->version;
+         break;
 
-		case SOCKS_RESPONSE:
-			response = (const struct response_t *)packet;
-			version	= response->version;
-			break;
+      case SOCKS_RESPONSE:
+         response = (const struct response_t *)packet;
+         version   = response->version;
+         break;
 
-	  default:
-		 SERRX(type);
+     default:
+       SERRX(type);
   }
 
-	switch (version) {
-		case SOCKS_V4:
-		case SOCKS_V4REPLY_VERSION:
-			switch (type) {
-				case SOCKS_REQUEST:
-					snprintfn(buf, sizeof(buf),
-					"(V4) VN: %d CD: %d address: %s",
-					request->version, request->command,
-					sockshost2string(&request->host, hstring, sizeof(hstring)));
-					break;
+   switch (version) {
+      case PROXY_SOCKS_V4:
+      case PROXY_SOCKS_V4REPLY_VERSION:
+         switch (type) {
+            case SOCKS_REQUEST:
+               snprintfn(buf, sizeof(buf),
+               "(V4) VN: %d CD: %d address: %s",
+               request->version, request->command,
+               sockshost2string(&request->host, hstring, sizeof(hstring)));
+               break;
 
-				case SOCKS_RESPONSE:
-					snprintfn(buf, sizeof(buf), "(V4) VN: %d CD: %d address: %s",
-					response->version, response->reply,
-					sockshost2string(&response->host, hstring, sizeof(hstring)));
-					break;
-			}
-			break;
+            case SOCKS_RESPONSE:
+               snprintfn(buf, sizeof(buf), "(V4) VN: %d CD: %d address: %s",
+               response->version, response->reply,
+               sockshost2string(&response->host, hstring, sizeof(hstring)));
+               break;
+         }
+         break;
 
-		case SOCKS_V5:
-			switch (type) {
-				case SOCKS_REQUEST:
-					snprintfn(buf, sizeof(buf),
-					"VER: %d CMD: %d FLAG: %d ATYP: %d address: %s",
-					request->version, request->command, request->flag,
-					request->host.atype,
-					sockshost2string(&request->host, hstring, sizeof(hstring)));
-					break;
+      case PROXY_SOCKS_V5:
+         switch (type) {
+            case SOCKS_REQUEST:
+               snprintfn(buf, sizeof(buf),
+               "VER: %d CMD: %d FLAG: %d ATYP: %d address: %s",
+               request->version, request->command, request->flag,
+               request->host.atype,
+               sockshost2string(&request->host, hstring, sizeof(hstring)));
+               break;
 
-				case SOCKS_RESPONSE:
-					snprintfn(buf, sizeof(buf),
-					"VER: %d REP: %d FLAG: %d ATYP: %d address: %s",
-					response->version, response->reply, response->flag,
-					response->host.atype,
-					sockshost2string(&response->host, hstring, sizeof(hstring)));
-					break;
-			}
-			break;
+            case SOCKS_RESPONSE:
+               snprintfn(buf, sizeof(buf),
+               "VER: %d REP: %d FLAG: %d ATYP: %d address: %s",
+               response->version, response->reply, response->flag,
+               response->host.atype,
+               sockshost2string(&response->host, hstring, sizeof(hstring)));
+               break;
+         }
+         break;
 
-		default:
-			SERRX(version);
+      default:
+         SERRX(version);
   }
 
-	return buf;
+   return buf;
 }
-
 
 enum operator_t
 string2operator(string)
-	const char *string;
+   const char *string;
 {
 
-	if (strcmp(string, "eq") == 0 || strcmp(string, "=") == 0)
-		return eq;
+   if (strcmp(string, "eq") == 0 || strcmp(string, "=") == 0)
+      return eq;
 
-	if (strcmp(string, "neq") == 0 || strcmp(string, "!=") == 0)
-		return neq;
+   if (strcmp(string, "ne") == 0 || strcmp(string, "!=") == 0)
+      return neq;
 
-	if (strcmp(string, "ge") == 0 || strcmp(string, ">=") == 0)
-		return ge;
+   if (strcmp(string, "ge") == 0 || strcmp(string, ">=") == 0)
+      return ge;
 
-	if (strcmp(string, "le") == 0 || strcmp(string, "<=") == 0)
-		return le;
+   if (strcmp(string, "le") == 0 || strcmp(string, "<=") == 0)
+      return le;
 
-	if (strcmp(string, "gt") == 0 || strcmp(string, ">") == 0)
-		return gt;
+   if (strcmp(string, "gt") == 0 || strcmp(string, ">") == 0)
+      return gt;
 
-	if (strcmp(string, "lt") == 0 || strcmp(string, "<") == 0)
-		return lt;
+   if (strcmp(string, "lt") == 0 || strcmp(string, "<") == 0)
+      return lt;
 
-	/* parser should make sure this never happens. */
-	SERRX(string);
+   /* parser should make sure this never happens. */
+   SERRX(string);
 
-	/* NOTREACHED */
+   /* NOTREACHED */
 }
-
-
 
 const char *
 operator2string(operator)
-	enum operator_t operator;
+   enum operator_t operator;
 {
 
-	switch (operator) {
-		case none:
-			return QUOTE("none");
+   switch (operator) {
+      case none:
+         return QUOTE("none");
 
-		case eq:
-			return QUOTE("eq");
+      case eq:
+         return QUOTE("eq");
 
-		case neq:
-			return QUOTE("neq");
+      case neq:
+         return QUOTE("neq");
 
-		case ge:
-			return QUOTE("ge");
+      case ge:
+         return QUOTE("ge");
 
-		case le:
-			return QUOTE("le");
+      case le:
+         return QUOTE("le");
 
-		case gt:
-			return QUOTE("gt");
+      case gt:
+         return QUOTE("gt");
 
-		case lt:
-			return QUOTE("lt");
+      case lt:
+         return QUOTE("lt");
 
-		case range:
-			return QUOTE("range");
+      case range:
+         return QUOTE("range");
 
-		default:
-			SERRX(operator);
-	}
+      default:
+         SERRX(operator);
+   }
 
-	/* NOTREACHED */
+   /* NOTREACHED */
 }
-
 
 const char *
-ruleaddress2string(address, string, len)
-	const struct ruleaddress_t *address;
-	char *string;
-	size_t len;
+ruleaddr2string(address, string, len)
+   const struct ruleaddr_t *address;
+   char *string;
+   size_t len;
 {
+   size_t lenused;
 
-	/* for debugging. */
-	if (string == NULL) {
-		static char addrstring[MAXRULEADDRSTRING];
+   if (string == NULL || len == 0) {
+      static char addrstring[MAXRULEADDRSTRING];
 
-		string = addrstring;
-		len = sizeof(addrstring);
-	}
+      string = addrstring;
+      len    = sizeof(addrstring);
+   }
 
-	switch (address->atype) {
-		case SOCKS_ADDR_IPV4: {
-			char *a;
+   lenused = snprintf(string, len, "%s ", atype2string(address->atype));
 
-			snprintfn(string, len,
-			"%s/%d%s, %s: %s%d%s, %s: %s%d%s, %s: %s, %s: %s%d",
-			strcheck(a = strdup(inet_ntoa(address->addr.ipv4.ip))),
-			bitcount((unsigned long)address->addr.ipv4.mask.s_addr),
-			QUOTE0(),
-			QUOTE("tcp"),
-			QUOTE0(),
-			ntohs(address->port.tcp),
-			QUOTE0(),
-			QUOTE("udp"),
-			QUOTE0(),
-			ntohs(address->port.udp),
-			QUOTE0(),
-			QUOTE("op"),
-			operator2string(address->operator),
-			QUOTE("end"),
-			QUOTE0(),
-			ntohs(address->portend));
+   switch (address->atype) {
+      case SOCKS_ADDR_IPV4: {
+         char *a;
 
-			free(a);
-			break;
-		}
+         snprintfn(&string[lenused], len - lenused,
+         "%s/%d%s, %s: %s%d%s, %s: %s%d%s, %s: %s, %s: %s%d",
+         strcheck(a = strdup(inet_ntoa(address->addr.ipv4.ip))),
+         bitcount((unsigned long)address->addr.ipv4.mask.s_addr),
+         QUOTE0(),
+         QUOTE("tcp"),
+         QUOTE0(),
+         ntohs(address->port.tcp),
+         QUOTE0(),
+         QUOTE("udp"),
+         QUOTE0(),
+         ntohs(address->port.udp),
+         QUOTE0(),
+         QUOTE("op"),
+         operator2string(address->operator),
+         QUOTE("end"),
+         QUOTE0(),
+         ntohs(address->portend));
 
-		case SOCKS_ADDR_DOMAIN:
-			snprintfn(string, len,
-			"%s%s, %s: %s%d%s, %s: %s%d%s, %s: %s, %s: %s%d",
-			address->addr.domain,
-			QUOTE0(),
-			QUOTE("tcp"),
-			QUOTE0(),
-			ntohs(address->port.tcp),
-			QUOTE0(),
-			QUOTE("udp"),
-			QUOTE0(),
-			ntohs(address->port.udp),
-			QUOTE0(),
-			QUOTE("op"),
-			operator2string(address->operator),
-			QUOTE("end"),
-			QUOTE0(),
-			ntohs(address->portend));
-			break;
+         free(a);
+         break;
+      }
 
-		case SOCKS_ADDR_IFNAME:
-			snprintfn(string, len,
-			"%s%s, %s: %s%d%s, %s : %s%d%s, %s: %s, %s: %s%d",
-			address->addr.ifname,
-			QUOTE0(),
-			QUOTE("tcp"),
-			QUOTE0(),
-			ntohs(address->port.tcp),
-			QUOTE0(),
-			QUOTE("udp"),
-			QUOTE0(),
-			ntohs(address->port.udp),
-			QUOTE0(),
-			QUOTE("op"),
-			operator2string(address->operator),
-			QUOTE("end"),
-			QUOTE0(),
-			ntohs(address->portend));
-			break;
+      case SOCKS_ADDR_DOMAIN:
+         snprintfn(&string[lenused], len - lenused,
+         "%s%s, %s: %s%d%s, %s: %s%d%s, %s: %s, %s: %s%d",
+         address->addr.domain,
+         QUOTE0(),
+         QUOTE("tcp"),
+         QUOTE0(),
+         ntohs(address->port.tcp),
+         QUOTE0(),
+         QUOTE("udp"),
+         QUOTE0(),
+         ntohs(address->port.udp),
+         QUOTE0(),
+         QUOTE("op"),
+         operator2string(address->operator),
+         QUOTE("end"),
+         QUOTE0(),
+         ntohs(address->portend));
+         break;
 
-		default:
-			SERRX(address->atype);
-	}
+      case SOCKS_ADDR_IFNAME:
+         snprintfn(&string[lenused], len - lenused,
+         "%s%s, %s: %s%d%s, %s : %s%d%s, %s: %s, %s: %s%d",
+         address->addr.ifname,
+         QUOTE0(),
+         QUOTE("tcp"),
+         QUOTE0(),
+         ntohs(address->port.tcp),
+         QUOTE0(),
+         QUOTE("udp"),
+         QUOTE0(),
+         ntohs(address->port.udp),
+         QUOTE0(),
+         QUOTE("op"),
+         operator2string(address->operator),
+         QUOTE("end"),
+         QUOTE0(),
+         ntohs(address->portend));
+         break;
 
-	return string;
+      default:
+         SERRX(address->atype);
+   }
+
+   return string;
 }
-
 
 const char *
 protocol2string(protocol)
-	int protocol;
+   int protocol;
 {
 
-	switch (protocol) {
-		case SOCKS_TCP:
-			return QUOTE(PROTOCOL_TCPs);
+   switch (protocol) {
+      case SOCKS_TCP:
+         return QUOTE(PROTOCOL_TCPs);
 
-		case SOCKS_UDP:
-			return QUOTE(PROTOCOL_UDPs);
+      case SOCKS_UDP:
+         return QUOTE(PROTOCOL_UDPs);
 
-		default:
-			SERRX(protocol);
-	}
+      default:
+         SERRX(protocol);
+   }
 
-	/* NOTREACHED */
+   /* NOTREACHED */
 }
 
 const char *
 resolveprotocol2string(resolveprotocol)
-	int resolveprotocol;
+   int resolveprotocol;
 {
-	switch (resolveprotocol) {
-		case RESOLVEPROTOCOL_TCP:
-			return QUOTE(PROTOCOL_TCPs);
+   switch (resolveprotocol) {
+      case RESOLVEPROTOCOL_TCP:
+         return QUOTE(PROTOCOL_TCPs);
 
-		case RESOLVEPROTOCOL_UDP:
-			return QUOTE(PROTOCOL_UDPs);
+      case RESOLVEPROTOCOL_UDP:
+         return QUOTE(PROTOCOL_UDPs);
 
-		case RESOLVEPROTOCOL_FAKE:
-			return QUOTE("fake");
+      case RESOLVEPROTOCOL_FAKE:
+         return QUOTE("fake");
 
-		default:
-			SERRX(resolveprotocol);
-	}
+      default:
+         SERRX(resolveprotocol);
+   }
 
-	/* NOTREACHED */
+   /* NOTREACHED */
 }
-
 
 const char *
 command2string(command)
-	int command;
+   int command;
 {
 
-	switch (command) {
-		case SOCKS_BIND:
-			return QUOTE(SOCKS_BINDs);
+   switch (command) {
+      case SOCKS_BIND:
+         return QUOTE(SOCKS_BINDs);
 
-		case SOCKS_CONNECT:
-			return QUOTE(SOCKS_CONNECTs);
+      case SOCKS_CONNECT:
+         return QUOTE(SOCKS_CONNECTs);
 
-		case SOCKS_UDPASSOCIATE:
-			return QUOTE(SOCKS_UDPASSOCIATEs);
+      case SOCKS_UDPASSOCIATE:
+         return QUOTE(SOCKS_UDPASSOCIATEs);
 
-		/* pseudo commands. */
-		case SOCKS_ACCEPT:
-			return QUOTE(SOCKS_ACCEPTs);
+      /* pseudo commands. */
+      case SOCKS_ACCEPT:
+         return QUOTE(SOCKS_ACCEPTs);
 
-		case SOCKS_BINDREPLY:
-			return QUOTE(SOCKS_BINDREPLYs);
+      case SOCKS_BINDREPLY:
+         return QUOTE(SOCKS_BINDREPLYs);
 
-		case SOCKS_UDPREPLY:
-			return QUOTE(SOCKS_UDPREPLYs);
+      case SOCKS_UDPREPLY:
+         return QUOTE(SOCKS_UDPREPLYs);
 
-		case SOCKS_DISCONNECT:
-			return QUOTE(SOCKS_DISCONNECTs);
+      case SOCKS_DISCONNECT:
+         return QUOTE(SOCKS_DISCONNECTs);
 
-		case SOCKS_UNKNOWN:
-			return QUOTE(SOCKS_UNKNOWNs);
+      case SOCKS_UNKNOWN:
+         return QUOTE(SOCKS_UNKNOWNs);
 
-		default:
-			SERRX(command);
-	}
+      default:
+         SERRX(command);
+   }
 
-	/* NOTREACHED */
+   /* NOTREACHED */
 }
 
 char *
 commands2string(command, str, strsize)
-	const struct command_t *command;
-	char *str;
-	size_t strsize;
+   const struct command_t *command;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[128];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	if (command->bind)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		command2string(SOCKS_BIND));
+   *str    = NUL;
+   strused = 0;
 
-	if (command->bindreply)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		command2string(SOCKS_BINDREPLY));
+   if (command->bind)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      command2string(SOCKS_BIND));
 
-	if (command->connect)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		command2string(SOCKS_CONNECT));
+   if (command->bindreply)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      command2string(SOCKS_BINDREPLY));
 
-	if (command->udpassociate)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		command2string(SOCKS_UDPASSOCIATE));
+   if (command->connect)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      command2string(SOCKS_CONNECT));
 
-	if (command->udpreply)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		command2string(SOCKS_UDPREPLY));
+   if (command->udpassociate)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      command2string(SOCKS_UDPASSOCIATE));
 
-	return str;
+   if (command->udpreply)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      command2string(SOCKS_UDPREPLY));
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
 
 const char *
 method2string(method)
-	int method;
+   int method;
 {
 
-	switch (method) {
-		case AUTHMETHOD_NOTSET:
-			return QUOTE(AUTHMETHOD_NOTSETs);
+   switch (method) {
+      case AUTHMETHOD_NOTSET:
+         return QUOTE(AUTHMETHOD_NOTSETs);
 
-		case AUTHMETHOD_NONE:
-			return QUOTE(AUTHMETHOD_NONEs);
+      case AUTHMETHOD_NONE:
+         return QUOTE(AUTHMETHOD_NONEs);
 
-		case AUTHMETHOD_GSSAPI:
-			return QUOTE(AUTHMETHOD_GSSAPIs);
+      case AUTHMETHOD_GSSAPI:
+         return QUOTE(AUTHMETHOD_GSSAPIs);
 
-		case AUTHMETHOD_UNAME:
-			return QUOTE(AUTHMETHOD_UNAMEs);
+      case AUTHMETHOD_UNAME:
+         return QUOTE(AUTHMETHOD_UNAMEs);
 
-		case AUTHMETHOD_NOACCEPT:
-			return QUOTE(AUTHMETHOD_NOACCEPTs);
+      case AUTHMETHOD_NOACCEPT:
+         return QUOTE(AUTHMETHOD_NOACCEPTs);
 
-		case AUTHMETHOD_RFC931:
-			return QUOTE(AUTHMETHOD_RFC931s);
+      case AUTHMETHOD_RFC931:
+         return QUOTE(AUTHMETHOD_RFC931s);
 
-		case AUTHMETHOD_PAM:
-			return QUOTE(AUTHMETHOD_PAMs);
+      case AUTHMETHOD_PAM:
+         return QUOTE(AUTHMETHOD_PAMs);
 
-		default:
-			SERRX(method);
-	}
+      default:
+         SERRX(method);
+   }
 
-	/* NOTREACHED */
+   /* NOTREACHED */
+}
+
+const char *
+version2string(version)
+   int version;
+{
+
+   switch (version) {
+      case PROXY_SOCKS_V4:
+         return QUOTE(PROXY_SOCKS_V4s);
+
+      case PROXY_SOCKS_V5:
+         return QUOTE(PROXY_SOCKS_V5s);
+
+      case PROXY_MSPROXY_V2:
+         return QUOTE(PROXY_MSPROXY_V2s);
+
+      case PROXY_HTTP_V1_0:
+         return QUOTE(PROXY_HTTP_V1_0s);
+
+      case PROXY_UPNP:
+         return QUOTE(PROXY_UPNPs);
+
+      case PROXY_DIRECT:
+         return QUOTE(PROXY_DIRECTs);
+
+      default:
+         SERRX(version);
+   }
+
+   /* NOTREACHED */
 }
 
 char *
 methods2string(methodc, methodv, str, strsize)
-	size_t methodc;
-	const int *methodv;
-	char *str;
-	size_t strsize;
+   size_t methodc;
+   const int methodv[];
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
-	size_t i;
+   size_t strused;
+   size_t i;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[512];
 
-	strused = 0;
-	for (i = 0; i < methodc; ++i)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		method2string(methodv[i]));
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	return str;
+   *str    = NUL;
+   strused = 0;
+
+   strused = 0;
+   for (i = 0; i < methodc; ++i)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      method2string(methodv[i]));
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
 
 int
 string2method(methodname)
-	const char *methodname;
+   const char *methodname;
 {
-	struct {
-		char	*methodname;
-		int	method;
-	} method[] = {
-		{ AUTHMETHOD_NONEs,		AUTHMETHOD_NONE	},
-		{ AUTHMETHOD_UNAMEs,		AUTHMETHOD_UNAME	},
-		{ AUTHMETHOD_RFC931s,	AUTHMETHOD_RFC931	},
-		{ AUTHMETHOD_PAMs,		AUTHMETHOD_PAM		}
-	};
-	size_t i;
+   struct {
+      char   *methodname;
+      int    method;
+   } method[] = {
+      { AUTHMETHOD_NONEs,     AUTHMETHOD_NONE     },
+      { AUTHMETHOD_UNAMEs,    AUTHMETHOD_UNAME    },
+      { AUTHMETHOD_GSSAPIs,   AUTHMETHOD_GSSAPI   },
+      { AUTHMETHOD_RFC931s,   AUTHMETHOD_RFC931   },
+      { AUTHMETHOD_PAMs,      AUTHMETHOD_PAM      }
+   };
+   size_t i;
 
-	for (i = 0; i < ELEMENTS(method); ++i)
-		if (strcmp(method[i].methodname, methodname) == 0)
-			return method[i].method;
+   for (i = 0; i < ELEMENTS(method); ++i)
+      if (strcmp(method[i].methodname, methodname) == 0)
+         return method[i].method;
 
-	return -1;
+   return -1;
 }
-
 
 char *
 sockshost2string(host, string, len)
-	const struct sockshost_t *host;
-	char *string;
-	size_t len;
+   const struct sockshost_t *host;
+   char *string;
+   size_t len;
 {
 
-	if (string == NULL) { /* to ease debugging. */
-		static char hstring[MAXSOCKSHOSTSTRING];
+   if (string == NULL || len == 0) {
+      static char hstring[MAXSOCKSHOSTSTRING];
 
-		string = hstring;
-		len = sizeof(hstring);
-	}
+      string = hstring;
+      len    = sizeof(hstring);
+   }
 
-	switch (host->atype) {
-		case SOCKS_ADDR_IPV4:
-			snprintfn(string, len, "%s.%d",
-			inet_ntoa(host->addr.ipv4), ntohs(host->port));
-			break;
+   switch (host->atype) {
+      case SOCKS_ADDR_IPV4:
+         snprintfn(string, len, "%s.%d",
+         inet_ntoa(host->addr.ipv4), ntohs(host->port));
+         break;
 
-		case SOCKS_ADDR_IPV6:
-				snprintfn(string, len, "%s.%d",
-				"<IPv6 address not supported>", ntohs(host->port));
-				break;
+      case SOCKS_ADDR_IPV6:
+            snprintfn(string, len, "%s.%d",
+            "<IPv6 address not supported>", ntohs(host->port));
+            break;
 
-		case SOCKS_ADDR_DOMAIN: {
-			snprintfn(string, len, "%s.%d",
-			host->addr.domain, ntohs(host->port));
-			break;
-		}
+      case SOCKS_ADDR_DOMAIN:
+         snprintfn(string, len, "%s.%d", host->addr.domain, ntohs(host->port));
+         break;
 
-		default:
-			SERRX(host->atype);
-	}
+      default:
+         SERRX(host->atype);
+   }
 
-	return string;
+   return string;
 }
 
+char *
+gwaddr2string(gw, string, len)
+   const gwaddr_t *gw;
+   char *string;
+   size_t len;
+{
+
+   if (string == NULL || len == 0) {
+      static char hstring[MAXSOCKSHOSTSTRING];
+
+      string = hstring;
+      len    = sizeof(hstring);
+   }
+
+   switch (gw->atype) {
+      case SOCKS_ADDR_IPV4:
+         snprintfn(string, len, "%s.%d",
+         inet_ntoa(gw->addr.ipv4), ntohs(gw->port));
+         break;
+
+      case SOCKS_ADDR_DOMAIN:
+         snprintfn(string, len, "%s.%d", gw->addr.domain, ntohs(gw->port));
+         break;
+
+      case SOCKS_ADDR_IFNAME:
+         snprintfn(string, len, "%s", gw->addr.ifname);
+         break;
+
+      case SOCKS_ADDR_URL:
+         snprintfn(string, len, "%s", gw->addr.urlname);
+         break;
+
+      default:
+         SERRX(gw->atype);
+   }
+
+   return string;
+}
 
 char *
 sockaddr2string(address, string, len)
-	const struct sockaddr *address;
-	char *string;
-	size_t len;
+   const struct sockaddr *address;
+   char *string;
+   size_t len;
 {
 
-	/* for debugging. */
-	if (string == NULL) {
-		static char addrstring[MAXSOCKADDRSTRING];
+   if (string == NULL || len == 0) {
+      static char addrstring[MAXSOCKADDRSTRING];
 
-		string = addrstring;
-		len = sizeof(addrstring);
-	}
+      string = addrstring;
+      len    = sizeof(addrstring);
+   }
 
-	switch (address->sa_family) {
-		case AF_UNIX: {
-			/* LINTED pointer casts may be troublesome */
-			const struct sockaddr_un *addr = (const struct sockaddr_un *)address;
+   switch (address->sa_family) {
+      case AF_UNIX: {
+         /* LINTED pointer casts may be troublesome */
+         const struct sockaddr_un *addr = (const struct sockaddr_un *)address;
 
-			strncpy(string, addr->sun_path, len - 1);
-			string[len - 1] = NUL;
-			break;
-		}
+         strncpy(string, addr->sun_path, len - 1);
+         string[len - 1] = NUL;
+         break;
+      }
 
-		case AF_INET: {
-			/* LINTED pointer casts may be troublesome */
-			const struct sockaddr_in *addr = TOCIN(address);
+      case AF_INET: {
+         /* LINTED pointer casts may be troublesome */
+         const struct sockaddr_in *addr = TOCIN(address);
 
-			snprintfn(string, len, "%s.%d",
-			inet_ntoa(addr->sin_addr), ntohs(addr->sin_port));
-			break;
-		}
+         snprintfn(string, len, "%s.%d",
+         inet_ntoa(addr->sin_addr), ntohs(addr->sin_port));
+         break;
+      }
 
-		default:
-			SERRX(address->sa_family);
-	}
+      default:
+         snprintfn(string, len, "<unknown af %d>", address->sa_family);
+   }
 
-	return string;
+   return string;
 }
 
 struct udpheader_t *
 string2udpheader(data, len, header)
-	const char *data;
-	size_t len;
-	struct udpheader_t *header;
+   const char *data;
+   size_t len;
+   struct udpheader_t *header;
 {
 
-	bzero(header, sizeof(*header));
+   bzero(header, sizeof(*header));
 
-	if (len < sizeof(header->flag))
-		return NULL;
-	memcpy(&header->flag, data, sizeof(header->flag));
-	data += sizeof(header->flag);
-	len -= sizeof(header->flag);
+   if (len < sizeof(header->flag))
+      return NULL;
+   memcpy(&header->flag, data, sizeof(header->flag));
+   data += sizeof(header->flag);
+   len -= sizeof(header->flag);
 
-	if (len < sizeof(header->frag))
-		return NULL;
-	memcpy(&header->frag, data, sizeof(header->frag));
-	data += sizeof(header->frag);
-	len -= sizeof(header->frag);
+   if (len < sizeof(header->frag))
+      return NULL;
+   memcpy(&header->frag, data, sizeof(header->frag));
+   data += sizeof(header->frag);
+   len -= sizeof(header->frag);
 
-	if ((data = (const char *)mem2sockshost(&header->host,
-	(const unsigned char *)data, len, SOCKS_V5)) == NULL)
-		return NULL;
+   if (mem2sockshost(&header->host, (const unsigned char *)data, len,
+   PROXY_SOCKS_V5) == NULL)
+      return NULL;
 
-	return header;
+   return header;
 }
 
 char *
 extensions2string(extensions, str, strsize)
-	const struct extension_t *extensions;
-	char *str;
-	size_t strsize;
+   const struct extension_t *extensions;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[16];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	if (extensions->bind)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE("bind"));
+   *str    = NUL;
+   strused = 0;
 
-	return str;
+   if (extensions->bind)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE("bind"));
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
 
+char *
+str2upper(string)
+   char *string;
+{
 
-#if SOCKS_SERVER
+   while (*string != NUL) {
+      *string = toupper(*string);
+      ++string;
+   }
+
+   return string;
+}
+
+char *
+socket2string(s, buf, buflen)
+   const int s;
+   char *buf;
+   size_t buflen;
+{
+   struct sockaddr addr;
+   socklen_t len;
+   char src[MAXSOCKADDRSTRING], dst[MAXSOCKADDRSTRING], *protocol;
+   int val;
+
+   if (buflen == 0) {
+      static char sbuf[256];
+
+      buf    = sbuf;
+      buflen = sizeof(sbuf);
+   }
+
+   *buf = NUL;
+
+   len = sizeof(addr);
+   if (getsockname(s, &addr, &len) == -1)
+      return buf;
+
+   sockaddr2string(&addr, src, sizeof(src));
+
+   len = sizeof(addr);
+   if (getpeername(s, &addr, &len) == -1)
+      return buf;
+
+   sockaddr2string(&addr, dst, sizeof(dst));
+
+   len = sizeof(val);
+   if (getsockopt(s, SOL_SOCKET, SO_TYPE, &val, &len) != 0)
+      return buf;
+
+   switch (val) {
+      case SOCK_DGRAM:
+         protocol = PROTOCOL_UDPs;
+         break;
+
+      case SOCK_STREAM:
+         protocol = PROTOCOL_TCPs;
+         break;
+
+      default:
+         protocol = "unknown";
+   }
+
+   snprintf(buf, buflen, "laddr: %s, raddr: %s, protocol: %s",
+   src, dst, protocol);
+
+   return buf;
+}
+
+const char *
+atype2string(atype)
+   const int atype;
+{
+
+   switch (atype) {
+      case SOCKS_ADDR_IPV4:
+         return "IPv4 address";
+
+      case SOCKS_ADDR_IFNAME:
+         return "interface name";
+
+      case SOCKS_ADDR_DOMAIN:
+         return "host/domain name";
+
+      case SOCKS_ADDR_IPV6:
+         return "IPv6 address";
+
+      case SOCKS_ADDR_URL:
+         return "url string";
+
+      default:
+         SERRX(atype);
+   }
+
+   /* NOTREACHED */
+}
+
+#if HAVE_GSSAPI
+const char *
+gssapiprotection2string(protection)
+   const int protection;
+{
+   switch (protection) {
+      case SOCKS_GSSAPI_CLEAR:
+         return "clear";
+
+      case SOCKS_GSSAPI_INTEGRITY:
+         return "integrity";
+
+      case SOCKS_GSSAPI_CONFIDENTIALITY:
+         return "confidentiality";
+
+      case SOCKS_GSSAPI_PERMESSAGE:
+         return "per-message";
+   }
+
+   return "unknown gssapi protection";
+}
+#endif /* HAVE_GSSAPI */
+
+#if !SOCKS_CLIENT
 
 char *
 logtypes2string(logtypes, str, strsize)
-	const struct logtype_t *logtypes;
-	char *str;
-	size_t strsize;
+   const struct logtype_t *logtypes;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
-	size_t i;
+   size_t strused;
+   size_t i;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[512];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	if (logtypes->type & LOGTYPE_SYSLOG)
-		strused += snprintfn(&str[strused], strsize - strused, "\"syslog.%s\", ",
-		logtypes->facilityname);
+   *str    = NUL;
+   strused = 0;
 
-	if (logtypes->type & LOGTYPE_FILE)
-		for (i = 0; i < logtypes->fpc; ++i)
-			strused += snprintfn(&str[strused], strsize - strused, "\"%s\", ",
-			logtypes->fnamev[i]);
+   if (logtypes->type & LOGTYPE_SYSLOG)
+      strused += snprintfn(&str[strused], strsize - strused, "\"syslog.%s\", ",
+      logtypes->facilityname);
 
-	return str;
+   if (logtypes->type & LOGTYPE_FILE)
+      for (i = 0; i < logtypes->fpc; ++i)
+         strused += snprintfn(&str[strused], strsize - strused, "\"%s\", ",
+         logtypes->fnamev[i]);
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
 
 char *
 options2string(options, prefix, str, strsize)
-	const struct option_t *options;
-	const char *prefix;
-	char *str;
-	size_t strsize;
+   const struct option_t *options;
+   const char *prefix;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[1024];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%sconfigfile\": \"%s\",\n", prefix, options->configfile == NULL ?
-	SOCKD_CONFIGFILE : options->configfile);
+   *str    = NUL;
+   strused = 0;
 
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%sdaemon\": \"%d\",\n", prefix, options->daemon);
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%sconfigfile\": \"%s\",\n", prefix, options->configfile == NULL ?
+   SOCKD_CONFIGFILE : options->configfile);
 
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%sdebug\": \"%d\",\n", prefix, options->debug);
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%sdaemon\": \"%d\",\n", prefix, options->daemon);
 
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%skeepalive\": \"%d\",\n", prefix, options->keepalive);
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%sdebug\": \"%d\",\n", prefix, options->debug);
 
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%slinebuffer\": \"%d\",\n", prefix, options->debug);
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%skeepalive\": \"%d\",\n", prefix, options->keepalive);
 
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%sservercount\": \"%d\",\n", prefix, options->serverc);
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%slinebuffer\": \"%d\",\n", prefix, options->debug);
 
-	return str;
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%sservercount\": \"%lu\",\n", prefix, (unsigned long)options->serverc);
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
-
 
 char *
 logs2string(logs, str, strsize)
-	const struct log_t *logs;
-	char *str;
-	size_t strsize;
+   const struct log_t *logs;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[128];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	if (logs->connect)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(LOG_CONNECTs));
+   *str    = NUL;
+   strused = 0;
 
-	if (logs->disconnect)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(LOG_DISCONNECTs));
+   if (logs->connect)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(SOCKS_LOG_CONNECTs));
 
-	if (logs->data)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(LOG_DATAs));
+   if (logs->disconnect)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(SOCKS_LOG_DISCONNECTs));
 
-	if (logs->error)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(LOG_ERRORs));
+   if (logs->data)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(SOCKS_LOG_DATAs));
 
-	if (logs->iooperation)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE(LOG_IOOPERATIONs));
+   if (logs->error)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(SOCKS_LOG_ERRORs));
 
-	return str;
+   if (logs->iooperation)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE(SOCKS_LOG_IOOPERATIONs));
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
 
 const char *
 childtype2string(type)
-	int type;
+   int type;
 {
 
-	switch (type) {
-		case CHILD_IO:
-			return "io";
+   switch (type) {
+      case CHILD_IO:
+         return "io";
 
-		case CHILD_MOTHER:
-			return "mother";
+      case CHILD_MOTHER:
+         return "mother";
 
-		case CHILD_NEGOTIATE:
-			return "negotiator";
+      case CHILD_NEGOTIATE:
+         return "negotiator";
 
-		case CHILD_REQUEST:
-			return "request";
+      case CHILD_REQUEST:
+         return "request";
 
-		default:
-			SERRX(type);
-	}
+      default:
+         SERRX(type);
+   }
 
-	/* NOTREACHED */
+   /* NOTREACHED */
 }
 
 const char *
 verdict2string(verdict)
-	int verdict;
+   int verdict;
 {
 
-	return verdict == VERDICT_PASS ?
-	QUOTE(VERDICT_PASSs) : QUOTE(VERDICT_BLOCKs);
+   return verdict == VERDICT_PASS ?
+   QUOTE(VERDICT_PASSs) : QUOTE(VERDICT_BLOCKs);
 }
 
 char *
-users2string(user, str, strsize)
-	const struct linkedname_t *user;
-	char *str;
-	size_t strsize;
+list2string(list, str, strsize)
+   const struct linkedname_t *list;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize)
+      *str = NUL; /* make sure we return a NUL terminated string. */
+   else
+      return str;
 
-	strused = 0;
+   strused = 0;
 
-	for (; user != NULL; user = user->next)
-		strused += snprintfn(&str[strused], strsize - strused, "\"%s\", ",
-		user->name);
+   for (; list != NULL; list = list->next)
+      strused += snprintfn(&str[strused], strsize - strused, "\"%s\", ",
+      list->name);
 
-	return str;
+   return str;
 }
 
 char *
 compats2string(compats, str, strsize)
-	const struct compat_t *compats;
-	char *str;
-	size_t strsize;
+   const struct compat_t *compats;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[32];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	if (compats->reuseaddr)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE("reuseaddr"));
+   *str    = NUL;
+   strused = 0;
 
-	if (compats->sameport)
-		strused += snprintfn(&str[strused], strsize - strused, "%s, ",
-		QUOTE("sameport"));
+   if (compats->reuseaddr)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE("reuseaddr"));
 
-	return str;
+   if (compats->sameport)
+      strused += snprintfn(&str[strused], strsize - strused, "%s, ",
+      QUOTE("sameport"));
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
 
 char *
 srchosts2string(srchost, prefix, str, strsize)
-	const struct srchost_t *srchost;
-	const char *prefix;
-	char *str;
-	size_t strsize;
+   const struct srchost_t *srchost;
+   const char *prefix;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[32];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	if (srchost->nomismatch)
-		strused += snprintfn(&str[strused], strsize - strused,
-		"\"%snomismatch\", ", prefix);
+   *str    = NUL;
+   strused = 0;
 
-	if (srchost->nounknown)
-		strused += snprintfn(&str[strused], strsize - strused,
-		"\"%snounknown\",", prefix);
+   if (srchost->nomismatch)
+      strused += snprintfn(&str[strused], strsize - strused,
+      "\"%snomismatch\", ", prefix);
 
-	return str;
+   if (srchost->nounknown)
+      strused += snprintfn(&str[strused], strsize - strused,
+      "\"%snounknown\",", prefix);
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
 
 const char *
 uid2name(uid)
-	uid_t uid;
+   uid_t uid;
 {
-	struct passwd *pw;
+   struct passwd *pw;
 
-	if ((pw = getpwuid(uid)) == NULL)
-		return NULL;
+   if ((pw = getpwuid(uid)) == NULL)
+      return NULL;
 
-	return pw->pw_name;
-}
-
-char *
-userids2string(userids, prefix, str, strsize)
-	const struct userid_t *userids;
-	const char *prefix;
-	char *str;
-	size_t strsize;
-{
-	size_t strused;
-
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
-
-	strused = 0;
-
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%sprivileged\": \"%s\",\n", prefix, uid2name(userids->privileged));
-
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%snotprivileged\": \"%s\",\n", prefix, uid2name(userids->unprivileged));
-
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%slibwrap\": \"%s\",\n", prefix, uid2name(userids->libwrap));
-
-	return str;
+   return pw->pw_name;
 }
 
 char *
 timeouts2string(timeouts, prefix, str, strsize)
-	const struct timeout_t *timeouts;
-	const char *prefix;
-	char *str;
-	size_t strsize;
+   const struct timeout_t *timeouts;
+   const char *prefix;
+   char *str;
+   size_t strsize;
 {
-	size_t strused;
+   size_t strused;
 
-	if (strsize)
-		*str = NUL; /* make sure we return a NUL terminated string. */
-	else
-		return str;
+   if (strsize == 0) {
+      static char buf[64];
 
-	strused = 0;
+      str = buf;
+      strsize = sizeof(buf);
+   }
 
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%sconnecttimeout\": \"%ld\",\n", prefix, (long)timeouts->negotiate);
+   *str    = NUL;
+   strused = 0;
 
-	strused += snprintfn(&str[strused], strsize - strused,
-	"\"%siotimeout\": \"%ld\",\n", prefix, (long)timeouts->io);
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%sconnecttimeout\": \"%ld\",\n", prefix, (long)timeouts->negotiate);
 
-	return str;
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%siotimeout\": tcp: \"%lu\", udp: \"%lu\" \n",
+   prefix, (unsigned long)timeouts->tcpio, (unsigned long)timeouts->udpio);
+
+   STRIPTRAILING(str, strused);
+   return str;
 }
 
 const char *
 rotation2string(rotation)
-	int rotation;
+   int rotation;
 {
 
-	switch (rotation) {
-		case ROTATION_NONE:
-			return "none";
+   switch (rotation) {
+      case ROTATION_NONE:
+         return "none";
 
-		case ROTATION_ROUTE:
-			return "route";
+      case ROTATION_ROUTE:
+         return "route";
 
-		default:
-			SERRX(rotation);
-	}
+      default:
+         SERRX(rotation);
+   }
 
-	/* NOTREACHED */
+   /* NOTREACHED */
 }
 
-#endif /* SOCKS_SERVER */
+const char *
+privop2string(op)
+   const priv_op_t op;
+{
+   switch (op) {
+      case PRIV_ON:
+         return "on";
+
+      case PRIV_OFF:
+         return "off";
+   }
+
+
+   /* NOTREACHED */
+   SERRX(op);
+}
+
+#if !HAVE_PRIVILEGES
+char *
+userids2string(userids, prefix, str, strsize)
+   const struct userid_t *userids;
+   const char *prefix;
+   char *str;
+   size_t strsize;
+{
+   size_t strused;
+
+   if (strsize == 0) {
+      static char buf[128];
+
+      str = buf;
+      strsize = sizeof(buf);
+   }
+
+   *str    = NUL;
+   strused = 0;
+
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%sprivileged\": \"%s\",\n", prefix, uid2name(userids->privileged));
+
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%sunprivileged\": \"%s\",\n", prefix, uid2name(userids->unprivileged));
+
+   strused += snprintfn(&str[strused], strsize - strused,
+   "\"%slibwrap\": \"%s\",\n", prefix, uid2name(userids->libwrap));
+
+   STRIPTRAILING(str, strused);
+   return str;
+}
+#endif /* !HAVE_PRIVILEGES */
+
+#endif /* !SOCKS_CLIENT */

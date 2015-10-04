@@ -40,7 +40,7 @@
 # any improvements or extensions that they make and grant Inferno Nettverk A/S
 # the rights to redistribute these changes.
 #
-# $Id: socksify.in,v 1.23 2005/01/24 10:24:18 karls Exp $
+# $Id: socksify.in,v 1.27 2009/08/11 07:15:59 karls Exp $
 
 #On systems where a supported preloading mechanism is used, you can
 #do "socksify <program>" and <program> will use socks without having
@@ -51,8 +51,13 @@ SOCKSIFY_PRELOAD_LIBS="@SOCKSIFY_PRELOAD_LIBS@"
 
 LIBDIR="@LIBRARY_PREFIX@"
 
-#XXX shared library name should be generated too (possibly including version)
+#dlib/Makefile.am libtool flags should produce a predictable library name
 LIBRARY="${SOCKS_LIBRARY-${LIBDIR}/libdsocks.@SOLIB_POSTFIX@}"
+
+if ! test -s "$LIBRARY"; then
+    echo "socksify: missing $LIBRARY. no preload support?" >&2
+    exit 1
+fi
 
 PRELOAD_SEPERATOR="@PRELOAD_SEPERATOR@"
 PRELOAD_POSTFIX="@PRELOAD_POSTFIX@"
