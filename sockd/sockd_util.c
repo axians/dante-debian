@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: sockd_util.c,v 1.80 2003/07/01 13:21:49 michaels Exp $";
+"$Id: sockd_util.c,v 1.86 2005/06/06 11:25:39 michaels Exp $";
 
 #define CM2IM(charmethodv, methodc, intmethodv) \
 	do { \
@@ -118,11 +118,6 @@ setsockoptions(s)
 	socklen_t len;
 	int type, val, bufsize;
 
-#ifdef SO_BSDCOMPAT
-	val = 1;
-	if (setsockopt(s, SOL_SOCKET, SO_BSDCOMPAT, &val, sizeof(val)) != 0)
-		swarn("%s: setsockopt(SO_BSDCOMPAT)", function);
-#endif /* SO_BSDCOMPAT */
 
 	len = sizeof(type);
 	if (getsockopt(s, SOL_SOCKET, SO_TYPE, &type, &len) != 0) {
@@ -187,7 +182,7 @@ sockdexit(sig)
 		if (sig > 0)
 			slog(LOG_ALERT, "%s: terminating on signal %d", function, sig);
 		else
-			slog(LOG_ALERT, "%s: terminating", function, sig);
+			slog(LOG_ALERT, "%s: terminating", function);
 
 		/* don't want this while cleaning up, which is all that's left. */
 		if (signal(SIGCHLD, SIG_IGN) == SIG_ERR)
@@ -252,7 +247,8 @@ socks_seteuid(old, new)
 		old = &oldmem;
 	*old = geteuid();
 
-	slog(LOG_DEBUG, "%s: old: %lu, new: %lu", function, *old, new);
+	slog(LOG_DEBUG, "%s: old: %lu, new: %lu",
+	function, (unsigned long)*old, (unsigned long)new);
 
 	if (*old == new)
 		return;
@@ -264,19 +260,16 @@ socks_seteuid(old, new)
 			SERR(sockscf.state.euid);
 		}
 
-	if (seteuid(new) != 0)
-		serr(EXIT_FAILURE, "%s: seteuid(%d)", function, new);
-
-#if 0 /* he who requested this says it doesn't work but not why. */
-	/* and now groupid. */
-
 	if ((pw = getpwuid(new)) == NULL)
 		serr(EXIT_FAILURE, "%s: getpwuid(%d)", function, new);
 
+	/* groupid ... */
 	if (setegid(pw->pw_gid) != 0)
 		serr(EXIT_FAILURE, "%s: setegid(%d)", function, pw->pw_gid);
-#endif
 
+	/* ... and uid. */
+	if (seteuid(new) != 0)
+		serr(EXIT_FAILURE, "%s: seteuid(%d)", function, new);
 }
 
 void
@@ -287,7 +280,8 @@ socks_reseteuid(current, new)
 	const char *function = "socks_reseteuid()";
 	struct passwd *pw;
 
-	slog(LOG_DEBUG, "%s: current: %lu, new: %lu", function, current, new);
+	slog(LOG_DEBUG, "%s: current: %lu, new: %lu",
+	function, (unsigned long)current, (unsigned long)new);
 
 #if DIAGNOSTIC
 	SASSERTX(current == geteuid());
@@ -301,20 +295,16 @@ socks_reseteuid(current, new)
 		if (seteuid(sockscf.state.euid) != 0)
 			SERR(sockscf.state.euid);
 
-	if (seteuid(new) != 0)
-		SERR(new);
-
-#if 0 /* he who requested this says it doesn't work but not why. */
-	/*
-	 * and now groupid.
-	 */
-
+	/* groupid ...  */
 	if ((pw = getpwuid(new)) == NULL)
 		serr(EXIT_FAILURE, "%s: getpwuid(%d)", function, new);
 
 	if (setegid(pw->pw_gid) != 0)
 		serr(EXIT_FAILURE, "%s: setegid(%d)", function, pw->pw_gid);
-#endif
+
+	/* ... and then userid. */
+	if (seteuid(new) != 0)
+		SERR(new);
 }
 
 int

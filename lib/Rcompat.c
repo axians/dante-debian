@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,12 +47,14 @@
 
 #if SOCKS_CLIENT && SOCKSLIBRARY_DYNAMIC
 
+#undef sendmsg
 #if HAVE_EXTRA_OSF_SYMBOLS
 #define sendmsg(s, msg, flags)			sys_Esendmsg(s, msg, flags)
 #else
 #define sendmsg(s, msg, flags)			sys_sendmsg(s, msg, flags)
 #endif  /* HAVE_EXTRA_OSF_SYMBOLS */
 
+#undef recvmsg
 #if HAVE_EXTRA_OSF_SYMBOLS
 #define recvmsg(s, msg, flags)			sys_Erecvmsg(s, msg, flags)
 #else
@@ -61,10 +63,12 @@
 
 /* XXX needed on AIX apparently */
 #ifdef recvmsg_system
+#undef recvmsg
 #define recvmsg recvmsg_system
 #endif /* recvmsg_system */
 
 #ifdef sendmsg_system
+#undef sendmsg
 #define sendmsg sendmsg_system
 #endif /* sendmsg_system */
 
@@ -72,7 +76,7 @@
 
 
 static const char rcsid[] =
-"$Id: Rcompat.c,v 1.20 2003/07/01 13:21:22 michaels Exp $";
+"$Id: Rcompat.c,v 1.23 2005/01/24 10:24:21 karls Exp $";
 
 int
 Rselect(nfds, readfds, writefds, exceptfds, timeout)
@@ -126,7 +130,7 @@ Rwritev(d, iov, iovcnt)
 
 	msg = msginit;
 	/* LINTED operands have incompatible pointer types */
-	msg.msg_iov			= (const struct iovec *)iov;
+	msg.msg_iov			= (struct iovec *)iov;
 	msg.msg_iovlen		= iovcnt;
 
 	return Rsendmsg(d, &msg, 0);
@@ -149,7 +153,7 @@ Rsend(s, msg, len, flags)
 	slog(LOG_DEBUG, "%s", function);
 
 	/* LINTED operands have incompatible pointer types */
-	iov.iov_base		= (const void *)msg;
+	iov.iov_base		= msg;
 	iov.iov_len			= len;
 
 	msghdr = msghdrinit;
@@ -243,7 +247,7 @@ Rreadv(d, iov, iovcnt)
 
 	msg = msghdrinit;
 	/* LINTED operands have incompatible pointer types */
-	msg.msg_iov		= (const struct iovec *)iov;
+	msg.msg_iov		= (struct iovec *)iov;
 	msg.msg_iovlen	= iovcnt;
 
 	return Rrecvmsg(d, &msg, 0);

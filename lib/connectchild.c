@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: connectchild.c,v 1.113 2003/07/01 13:21:27 michaels Exp $";
+"$Id: connectchild.c,v 1.116 2005/05/28 17:10:12 michaels Exp $";
 
 #define MOTHER 0	/* descriptor mother reads/writes on.  */
 #define CHILD	1	/* descriptor child reads/writes on.   */
@@ -90,7 +90,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 	CMSG_AALLOC(cmsg, sizeof(int) * FDPASS_MAX);
 
 
-	slog(LOG_DEBUG, function);
+	slog(LOG_DEBUG, "%s: s = %d", function, s);
 
 	if (socks_getroute(&packet->req, src, dst) == NULL)
 		return NULL;
@@ -202,20 +202,46 @@ socks_nbconnectroute(s, control, packet, src, dst)
 			/*
 			 * Controlsocket is what later becomes datasocket.
 			 * We don't want to allow the client to read/write/select etc.
-			 * on the socket yet since we need to read/write on it
+			 * on the socket yet, since we need to read/write on it
 			 * ourselves to setup the connection to the socksserver.
+			 *
 			 * We therefore create a new unconnected socket and assign
 			 * it the same descriptor number as the number the client uses.
-			 * When the connection has been set up we duplicate over the
+			 * This way, the clients select(2)/poll(2) will not
+			 * mark the descriptor as ready for anything untill we 
+			 * are working.
+			 *
+			 * When the connection has been set up we duplicate back the
 			 * socket we were passed here and close the temporarily created
 			 * socket.
 			 */
 			int tmp;
+			struct sockaddr_in addr;
 
 			SASSERTX(control == s);
 			if ((control = socketoptdup(s)) == -1)
 				return NULL;
 
+			/* 
+			 * The below bind(2) and listen(2) is neccessary for
+			 * Linux not to mark the socket as readable/writable.
+			 * Under other unix systems, just a socket() is 
+			 * enough.  Judging from the Open Unix spec., Linux
+			 * is the one that is correct though.
+			 */
+
+			bzero(&addr, sizeof(addr));
+			addr.sin_family 		= AF_INET;
+			addr.sin_addr.s_addr 	= htonl(INADDR_ANY);
+			addr.sin_port 			= htons(0);
+
+			/* LINTED pointer casts may be troublesome */
+			if (bind(control, (struct sockaddr *)&addr, sizeof(addr)) != 0
+			||  listen(control, 1) != 0) {
+				close(control);
+				return NULL;
+			}
+			
 			if ((tmp = dup(s)) == -1) {
 				close(control);
 				return NULL;
@@ -230,10 +256,9 @@ socks_nbconnectroute(s, control, packet, src, dst)
 			control = tmp;
 
 			/*
-			 * s: new (temp) socket using original index of "s".
-			 * control: original "s" socket but using new descriptor index.
+			 * s: new (temporary) socket using original index of "s".
+			 * control: original "s" socket, but using new descriptor index.
 			 */
-
 			break;
 		}
 
@@ -286,6 +311,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 					break;
 
 				case MSPROXY_V2:
+				swarn("%s: connect failed", function);
 					break;
 
 				default:
@@ -302,7 +328,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 		}
 
 		SASSERTX(ADDRISBOUND(local));
-		local.sin_port				= htons(0);
+		local.sin_port = htons(0);
 
 		/* LINTED pointer casts may be troublesome */
 		if (bind(s, (struct sockaddr *)&local, sizeof(local)) != 0)
@@ -330,6 +356,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 	 */
 
 	fdsent = 0;
+	/* LINTED pointer casts may be troublesome */
 	CMSG_ADDOBJECT(control, cmsg, sizeof(control) * fdsent++);
 
 	switch (packet->req.version) {
@@ -339,6 +366,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 			break;
 
 		case MSPROXY_V2:
+			/* LINTED pointer casts may be troublesome */
 			CMSG_ADDOBJECT(s, cmsg, sizeof(s) * fdsent++);
 			break;
 
@@ -346,6 +374,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 			SERRX(packet->req.version);
 	}
 
+	childreq.s			= s;
 	childreq.src		= *src;
 	childreq.dst		= *dst;
 	childreq.packet	= *packet;
@@ -359,6 +388,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 	msg.msg_name			= NULL;
 	msg.msg_namelen		= 0;
 
+	/* LINTED pointer casts may be troublesome */
 	CMSG_SETHDR_SEND(msg, cmsg, sizeof(int) * fdsent);
 
 	slog(LOG_DEBUG, "sending request to connectchild");
@@ -389,8 +419,8 @@ run_connectchild(mother)
 	fd_set rset;
 	struct sigaction sig;
 
+	slog(LOG_DEBUG, function);
 #if 0
-	slog(LOG_DEBUG, "%s: sleeping ...", function);
 	sleep(20);
 #endif
 
@@ -441,6 +471,7 @@ run_connectchild(mother)
 			msg.msg_name         = NULL;
 			msg.msg_namelen      = 0;
 
+			/* LINTED pointer casts may be troublesome */
 			CMSG_SETHDR_RECV(msg, cmsg, CMSG_MEMSIZE(cmsg));
 
 			if ((p = recvmsgn(mother, &msg, 0)) != (ssize_t)len) {
@@ -483,10 +514,12 @@ run_connectchild(mother)
 #endif
 
 			len = 0;
+			/* LINTED pointer casts may be troublesome */
 			CMSG_GETOBJECT(control, cmsg, sizeof(control) * len++);
 
 			switch (req.packet.req.version) {
 				case MSPROXY_V2:
+					/* LINTED pointer casts may be troublesome */
 					CMSG_GETOBJECT(s, cmsg, sizeof(s) * len++);
 					break;
 
@@ -500,16 +533,9 @@ run_connectchild(mother)
 					SERRX(req.packet.req.version);
 			}
 
-#if DIAGNOSTIC
-			/*
-			 * XXX
-			 * This fails (on OpenBSD at least) if the connect(2) failed.
-			 * This means mother does not know what address we are returning
-			 * the error for (we don't know either) and prevents us from
-			 * returning a error to the client, the socket being "in progress"
-			 * all the time as far as mother knows.
-			 */
+			slog(LOG_DEBUG, "%s: req.s = %d", function, req.s);
 
+#if DIAGNOSTIC /* DIAGNOSTIC */
 			len = sizeof(local);
 			if (getsockname(s, &local, &len) == 0)
 				slog(LOG_DEBUG, "%s: s local: %s",
@@ -531,20 +557,21 @@ run_connectchild(mother)
 			/* XXX set socket to blocking while we use it. */
 			if ((flags = fcntl(s, F_GETFL, 0)) == -1
 			|| fcntl(s, F_SETFL, flags & ~NONBLOCKING) == -1)
-				swarn("%s: fcntl(s)");
+				swarn("%s: fcntl(s)", function);
 
 			/* default, in case we don't even get a response. */
 			req.packet.res.reply = (char)sockscode(req.packet.req.version,
 			SOCKS_FAILURE);
 			req.packet.res.version = req.packet.req.version;
 
+			/* CONSTCOND */
 			if (1) { /* XXX wait for the connection to complete. */
 				fd_set wset;
 
 				FD_ZERO(&wset);
 				FD_SET(control, &wset);
 
-				slog(LOG_DEBUG, "%s: waiting for connectresponse...", function);
+				slog(LOG_DEBUG, "%s: waiting for connectresponse ...", function);
 				switch (selectn(control + 1, NULL, &wset, NULL, NULL)) {
 					case -1:
 						SERR(-1);
@@ -566,16 +593,17 @@ run_connectchild(mother)
 #endif /* !HAVE_SO_ERROR */
 
 			if (errno != 0) {
-				swarn("%s: connect failed", function);
 				req.packet.state.err = errno;
+				swarn("%s: connect failed", function);
 			}
 			else
 				/* connected ok. */
-				p = socks_negotiate(s, control, &req.packet, NULL);
+				if (socks_negotiate(s, control, &req.packet, NULL) != 0)
+					req.packet.state.err = errno;
 
 			/* XXX back to original. */
 			if (fcntl(s, F_SETFL, flags) == -1)
-				swarn("%s: fcntl(s)");
+				swarn("%s: fcntl(s)", function);
 
 			len = sizeof(local);
 			if (getsockname(control, &local, &len) != 0) {
@@ -611,7 +639,7 @@ run_connectchild(mother)
 
 			/* send response to mother. */
 			if ((p = write(mother, &req, sizeof(req))) != sizeof(req))
-				swarn("%s: write(): %d out of %d", p, sizeof(req));
+				swarn("%s: write(): %d out of %d", function, p, sizeof(req));
 			close(s);
 
 			slog(LOG_DEBUG, "raising SIGSTOP");
@@ -628,6 +656,7 @@ sigchld(sig)
 {
 	const char *function = "sigchld()";
 	const int errno_s = errno;
+	/* CONSTCOND */
 	char string[MAX(sizeof(MAXSOCKADDRSTRING), sizeof(MAXSOCKSHOSTSTRING))];
 	int status;
 
@@ -663,7 +692,9 @@ sigchld(sig)
 				break;
 			}
 
+			/* LINTED bitwise operation on signed value possibly nonportable */
 			if (WIFEXITED(status)) {
+				/* LINTED bitwise operation on signed value possibly nonportable */
 				swarnx("%s: cconnectchild exited with status %d",
 				function, WEXITSTATUS(status));
 				sockscf.connectchild = 0;
@@ -694,11 +725,17 @@ sigchld(sig)
 				char lstring[MAXSOCKADDRSTRING];
 				char rstring[MAXSOCKADDRSTRING];
 
-				swarnx("%s: hmm, can't find controlsocket for %s <-> %s",
-				function, sockaddr2string(local, lstring, sizeof(lstring)),
-				sockaddr2string(remote, rstring, sizeof(rstring)));
+				
+				if (socks_isaddr(childres.s))
+					s = childres.s; /* not as safe. */
+				else {
+					swarnx("%s: can't find controlsocket for %s <-> %s, s = %d",
+					function, sockaddr2string(local, lstring, sizeof(lstring)),
+					sockaddr2string(remote, rstring, sizeof(rstring)), 
+					childres.s);
 
-				return;
+					return;
+				}
 			}
 
 			socksfd = socks_getaddr((unsigned int)s);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: Rgetsockname.c,v 1.42 2003/07/01 13:21:24 michaels Exp $";
+"$Id: Rgetsockname.c,v 1.44 2005/01/24 10:24:21 karls Exp $";
 
 int
 Rgetsockname(s, name, namelen)
@@ -142,7 +142,7 @@ Rgetsockname(s, name, namelen)
 			SERRX(socksfd->state.command);
 	}
 
-	*namelen = MIN(*namelen, sizeof(*addr));
+	*namelen = MIN(*namelen, (socklen_t)sizeof(*addr));
 	memcpy(name, addr, (size_t)*namelen);
 
 	return 0;

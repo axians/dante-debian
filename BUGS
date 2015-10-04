@@ -1,25 +1,14 @@
-# $Id: BUGS,v 1.26 2002/06/06 09:52:22 michaels Exp $
+# $Id: BUGS,v 1.32 2004/12/24 15:47:27 michaels Exp $
 
-To report a new bug, mail dante-bugs@inet.no.  Make sure you read
-the FAQ first.
+To report a new bug, mail dante-bugs@inet.no.
+Make sure you read the FAQ (http://www.inet.no/dante/FAQ/) first.
 
-	Things known not to work:
+Generic:
+ - 'libtool' is broken on OS X.
 
-- there appear to be some problems with "socksify" and NIS on at least
-  some systems.  Somebody needs to look into what the problem is.
+Client part:
+ - The clientlibrary is not threadsafe.  This can cause problems
+   when trying to socksify programs that use threads.
 
-- msproxycode seems to crash at least some msproxy servers.  See
-  README.msproxy for more information.  Also see the HTTP proxy
-  support added to the client.
-
-- 'libtool' is broken on OS X.
-
-- If username/password authentication is used, the socks client will
-  always get a successful response at first.  The username/password
-  is not checked until the full socks request has been received
-  from the client, at which point the request will fail if
-  the username/password is incorrect in the same way it would if
-  there was no "pass" rule for the request.
-
-- The clientlibrary is not threadsafe, this can cause problems
-  when trying to socksify programs that use threads.
+Server part:
+    None known.

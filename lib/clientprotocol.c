@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: clientprotocol.c,v 1.43 2003/07/01 13:21:26 michaels Exp $";
+"$Id: clientprotocol.c,v 1.45 2005/01/24 10:24:21 karls Exp $";
 
 int
 socks_sendrequest(s, request)
@@ -350,7 +350,9 @@ recv_sockshost(s, host, version, auth)
 
 					OCTETIFY(alen);
 
+#if MAXHOSTNAMELEN < 0xff
 					SASSERTX(alen < sizeof(host->addr.domain));
+#endif
 
 					/* BND.ADDR, alen octets */
 					if (readn(s, host->addr.domain, (size_t)alen, auth)

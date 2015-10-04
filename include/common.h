@@ -41,7 +41,7 @@
  *
  */
 
-/* $Id: common.h,v 1.312 2003/07/01 13:21:15 michaels Exp $ */
+/* $Id: common.h,v 1.322 2005/05/10 11:16:32 karls Exp $ */
 
 #ifndef _COMMON_H_
 #define _COMMON_H_
@@ -63,6 +63,10 @@
 #ifdef HAVE_CONFIG_H
 #include "autoconf.h"
 #endif  /* HAVE_CONFIG_H */
+
+#ifndef __GNUC__
+#define __attribute__(a)
+#endif
 
 #if HAVE_LINUX_ECCENTRICITIES
 /*
@@ -165,7 +169,7 @@
 #endif  /* HAVE_DEC_PROTO */
 #include <unistd.h>
 #ifdef HAVE_DEC_PROTO
-#define _XOPEN_SOURCE_EXTENDED
+#define _XOPEN_SOURCE_EXTENDED 1
 #endif /* HAVE_DEC_PROTO */
 #endif  /* HAVE_UNISTD_H */
 #if HAVE_RESOLV_H
@@ -403,6 +407,18 @@ struct ipoption {
 };
 #endif  /* !HAVE_STRUCT_IPOPTS */
 
+#if !HAVE_IN6_ADDR
+/* from OpenBSD netinet6/in6.h */
+struct in6_addr {
+	union {
+		u_int8_t   __u6_addr8[16];
+		u_int16_t  __u6_addr16[8];
+		u_int32_t  __u6_addr32[4];
+	} __u6_addr;/* 128-bit IP6 address */
+};
+#define s6_addr   __u6_addr.__u6_addr8
+#endif /* !HAVE_IN6_ADDR */
+
 #if 0
 #if !HAVE_SOCKADDR_STORAGE
 /*
@@ -583,7 +599,7 @@ extern int h_errno;
 
 #define ELEMENTS(array) (sizeof(array) / sizeof(array[0]))
 
-#define OCTETIFY(a) ((a) = ((a) & 0xff))
+#define OCTETIFY(a) ((a) &= 0xff)
 /*
  * Note that it's the argument that will be truncated, not just the
  * return value.
@@ -598,13 +614,28 @@ extern int h_errno;
  * Modern CMSG alignment macros. Use them if the platform has them,
  * if not we get the default behaviour.
  */
+
+#if HAVE_CMSGHDR
+
 #if !HAVE_CMSG_LEN
-#define CMSG_LEN(a) (a)
+#define CMSG_LEN(len) (sizeof(struct cmsghdr) + (len))
 #endif /* !HAVE_CMSG_LEN */
 
 #if !HAVE_CMSG_SPACE
-#define CMSG_SPACE(a) (a)
+#define CMSG_SPACE(len) (sizeof(struct cmsghdr) + (len))
 #endif /* !HAVE_CMSG_SPACE */
+
+#else /* HAVE_CMSGHDR */
+
+#if !HAVE_CMSG_LEN
+#define CMSG_LEN(len) (len)
+#endif /* !HAVE_CMSG_LEN */
+
+#if !HAVE_CMSG_SPACE
+#define CMSG_SPACE(len) (len)
+#endif /* !HAVE_CMSG_SPACE */
+
+#endif /* HAVE_CMSGHDR */
 
 /*
  * allocate memory for a controlmessage of size "size".  "name" is the
@@ -848,14 +879,14 @@ do {														\
 #define FAKEIP_END	0x000000ff
 
 #define SOCKS_V4					4
-#define SOCKS_V4s					"socks v4"
+#define SOCKS_V4s					"socks_v4"
 #define SOCKS_V4REPLY_VERSION 0
 #define SOCKS_V5					5
-#define SOCKS_V5s					"socks v5"
+#define SOCKS_V5s					"socks_v5"
 #define MSPROXY_V2				2
-#define MSPROXY_V2s				"msproxy v2"
+#define MSPROXY_V2s				"msproxy_v2"
 #define HTTP_V1_0					1
-#define HTTP_V1_0s				"http v1.0"
+#define HTTP_V1_0s				"http_v1.0"
 
 /* subnegotiation. */
 #define SOCKS_UNAMEVERSION		1
@@ -1577,28 +1608,32 @@ __BEGIN_DECLS
  */
 
 #ifdef STDC_HEADERS
-void serr(int eval, const char *fmt, ...);
+void serr(int eval, const char *fmt, ...)
 #else
-void serr();
+void serr()
 #endif  /* STDC_HEADERS */
+__attribute__ ((format (__printf__, 2, 3)));
 
 #ifdef STDC_HEADERS
-void serrx(int eval, const char *fmt, ...);
+void serrx(int eval, const char *fmt, ...)
 #else
-void serrx();
+void serrx()
 #endif  /* STDC_HEADERS */
+__attribute__ ((format (__printf__, 2, 3)));
 
 #ifdef STDC_HEADERS
-void swarn(const char *fmt, ...);
+void swarn(const char *fmt, ...)
 #else
-void swarn();
+void swarn()
 #endif  /* STDC_HEADERS */
+__attribute__ ((format (__printf__, 1, 2)));
 
 #ifdef STDC_HEADERS
-void swarnx(const char *fmt, ...);
+void swarnx(const char *fmt, ...)
 #else
-void swarnx();
+void swarnx()
 #endif  /* STDC_HEADERS */
+__attribute__ ((format (__printf__, 1, 2)));
 
 void
 genericinit __P((void));
@@ -1852,17 +1887,22 @@ mem2sockshost __P((struct sockshost_t *host, const unsigned char *mem,
  */
 
 #ifdef STDC_HEADERS
-void slog(int priority, const char *message, ...);
+void slog(int priority, const char *fmt, ...)
 #else
-void slog();
+void slog()
 #endif  /* STDC_HEADERS */
+__attribute__ ((format (__printf__, 2, 3)));
 /*
- * Logs message "message" at priority "priority" to previously configured
+ * Logs message "fmt" at priority "priority" to previously configured
  * outputdevice.
  * Checks settings and ignores message if it's of to low a priority.
  */
 
-void vslog __P((int priority, const char *message, va_list ap));
+#ifdef STDC_HEADERS
+void vslog(int priority, const char *fmt, va_list ap);
+#else
+void vslog();
+#endif  /* STDC_HEADERS */
 /*
  * Same as slog() but assumes varargs/stdargs have already processed
  * the arguments.
@@ -1879,22 +1919,24 @@ readconfig __P((const char *filename));
 
 #ifdef STDC_HEADERS
 void
-yywarn (const char *fmt, ...);
+yywarn (const char *fmt, ...)
 #else
 void
-yywarn();
+yywarn()
 #endif  /* STDC_HEADERS */
+__attribute__ ((format (__printf__, 1, 2)));
 /*
  * Report a error related to (configfile) parsing.
  */
 
 #ifdef STDC_HEADERS
 void
-yyerror (const char *fmt, ...);
+yyerror (const char *fmt, ...)
 #else
 void
-yyerror();
+yyerror()
 #endif  /* STDC_HEADERS */
+__attribute__ ((format (__printf__, 1, 2)));
 /*
  * Report a error related to (configfile) parsing and exit.
  */
@@ -2167,6 +2209,14 @@ bitcount __P((unsigned long number));
 struct hostent *sys_gethostbyaddr __P((const char *addr, int len, int af));
 struct hostent *sys_gethostbyname __P((const char *));
 struct hostent *sys_gethostbyname2 __P((const char *, int));
+#if HAVE_GETADDRINFO
+int sys_getaddrinfo __P((const char *nodename, const char *servname,
+			 				const struct addrinfo *hints, struct addrinfo **res));
+#endif /* HAVE_GETADDRINFO */
+#if HAVE_GETIPNODEBYNAME
+struct hostent *sys_getipnodebyname __P((const char *name, int af, int flags,
+					 int *error_num));
+#endif /* HAVE_GETIPNODEBYNAME */
 #endif /* SOCKSLIBRARY_DYNAMIC */
 
 #if defined(DEBUG) || HAVE_SOLARIS_BUGS
@@ -2210,10 +2260,12 @@ int vsnprintf __P((char *, size_t, const char *, va_list));
 
 #if !HAVE_SETPROCTITLE
 #ifdef STDC_HEADERS
-void setproctitle __P((const char *fmt, ...));
+void setproctitle __P((const char *fmt, ...))
+__attribute__ ((format (__printf__, 1, 2)));
 int initsetproctitle __P((int, char **, char **));
 #else
-void setproctitle();
+void setproctitle()
+__attribute__ ((format (__printf__, 1, 2)));
 int initsetproctitle __P((int, char **, char **));
 #endif  /* STDC_HEADERS */
 #endif  /* !HAVE_SETPROCTITLE */
@@ -2270,6 +2322,10 @@ checkmodule __P((const char *name));
  * Checks that the system has the module "name" and permission to use it.
  * Aborts with a errormessage if not.
  */
+
+int socks_yyparse __P((void));
+int socks_yylex __P((void));
+
 
 __END_DECLS
 

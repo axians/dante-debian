@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: Raccept.c,v 1.77 2003/07/01 13:21:21 michaels Exp $";
+"$Id: Raccept.c,v 1.79 2005/01/24 10:24:20 karls Exp $";
 
 int
 Raccept(s, addr, addrlen)
@@ -288,7 +288,7 @@ Raccept(s, addr, addrlen)
 #endif
 
 	if (addr != NULL) {
-		*addrlen = MIN(*addrlen, sizeof(accepted));
+		*addrlen = MIN(*addrlen, (socklen_t)sizeof(accepted));
 		memcpy(addr, &accepted, (size_t)*addrlen);
 	}
 
