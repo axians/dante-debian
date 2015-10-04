@@ -1,16 +1,18 @@
 AC_INIT
 AC_PREREQ(2.50)
-AC_REVISION($Id: configure.ac,v 1.298 2002/01/28 14:12:14 karls Exp $)
+AC_REVISION($Id: configure.ac,v 1.316 2003/07/23 15:47:33 karls Exp $)
 
-version=1.1.12
+version=1.1.14
 #set this to enable prerelease, changes some defaults (debug enabled)
-prerelease="1"
+#prerelease="1"
 if test x$prerelease != x; then
 	prename="-pre$prerelease"
 	TOPEXTRADIST="${TOPEXTRADIST} PRERELEASE"
 else
 	prename=""
 fi
+
+echo "Configuring Dante ${version}${prename}:"
 
 AM_INIT_AUTOMAKE(dante, ${version}${prename})
 AC_CONFIG_SRCDIR(include/common.h)
@@ -35,7 +37,7 @@ for keyword in `set | egrep '^enable_' | sed -e 's/^enable_\(.*\)=.*/\1/'`;
 do
 	echo $keyword | egrep "^(${KNOWN_KEYWORDS})$" > /dev/null
 	if test $? -ne 0; then
-		AC_MSG_WARN(unknown option '$keyword', ignoring ...)
+		AC_MSG_WARN([unknown option '$keyword', ignoring ...])
 		sleep 10;
 	fi
 done
@@ -43,7 +45,7 @@ done
 #Solaris 2.5.1 is broken in many places
 case $host in
     *-*-solaris2.5.1)
-	AC_MSG_WARN(the server might not work properly on solaris 2.5.1)
+	AC_MSG_WARN([the server might not work properly on solaris 2.5.1])
 	AC_DEFINE(HAVE_SOLARIS_2_5_1)
     ;;
 esac
@@ -52,7 +54,7 @@ esac
 #XXX add proper test for this?
 case $host in
 
-	*-*-*bsd* | alpha*-dec-osf* | *-*-hpux* | *-*-aix4*)
+	*-*-*bsd* | alpha*-dec-osf* | *-*-hpux* | *-*-aix4* | *-*-aix5*)
 		no_acceptlock=t
 	;;
 
@@ -96,7 +98,7 @@ case $host in
 		#XXX hardcode library path (find better way to do this?)
 		AC_DEFINE(LIBRARY_PATH, "/usr/lib/")
 		base_library_path="/usr/lib/"
-		AC_MSG_WARN("notice: hardcoding /usr/lib for dlopen")
+		AC_MSG_WARN([notice: hardcoding /usr/lib for dlopen])
 		#nonstandard libfunction workaround #XXX proper test
 		AC_DEFINE(HAVE_BROKEN_VSPRINTF)
 		#link problems with libresolv, hardcode domainname
@@ -128,14 +130,17 @@ case $host in
 	*-*-irix*)
 		PRELOAD="RLD"
 	;;
-	*-*-aix4*)
+	*-*-aix4* | *-*-aix5*)
 		OSPIDFILE="/etc/sockd.pid"
+		AC_DEFINE(HAVE_SYSTEM_XMSG_MAGIC)
 	;;
 	*-*-cygwin)
-		AC_MSG_WARN(disabling preloading)
+		AC_MSG_WARN([disabling preloading])
 		no_preload_client=t
 		no_preload_server=t
 		no_preload=t
+		no_res_init=t
+		AC_DEFINE(HAVE_NO_RESOLVESTUFF)
 	;;
 
 esac
@@ -168,7 +173,7 @@ if test x$no_acceptlock != xt; then
 	AC_DEFINE(NEED_ACCEPTLOCK)
 fi
 
-AC_MSG_CHECKING(for compiler flags)
+AC_MSG_CHECKING([for compiler flags])
 case $host in
 
     #XXX check for compiler type, not architecture
@@ -179,8 +184,8 @@ case $host in
 	    #XXX due to some problems with sockaddr alignment
 	    #XXX sun cc needs -misalign
 	    comp_flags="$comp_flags -misalign -xO0"
-	    AC_MSG_RESULT($comp_flags)
-	    AC_MSG_WARN(there might currenly be some performance problems with suncc - it needs -misalign)
+	    AC_MSG_RESULT([$comp_flags])
+	    AC_MSG_WARN([there might currenly be some performance problems with suncc - it needs -misalign])
 	    $CC 2>&1 | grep ucbcc > /dev/null
 	    if test $? -eq 0; then
 		#XXX ucbcc uses includes from /usr/ucbinclude, but these are
@@ -191,21 +196,21 @@ case $host in
 		CPPFLAGS="-I/usr/include $CPPFLAGS${CPPFLAGS:+ } "
 	    fi
 	fi
-#	AC_MSG_RESULT($comp_flags)
+#	AC_MSG_RESULT([$comp_flags])
     ;;
 
     alphaev6-dec-osf*)
 	if test "x$GCC" = x; then
 	    comp_flags="-std1"
 	fi
-	AC_MSG_RESULT($comp_flags)
+	AC_MSG_RESULT([$comp_flags])
     ;;
 
     alpha*-dec-osf*) #XXX is it possible to get it to work with -newc?
 	if test "x$GCC" = x; then
 	    comp_flags="-std1 -oldc"
 	fi
-	AC_MSG_RESULT($comp_flags)
+	AC_MSG_RESULT([$comp_flags])
     ;;
 
     *-*-hpux*)
@@ -218,34 +223,34 @@ case $host in
 #	    comp_flags="-Ae"
 	    CPPFLAGS="${CPPFLAGS} -Ae"
 	fi
-	AC_MSG_RESULT($comp_flags)
+	AC_MSG_RESULT([$comp_flags])
 	;;
 
-    *-*-aix4*)
+    *-*-aix4* | *-*-aix5*)
 	if test "x$GCC" = x; then
 	    comp_flags="-qlanglvl=ansi"
 	    #XXX
 	    CPPFLAGS="${CPPFLAGS} -qlanglvl=ansi"
 	fi
-	AC_MSG_RESULT($comp_flags)
+	AC_MSG_RESULT([$comp_flags])
      ;;
 
     *)
-	AC_MSG_RESULT(none)
+	AC_MSG_RESULT([none])
     ;;
     #XXX make sure compiling with compiler options works
 esac
 
-AC_MSG_CHECKING(for support for -pipe compiler flag)
+AC_MSG_CHECKING([for support for -pipe compiler flag])
 oCFLAGS=$CFLAGS
 CFLAGS="$CFLAGS -pipe"
 AC_TRY_RUN([
 int main()
 {
 	return 0;
-}], [AC_MSG_RESULT(yes)
+}], [AC_MSG_RESULT([yes])
      comp_flags="${comp_flags} -pipe"],
-    AC_MSG_RESULT(no))
+    AC_MSG_RESULT([no]))
 CFLAGS="$oCFLAGS"
 
 AC_ARG_ENABLE(internal,
@@ -255,7 +260,7 @@ AC_ARG_ENABLE(internal,
     ],
    unset build_internal)
 
-AC_MSG_CHECKING(for compilation with debugging)
+AC_MSG_CHECKING([for compilation with debugging])
 AC_ARG_ENABLE(debug,
 [  --enable-debug          compile with debugging support],
 	debug_enabled=t,
@@ -269,15 +274,16 @@ if test x$debug_enabled = xt; then
 	CFLAGS="$CFLAGS -g"
     fi
     CPPFLAGS="-DDEBUG $CPPFLAGS"
-    AC_MSG_RESULT(yes)
+    AC_MSG_RESULT([yes])
 else
-    AC_MSG_RESULT(no)
+    AC_MSG_RESULT([no])
     #autoconf_compflags is set to "-g -O2" with GCC
+    #override CFLAGS when running configure to avoid this
     CFLAGS="$CFLAGS $autoconf_compflags"
 fi
 
 #-Wall ?
-AC_MSG_CHECKING(for warning flags)
+AC_MSG_CHECKING([for warning flags])
 AC_ARG_ENABLE(warnings,
 [  --enable-warnings       show compilation warnings],
 	[enable_warnings=t],
@@ -328,28 +334,28 @@ if test x$enable_warnings != x; then
     CFLAGS="$CFLAGS $warn"
     #make sure compilation is still possible
     AC_TRY_COMPILE([], [],
-		   [AC_MSG_RESULT($warn)],
-		   [AC_MSG_RESULT(none)
+		   [AC_MSG_RESULT([$warn])],
+		   [AC_MSG_RESULT([none])
 		    unset warn])
     CFLAGS=$oCFLAGS
 else
-    AC_MSG_RESULT(none)
+    AC_MSG_RESULT([none])
 fi
 
 #NOTE: set warnings at the bottom; might interfere with tests
 CFLAGS="$CFLAGS $comp_flags"
 
 #-DDIAGNOSTICS?
-AC_MSG_CHECKING(for compliation with DIAGNOSTIC)
+AC_MSG_CHECKING([for compliation with DIAGNOSTIC])
 AC_ARG_ENABLE(diagnostic,
 [  --enable-diagnostic     enable diagnostic],
 	[AC_DEFINE(DIAGNOSTIC)
-	 AC_MSG_RESULT(yes)],
+	 AC_MSG_RESULT([yes])],
 	[if test x$prerelease != x; then
 	      AC_DEFINE(DIAGNOSTIC)
-	      AC_MSG_RESULT(yes)
+	      AC_MSG_RESULT([yes])
 	 else
-	      AC_MSG_RESULT(no)
+	      AC_MSG_RESULT([no])
 	 fi])
 
 AC_ARG_ENABLE(profiling,
@@ -362,7 +368,7 @@ AM_CONDITIONAL(SPROFIL, test x$s_profiling = xt)
 AM_CONDITIONAL(STATIC_SOCKD, test x$no_dynamic_profiled_sockd = xt)
 if test "x$s_profiling" = "xt" -a "x$no_dynamic_profiled_sockd" = "xt"; then
 	no_preload_server=t
-	AC_MSG_WARN(sockd is built static when profiling is enabled)
+	AC_MSG_WARN([sockd is built static when profiling is enabled])
 fi
 
 AC_ARG_ENABLE(linting,
@@ -370,15 +376,15 @@ AC_ARG_ENABLE(linting,
 	s_linting=t)
 AM_CONDITIONAL(LINT, test x$s_linting = xt)
 
-AC_MSG_CHECKING(whether libwrap should be disabled)
+AC_MSG_CHECKING([whether libwrap should be disabled])
 AC_ARG_ENABLE(libwrap,
 [  --disable-libwrap       never use libwrap, even if it is available],
 [if test x$enableval = xno; then
 	no_libwrap=t
-	AC_MSG_RESULT(yes)
+	AC_MSG_RESULT([yes])
 else
-	AC_MSG_RESULT(no)
-fi], AC_MSG_RESULT(no))
+	AC_MSG_RESULT([no])
+fi], AC_MSG_RESULT([no]))
 
 dnl Checks for programs.
 AC_PROG_YACC
@@ -406,72 +412,24 @@ case $host in
 	*) ;;
 esac
 
-#build without support for preloading?
-AC_MSG_CHECKING(whether all interposition usage should be disabled)
-AC_ARG_ENABLE(preload,
-[  --disable-preload       disable preloading in server and client],
-[if test x$enableval = xno; then
-	no_preload_client=t
-	no_preload_server=t
-	no_preload=t
-	AC_MSG_RESULT(yes)
-else
-	AC_MSG_RESULT(no)
-fi], AC_MSG_RESULT(no))
-
-if test "x$no_preload" = x; then
-    AC_MSG_CHECKING(whether interposition in the client should be disabled)
-    AC_ARG_ENABLE(clientdl,
-    [  --disable-clientdl      disable support for preloading in the client],
-    [if test x$enableval = xno; then
-	    no_preload_client=t
-	    AC_MSG_RESULT(yes)
-    else
-	    AC_MSG_RESULT(no)
-    fi], AC_MSG_RESULT(no))
-
-    AC_MSG_CHECKING(whether interposition in the server should be disabled)
-    AC_ARG_ENABLE(serverdl,
-    [  --disable-serverdl      disable support for preloading in the server],
-    [if test x$enableval = xno; then
-	    no_preload_server=t
-	    AC_MSG_RESULT(yes)
-    else
-	    if text x$enableval = xyes; then
-		serverdl_always_on=t
-	    fi
-	    AC_MSG_RESULT(no)
-    fi], AC_MSG_RESULT(no))
-fi
-
-AM_CONDITIONAL(SERVER_INTERPOSITION, test x$no_preload_server = x)
-AM_CONDITIONAL(SERVER_INTERPOSITION_ALWAYS, test x$serverdl_always_on = xt)
-
-if test "x${no_preload_client}" = "xt" -a "x${no_preload_server}" = "xt"; then
-    unset preload_enabled
-else
-    preload_enabled=t
-fi
-
-
 #allow manual specification
-AC_MSG_CHECKING(for hardcoded domainname)
+AC_MSG_CHECKING([for hardcoded domainname])
 AC_ARG_WITH(domainname,
 [  --with-domainname=NAME  hardcode local domainname (only on broken platforms)], [domainname_hardcoded=$withval])
 
 if test x${domainname_hardcoded} != x; then
     AC_DEFINE_UNQUOTED(SOCKS_DOMAINNAME, "${domainname_hardcoded}")
-    AC_MSG_RESULT(yes)
-    AC_MSG_WARN(using hardcoded domainname ${domainname_hardcoded})
+    AC_MSG_RESULT([yes])
+    AC_MSG_WARN([using hardcoded domainname ${domainname_hardcoded}])
 else
-    AC_MSG_RESULT(no)
+    AC_MSG_RESULT([no])
     if test x${no_res_init} = xt; then
-	AC_MSG_WARN(unable to locate domainname, specify if necessary)
+	AC_MSG_WARN([unable to locate domainname, specify if necessary])
     fi
 fi
 
 #allow default file locations to be overridden
-AC_MSG_CHECKING(for socks config file location)
+AC_MSG_CHECKING([for socks config file location])
 AC_ARG_WITH(socks-conf,
 [  --with-socks-conf=FILE  change location of socks client configuration file],
 [AC_MSG_RESULT($withval)
@@ -479,7 +437,7 @@ AC_ARG_WITH(socks-conf,
  AC_DEFINE_UNQUOTED(HAVE_ALT_SOCKS_CONFIGFILE, "$withval")
 ], [AC_MSG_RESULT(default)])
 
-AC_MSG_CHECKING(for sockd config file location)
+AC_MSG_CHECKING([for sockd config file location])
 AC_ARG_WITH(sockd-conf,
 [  --with-sockd-conf=FILE  change location of socks server configuration file],
 [AC_MSG_RESULT($withval)
@@ -492,7 +450,7 @@ AC_ARG_ENABLE(pidfile,
 [  --disable-pidfile       disable server pidfile creation],
    [AC_DEFINE(HAVE_DISABLED_PIDFILE)])
 
-AC_MSG_CHECKING(for pid file location)
+AC_MSG_CHECKING([for pid file location])
 AC_ARG_WITH(pidfile,
 [  --with-pidfile=FILE     change location of server pidfile],
 [AC_MSG_RESULT($withval)
@@ -509,23 +467,70 @@ if test x"${have_pidfile}" != xt; then
     fi
 fi
 
-# SOCKSLIBRARY_DYNAMIC is set in the lib directory when preloading
-# is supported (and requested).
+
+## preload related tests
+#build without support for preloading?
+
 # HAVE_DLFCN_H only determines if the include file exists
 AC_CHECK_HEADER(dlfcn.h,
 [AC_DEFINE(HAVE_DLFCN_H)
- have_dlfcn_h=t])
+ have_dlfcn_h=t],
+[AC_MSG_WARN([dlfcn.h missing, preloading disabled])
+ no_preload_client=t
+ no_preload_server=t
+ no_preload=t])
 
-#building of shared libraries enabled?
-unset build_preload_lib
-if test "x${no_preload_client}" = "x" -a "x$have_dlfcn_h" = "xt"; then
-    build_preload_lib=t
+if test "x$no_preload" = x; then
+   AC_MSG_CHECKING([whether all interposition usage should be disabled])
+   AC_ARG_ENABLE(preload,
+   [  --disable-preload       disable preloading in server and client],
+   [if test x$enableval = xno; then
+	no_preload_client=t
+	no_preload_server=t
+	no_preload=t
+	AC_MSG_RESULT([yes])
+    else
+	AC_MSG_RESULT([no])
+    fi], AC_MSG_RESULT([no]))
 fi
 
+if test "x$no_preload" = x; then
+    AC_MSG_CHECKING([whether interposition in the client should be disabled])
+    AC_ARG_ENABLE(clientdl,
+    [  --disable-clientdl      disable support for preloading in the client],
+    [if test x$enableval = xno; then
+	    no_preload_client=t
+	    AC_MSG_RESULT([yes])
+    else
+	    AC_MSG_RESULT([no])
+    fi], AC_MSG_RESULT([no]))
+
+    AC_MSG_CHECKING([whether interposition in the server should be disabled])
+    AC_ARG_ENABLE(serverdl,
+    [  --disable-serverdl      disable support for preloading in the server],
+    [if test x$enableval = xno; then
+	    no_preload_server=t
+	    AC_MSG_RESULT([yes])
+    else
+	    if text x$enableval = xyes; then
+		serverdl_always_on=t
+	    fi
+	    AC_MSG_RESULT([no])
+    fi], AC_MSG_RESULT([no]))
+fi
+
+AM_CONDITIONAL(SERVER_INTERPOSITION, test x$no_preload_server = x)
+AM_CONDITIONAL(SERVER_INTERPOSITION_ALWAYS, test x$serverdl_always_on = xt)
+
+if test "x${no_preload_client}" = "xt" -a "x${no_preload_server}" = "xt"; then
+    unset preload_enabled
+else
+    preload_enabled=t
+fi
 
 #construct SUBDIRS variable
 SUBDIRS="lib sockd unlicensed example doc bin SPECS capi contrib"
-if test x"${build_preload_lib}" = xt; then
+if test "x${no_preload_client}" = x; then
     SUBDIRS="dlib $SUBDIRS"
 fi
 #include should be done before compilation to ensure that
@@ -540,7 +545,7 @@ AC_CHECK_HEADER(sys/sockio.h,
  have_sys_sockio_h=t])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
-AC_MSG_CHECKING(whether <sys/types.h> defines const)
+AC_MSG_CHECKING([whether <sys/types.h> defines const])
 AC_EGREP_CPP(yes, [
 #include <sys/types.h>
 #ifdef const
@@ -554,7 +559,7 @@ if test x$check_const = xyes; then
 fi
 
 #looks for linux + systems with RTAX_GATEWAY defined in net/route.h
-AC_MSG_CHECKING(for supported routing socket communication)
+AC_MSG_CHECKING([for supported routing socket communication])
 unset no_routeinfo
 AC_EGREP_CPP(yes, [
 #include <net/route.h>
@@ -572,10 +577,10 @@ yes
 ],  [AC_DEFINE(HAVE_ROUTE_SOURCE)
      AC_DEFINE(HAVE_ROUTEINFO_BSD)
      AC_MSG_RESULT(yes)],
-     [AC_MSG_RESULT(no, might result in reduced functionality)
+     [AC_MSG_RESULT([no, might result in reduced functionality])
       no_routeinfo=t])])
 
-AC_MSG_CHECKING(whether <netdb.h> declares h_errno)
+AC_MSG_CHECKING([whether <netdb.h> declares h_errno])
 AC_EGREP_CPP(h_errno, [
 #include <netdb.h>
 ], [AC_DEFINE(HAVE_H_ERRNO)
@@ -583,14 +588,14 @@ AC_EGREP_CPP(h_errno, [
    [AC_MSG_RESULT(no)])
 
 #XXXsys/socket.h?
-AC_MSG_CHECKING(for struct ip_opts in <netinet/in.h>)
+AC_MSG_CHECKING([for struct ip_opts in <netinet/in.h>])
 AC_EGREP_CPP([struct.*ipoption], [
 #include <netinet/ip_var.h>
 ], [AC_DEFINE(HAVE_STRUCT_IPOPTS)
     AC_MSG_RESULT(yes)],
    AC_MSG_RESULT(no))
 
-AC_MSG_CHECKING(whether <sys/types.h> defines inline)
+AC_MSG_CHECKING([whether <sys/types.h> defines inline])
 AC_EGREP_CPP(yes, [
 #include <sys/types.h>
 #ifdef inline
@@ -609,7 +614,7 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 
-AC_MSG_CHECKING(for sockaddr_storage in sys/socket.h)
+AC_MSG_CHECKING([for sockaddr_storage in sys/socket.h])
 AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -621,7 +626,7 @@ sin = (struct sockaddr_in *) &__ss;
     AC_DEFINE(HAVE_SOCKADDR_STORAGE)],
    [AC_MSG_RESULT(no)])
 
-AC_MSG_CHECKING(to see if openlog accepts LOG_PERROR)
+AC_MSG_CHECKING([to see if openlog accepts LOG_PERROR])
 AC_EGREP_CPP(yes, [
 #include <syslog.h>
 #ifdef LOG_PERROR
@@ -631,7 +636,7 @@ yes
     AC_MSG_RESULT(yes)],
    AC_MSG_RESULT(no))
 
-AC_MSG_CHECKING(to see if stdlib.h defines EXIT_FAILURE)
+AC_MSG_CHECKING([to see if stdlib.h defines EXIT_FAILURE])
 AC_EGREP_CPP(yes, [
 #include <stdlib.h>
 #ifdef EXIT_FAILURE
@@ -642,7 +647,7 @@ yes
     AC_MSG_RESULT(no)])
 
 #XXX actually checks if AF_UNIX should be used instead of AF_LOCAL
-AC_MSG_CHECKING(whether <sys/socket.h> uses AF_UNIX)
+AC_MSG_CHECKING([whether <sys/socket.h> uses AF_UNIX])
 AC_EGREP_CPP(yes, [
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -656,7 +661,7 @@ yes
     AC_MSG_RESULT(yes)],
    AC_MSG_RESULT(no))
 
-AC_MSG_CHECKING(for SIGINFO)
+AC_MSG_CHECKING([for SIGINFO])
 AC_EGREP_CPP(yes, [
 #include <signal.h>
 #ifdef SIGINFO
@@ -666,7 +671,7 @@ yes
     AC_MSG_RESULT(yes)],
    AC_MSG_RESULT(no))
 
-AC_MSG_CHECKING(to see if MSG_WAITALL exists)
+AC_MSG_CHECKING([to see if MSG_WAITALL exists])
 AC_EGREP_CPP(yes, [
 #include <sys/socket.h>
 #ifdef MSG_WAITALL
@@ -679,7 +684,7 @@ yes
 #SO_SNDLOWAT
 #irix 6.2 only seems to look at lowest 8 bit of value
 #Solaris also seems to be broken (up to 2.6 atleast)
-AC_MSG_CHECKING(whether a working SO_SNDLOWAT exists)
+AC_MSG_CHECKING([whether a working SO_SNDLOWAT exists])
 AC_EGREP_CPP(yes, [
 #include <sys/socket.h>
 #ifdef SO_SNDLOWAT
@@ -699,9 +704,9 @@ if test "x${so_sndlowat}" = xt; then
 	AC_MSG_RESULT(yes)
 else
 	AC_MSG_RESULT(disabled)
-	AC_MSG_WARN(performance in the server might be degraded without support for the SO_SNDLOWAT socket option)
+	AC_MSG_WARN([performance in the server might be degraded without support for the SO_SNDLOWAT socket option])
 fi], [AC_MSG_RESULT(no)
-      AC_MSG_WARN(performance in the server might be degraded without support for the SO_SNDLOWAT socket option)])
+      AC_MSG_WARN([performance in the server might be degraded without support for the SO_SNDLOWAT socket option])])
 
 #correct select behaviour?
 unset nb_select_err
@@ -709,11 +714,11 @@ L_UNCON_SELECT([],
  [nb_select_err=t])
 
 if test x"${nb_select_err}" = xt; then
-   AC_MSG_WARN(operations on nonblocking sockets might fail on this platform)
+   AC_MSG_WARN([operations on nonblocking sockets might fail on this platform])
 fi
 
 
-AC_MSG_CHECKING(whether realloc with a NULL pointer calls malloc)
+AC_MSG_CHECKING([whether realloc with a NULL pointer calls malloc])
 AC_TRY_RUN([
 #include <stdlib.h>
 #ifndef NULL
@@ -731,7 +736,7 @@ int main()
     [AC_DEFINE(HAVE_NOMALLOC_REALLOC)
      AC_MSG_RESULT(no)])
 
-AC_MSG_CHECKING(whether free can be called with NULL)
+AC_MSG_CHECKING([whether free can be called with NULL])
 AC_TRY_RUN([
 #include <stdlib.h>
 #ifndef NULL
@@ -776,7 +781,7 @@ yes
 	#the list. (to add a new function a set of #undef statements in
 	#acconfig.h is also needed).
 	case $host in
-		*-*-aix4*)
+		*-*-aix4* | *-*-aix5*)
 			PROTO_ACCEPT=naccept
 			PROTO_GETPEERNAME=ngetpeername
 			PROTO_GETSOCKNAME=ngetsockname
@@ -1035,7 +1040,7 @@ esac
     fi #stdc_headers
 fi #no preload
 
-AC_MSG_CHECKING(if getsockopt needs cast)
+AC_MSG_CHECKING([if getsockopt needs cast])
 AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -1047,7 +1052,7 @@ int getsockopt(int, int, int, char *, int *);
 
 #include both <sys/ioctl.h> and <sys/sockio.h>?
 if test x$have_sys_sockio_h = xt; then
-	AC_MSG_CHECKING(to see if <sys/sockio.h> should be included)
+	AC_MSG_CHECKING([to see if <sys/sockio.h> should be included])
 	AC_EGREP_CPP(yes, [
 #include <sys/ioctl.h>
 #ifdef SIOCATMARK
@@ -1063,7 +1068,7 @@ yes
 fi
 
 #XXX should be more generic, check if nonexistent
-AC_MSG_CHECKING(to see if dlopen param has DL_ and not RTLD_ prefix)
+AC_MSG_CHECKING([to see if dlopen param has DL_ and not RTLD_ prefix])
 AC_EGREP_CPP(yes, [
 #include <dlfcn.h>
 #ifdef DL_LAZY
@@ -1078,7 +1083,7 @@ yes
 
 #XXX should be more generic, check if nonexistent
 #SV_INTERRUPT, but not SA_RESTART defined?
-AC_MSG_CHECKING(to see if SV_INTERRUPT should be used)
+AC_MSG_CHECKING([to see if SV_INTERRUPT should be used])
 AC_EGREP_CPP(yes, [
 #include <signal.h>
 #ifdef SA_RESTART
@@ -1094,7 +1099,7 @@ yes
 #XXXseems to be supported on Solaris2.6, but there might be some
 #defines that need to be set (should _XOPEN_SOURCE be defined on all
 #platforms?)
-AC_MSG_CHECKING(if cmsghdr exists in <sys/socket.h>)
+AC_MSG_CHECKING([if cmsghdr exists in <sys/socket.h>])
 case $host in
     *)
 	AC_TRY_COMPILE([
@@ -1112,7 +1117,33 @@ case $host in
 	;;
 esac
 
-AC_MSG_CHECKING(for sa_len in sockaddr)
+AC_MSG_CHECKING([for CMSG_SPACE in sys/socket.h])
+AC_TRY_RUN([
+#include <sys/types.h>
+#include <sys/socket.h>
+int main()
+{
+   int d = CMSG_SPACE(4);
+   return 0;
+}
+], [AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_CMSG_SPACE)],
+   [AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING([for CMSG_LEN in sys/socket.h])
+AC_TRY_RUN([
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int main()
+{
+   int d = CMSG_LEN(4);
+   return 0;
+}], [AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_CMSG_LEN)],
+   [AC_MSG_RESULT(no)])
+
+AC_MSG_CHECKING([for sa_len in sockaddr])
 AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -1122,14 +1153,14 @@ foo.sa_len = 0;
     AC_MSG_RESULT(yes)],
    AC_MSG_RESULT(no))
 
-AC_MSG_CHECKING(to see if malloc_options exists)
+AC_MSG_CHECKING([to see if malloc_options exists])
 AC_TRY_LINK([extern char *malloc_options;],
 [ malloc_options = 0; ],
 [AC_DEFINE(HAVE_MALLOC_OPTIONS)
  AC_MSG_RESULT(yes)],
 AC_MSG_RESULT(no))
 
-AC_MSG_CHECKING(to see if __progname exists)
+AC_MSG_CHECKING([to see if __progname exists])
 AC_TRY_LINK([extern char *__progname;],
 [ __progname = 0; ],
 [AC_DEFINE(HAVE_PROGNAME)
@@ -1267,10 +1298,10 @@ if test "x$preload_enabled" = "xt"; then
 		*-*-sunos4*) #XXX attempt to get libdl name
 		    libdl=`ls ${base_library_path}libdl.${SOLIB_POSTFIX}* | sed -e 's/.*\///' | sort -nr | head -1`
 		    if test x$libdl = x; then
-			AC_MSG_WARN(unable to locate libdl)
+			AC_MSG_WARN([unable to locate libdl])
 		    else
 			LIBRARY_DLOPEN=${base_library_path}${libdl}
-			AC_MSG_WARN(hardcoding libdl to $LIBRARY_DLOPEN)
+			AC_MSG_WARN([hardcoding libdl to $LIBRARY_DLOPEN])
 		    fi
 		;;
 		*)
@@ -1301,7 +1332,7 @@ prefix=${o_prefix}
 AC_SUBST(LIBRARY_PREFIX)
 
 #allow user to specify libc name, use default value otherwise
-AC_MSG_CHECKING(for libc name)
+AC_MSG_CHECKING([for libc name])
 AC_ARG_WITH(libc,
  [  --with-libc=NAME        manually set name of c library if necessary],
  [LIBC_NAME=$withval])
@@ -1338,7 +1369,7 @@ if test "x${ac_cv_header_tcpd_h}" = "xyes"; then
 	;;
     esac
     oLIBS=$LIBS
-    AC_MSG_CHECKING(for libwrap)
+    AC_MSG_CHECKING([for libwrap])
     if test x$no_libwrap = xt; then
 	echo "disabled"
     else
@@ -1369,7 +1400,7 @@ fi
 L_SYMBOL_UNDERSCORE()
 
 #try to detect gcc bug (irix 64 problem, affects among others inet_ntoa)
-AC_MSG_CHECKING(for incorrect inet_ntoa behaviour)
+AC_MSG_CHECKING([for incorrect inet_ntoa behaviour])
 AC_TRY_RUN([
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -1393,7 +1424,7 @@ int main(void)
 
 #Linux (redhat 5.2) defines socklen_t in <socketbits.h>, which is
 #included by <sys/socket.h>.  check for this first.
-AC_MSG_CHECKING(for socklen_t)
+AC_MSG_CHECKING([for socklen_t])
 AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -1415,7 +1446,7 @@ if test x"$socklen_found" = x; then
 fi
 
 #sig_atomic_t
-AC_MSG_CHECKING(for sig_atomic_t in <signal.h>)
+AC_MSG_CHECKING([for sig_atomic_t in <signal.h>])
 AC_EGREP_CPP(sig_atomic_t, [
 #include <signal.h>
 ], [AC_DEFINE(HAVE_SIG_ATOMIC_T)
@@ -1448,9 +1479,9 @@ AC_CHECK_FUNCS(select socket strcspn strdup strspn hstrerror issetugid)
 AC_CHECK_FUNCS(strvis vsnprintf getdtablesize sysconf inet_pton vsyslog)
 AC_CHECK_FUNCS(daemon bzero sockatmark difftime memmove seteuid setproctitle)
 AC_CHECK_FUNCS(inet_aton gethostbyname2 getprpwnam getspnam getifaddrs)
-AC_CHECK_FUNCS(freeifaddrs)
+AC_CHECK_FUNCS(freeifaddrs bindresvport)
 
-AC_MSG_CHECKING(for system V getpwnam)
+AC_MSG_CHECKING([for system V getpwnam])
 unset getpwnam_alt
 if test x"${ac_cv_func_getprpwnam}" = xyes; then
     getpwnam_alt=t
@@ -1475,7 +1506,7 @@ else
 	case $host in
 
 		*-*-sunos4*)
-			AC_MSG_WARN(omitting strerror test on sunos4 with profiling enabled)
+			AC_MSG_WARN([omitting strerror test on sunos4 with profiling enabled])
 		;;
 
 		*)
@@ -1626,12 +1657,13 @@ fi
 
 
 if test x"${no_routeinfo}" = xt; then
-	echo "Routeinfo:         no supported on this platform"
+	echo "Routeinfo:         not supported on this platform"
 else
 	echo "Routeinfo:         OK"
 fi
 echo ""
 echo "This software should perform optimally when all the lines above report 'OK'."
+echo "This is not possible on all platforms."
 echo ""
 
 echo "                     Modules:"

@@ -1,6 +1,12 @@
-# $Id: TODO,v 1.155 2002/01/29 11:16:29 michaels Exp $
+# $Id: TODO,v 1.163 2003/04/18 10:47:50 michaels Exp $
 
-* make "unexpected source" in relation to bindreply go through iolog().
+* checkmodule matches external against licesensed ipaddress, if external
+  is an interface name however, it looks like it can contain multiple
+  unlicensed ipaddresses, as long as the interface contains at least
+  one licensed.
+
+* there is a race condition in bw stuff between rulespermit() and
+  bwuse().
 
 * change _t struct's to typedef.
 

@@ -23,6 +23,10 @@
 /* send/recvmsg cmsg types */
 #undef HAVE_CMSGHDR
 
+/* CMSG_LEN/SPACE */
+#undef HAVE_CMSG_LEN
+#undef HAVE_CMSG_SPACE
+
 /* Solaris 2.5 name */
 #undef HAVE_OPTHDR
 
@@ -224,6 +228,9 @@
 #undef HAVE_MODULE_REDIRECT
 #undef HAVE_MODULE_BANDWIDTH
 
+/* more AIX bandaid */
+#undef HAVE_SYSTEM_XMSG_MAGIC
+
 /* interposition.c prototypes */
 #undef HAVE_PROT_CONNECT_0
 #undef HAVE_PROT_CONNECT_1
@@ -315,6 +322,9 @@
 
 /* Define if you have the <arpa/nameser.h> header file. */
 #undef HAVE_ARPA_NAMESER_H
+
+/* Define if you have the `bindresvport' function. */
+#undef HAVE_BINDRESVPORT
 
 /* Define if you have the `bzero' function. */
 #undef HAVE_BZERO

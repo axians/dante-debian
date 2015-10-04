@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: sockd_protocol.c,v 1.93 2001/12/11 12:26:46 michaels Exp $";
+"$Id: sockd_protocol.c,v 1.95 2003/07/01 13:21:47 michaels Exp $";
 
 __BEGIN_DECLS
 
@@ -231,7 +231,7 @@ recv_methods(s, request, state)
 	const unsigned char methodc = state->mem[state->reqread - 1];	/* NMETHODS */
 	unsigned char reply[ 1 /* VERSION	*/
 							 + 1 /* METHOD		*/
-							];
+							 ];
 
 	INIT(methodc);
 	CHECK(&state->mem[start], request->auth, NULL);

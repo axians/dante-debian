@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: log.c,v 1.59 2001/12/12 14:42:12 karls Exp $";
+"$Id: log.c,v 1.61 2003/07/01 13:21:30 michaels Exp $";
 
 __BEGIN_DECLS
 
@@ -154,7 +154,7 @@ vslog(priority, message, ap)
 			socks_lock(sockscf.log.fplockv[i], F_WRLCK, -1);
 			fprintf(sockscf.log.fpv[i], "%s%s",
 			buf, buf[strlen(buf) - 1] == '\n' ? "" : "\n");
-/*			fflush(sockscf.log.fpv[i]); */ /* XXX needed or not?  why? */
+/*			fflush(sockscf.log.fpv[i]); */ /* should not be needed. */
 			socks_unlock(sockscf.log.fplockv[i]);
 
 #if SOCKS_CLIENT && SOCKSLIBRARY_DYNAMIC

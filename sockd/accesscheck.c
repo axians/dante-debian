@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: accesscheck.c,v 1.12 2001/12/11 14:31:31 karls Exp $";
+"$Id: accesscheck.c,v 1.19 2003/07/01 13:21:39 michaels Exp $";
 
 
 /* ARGSUSED */
@@ -65,19 +65,6 @@ accessmatch(s, auth, src, dst, userlist, emsg, emsgsize)
 	function, method2string(auth->method),
 	src == NULL ? "<unknown>" : sockaddr2string(src, srcstr, sizeof(srcstr)),
 	dst == NULL ? "<unknown>" : sockaddr2string(dst, dststr, sizeof(dststr)));
-
-	/*
-	 * We don't want to re-check the same method.  This could
-	 * happen in several cases:
-	 *  - was checked as client-rule, is now checked as socks-rule.
-	 *  - a different rule with the same method.
-	*/
-
-	if (methodisset(auth->method, auth->methodv, (size_t)auth->methodc))
-		return 1; /* already matched. */
-
-	if (methodisset(auth->method, auth->badmethodv, (size_t)auth->badmethodc))
-		return 0; /* already checked, won't match. */
 
 	if (userlist != NULL) {
 		const struct linkedname_t *ruleuser;
@@ -119,6 +106,19 @@ accessmatch(s, auth, src, dst, userlist, emsg, emsgsize)
 			return 0; /* no match. */
 	}
 
+	/*
+	 * We don't want to re-check the same method.  This could
+	 * happen in several cases:
+	 *  - was checked as client-rule, is now checked as socks-rule.
+	 *  - a different rule with the same method.
+	*/
+
+	if (methodisset(auth->method, auth->methodv, (size_t)auth->methodc))
+		return 1; /* already checked, matches. */
+
+	if (methodisset(auth->method, auth->badmethodv, (size_t)auth->badmethodc))
+		return 0; /* already checked, won't match. */
+
 	match = 0;
 	switch (auth->method) {
 		case AUTHMETHOD_NONE:
@@ -138,40 +138,62 @@ accessmatch(s, auth, src, dst, userlist, emsg, emsgsize)
 			break;
 
 #if HAVE_PAM
-		case AUTHMETHOD_PAM:
+		case AUTHMETHOD_PAM: {
+#if DIAGNOSTIC
+			const int freec = freedescriptors(sockscf.option.debug ?
+			"start" : NULL);
+#endif /* DIAGNOSTIC */
+
 			if (pam_passwordcheck(s, src, dst, &auth->mdata.pam, emsg, emsgsize)
 			== 0)
 				match = 1;
+
+#if DIAGNOSTIC
+			if (freec != freedescriptors(sockscf.option.debug ?  "end" : NULL))
+				serrx(EXIT_FAILURE,
+				"the PAM library/module code on your system seems to be messing "
+				"with our descriptors, can't cope with that.  Get the PAM code "
+				"on your system fixed");
+#endif /* DIAGNOSTIC */
 			break;
+		}
 #endif /* HAVE_PAM */
 
 		default:
 			SERRX(auth->method);
 	}
 
-	if (match) {
-		SASSERTX(auth->methodc + 1 <= sizeof(auth->methodv));
-		auth->methodv[auth->methodc++] = auth->method;
-	}
-	else {
+	switch (auth->method) {
 		/*
 		 * Some methods can be called with different values for the
 		 * same client, others can not.  Mark those who can't as
-		 * "bad" so we don't waste time on re-trying them.
+		 * "tried" so we don't waste time on re-trying them.
 		 */
-		switch (auth->method) {
-			case AUTHMETHOD_PAM:
-				if (sockscf.state.unfixedpamdata)
-					break;
-				/* else; */ /* FALLTHROUGH */
+		case AUTHMETHOD_PAM:
+			if (sockscf.state.unfixedpamdata)
+				break;
+			/* else; */ /* FALLTHROUGH */
 
-			case AUTHMETHOD_NONE:
-			case AUTHMETHOD_UNAME:
-			case AUTHMETHOD_RFC931:
+		case AUTHMETHOD_NONE:
+		case AUTHMETHOD_UNAME:
+		case AUTHMETHOD_RFC931:
+			if (match) {
+				SASSERTX(auth->methodc + 1 <= sizeof(auth->methodv));
+				auth->methodv[auth->methodc++] = auth->method;
+			}
+			else {
 				SASSERTX(auth->badmethodc + 1 <= sizeof(auth->badmethodv));
 				auth->badmethodv[auth->badmethodc++] = auth->method;
-				break;
-		}
+			}
+
+			/*
+			 * We might have wanted to bzero() the password here, but
+			 * then we wouldn't be able to use the password if we
+			 * at a later point needed to check for access against
+			 * a different method.  (For instance, PAM on setup,
+			 * UNAME on UDP packet.  Strange, but in theory possible.)
+			 */
+			break;
 	}
 
 	return match;

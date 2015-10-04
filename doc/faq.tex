@@ -1,4 +1,4 @@
-%@(#)$Id: faq.tex,v 1.42 2001/12/12 13:18:07 karls Exp $
+%@(#)$Id: faq.tex,v 1.50 2003/07/15 15:45:55 karls Exp $
 %/*
 % * Copyright (c) 1997, 1998, 1999, 2000, 2001
 % *      Inferno Nettverk A/S, Norway.  All rights reserved.
@@ -47,6 +47,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{babel}
 \usepackage{html}
+\usepackage{url}
 
 \title{Dante FAQ}
 \author{
@@ -55,7 +56,7 @@
 	Gaustadalléen 21   \\
 	NO-0349 Oslo          \\
 	Norway}
-\date{$$$$Date: 2001/12/12 13:18:07 $$$$}
+\date{$$$$Date: 2003/07/15 15:45:55 $$$$}
 
 \makeindex
 
@@ -67,7 +68,7 @@
 
   \emph{See
    \htmladdnormallink{
-	http://www.inet.no/dante/FAQ}{http://www.inet.no/dante/FAQ} for the
+	http://www.inet.no/dante/FAQ/}{http://www.inet.no/dante/FAQ/} for the
 	latest version of this faq.}
 
    Send updates/corrections to the public mailinglist dante-misc@inet.no.
@@ -103,7 +104,7 @@
 
   If the problem is with the client, also uncomment the line containing
   "debug".
-  If the problem is with the server, also add "-dl" to whatever
+  If the problem is with the server, also add "-d" to whatever
   arguments you usually start the server with.
 
   Repeat whatever you did to produce the error and look at the
@@ -476,8 +477,11 @@ command).
       libdl.so
       libdsocks.so
   \end{verbatim}
- \emph{Thanks to: Dag Wieers <dag@mind.be>.}
+ \emph{Thanks to: Dag Wieers <dag@wieers.com>.}
 
+ Dag Wieers also has a (RedHat) SPEC file which contains scripts for
+ doing this automatically. It can be found at:
+ \htmladdnormallink{ftp://dag.wieers.com/home-made/dante/dante.spec}{ftp://dag.wieers.com/home-made/dante/dante.spec}
 
  \subsection{Generic}
   There is another way that gives you more control over what will and what
@@ -489,13 +493,13 @@ command).
    export LD_PRELOAD
   \end{verbatim}
   to the environment. (/etc/profile ~/.profile ~/.bashrc)
-  \\ \emph{Thanks to: Dag Wieers <dag@mind.be>.}
+  \\ \emph{Thanks to: Dag Wieers <dag@wieers.com>.}
 
   \subsubsection{Why do I want to be able to control this?}
    In same rare cases programs fail to work in a socksified environment
    (e.g. acroread 4.0 for Linux segfaults) or programs like rpm depend on a
    clean build-environment to get its (library) dependencies.
-   \\ \emph{Thanks to Dag Wieers <dag@mind.be>.}
+   \\ \emph{Thanks to Dag Wieers <dag@wieers.com>.}
 
 
  \subsubsection{How can I easily unsocksify the current shell?}
@@ -503,7 +507,7 @@ command).
   \begin{verbatim}
    unset LD_PRELOAD
   \end{verbatim}
-  \emph{Thanks to: Dag Wieers <dag@mind.be>.}
+  \emph{Thanks to: Dag Wieers <dag@wieers.com>.}
 
 
 \section{Technical Problems}
@@ -532,6 +536,11 @@ command).
   successors, which adds \emph{LD\_PRELOAD} support to the loader.
 
   \emph{Thanks to: albert chin (china@thewrittenword.com)}
+
+ \subsection{Why do I get undefined references to \_\_bswap\_32 during
+   compilation on Linux?}
+  This is likely due to a bug in one of the system header files. A
+  workaround has been added in version 1.1.14.
 
  \subsection{How do I setup a password file for authenticating users?}
   The Dante server uses the standard system passwordfile.
@@ -595,5 +604,117 @@ command).
    \end{verbatim}
    \emph{Thanks to: James Coe <starascendant@hotmail.com>.}
 
+Another solution:
+
+I use dante under supervise with multilog for log rotation (based on
+size, not date).  This will run Dante under supervise (and limit its
+memory usage to 5 megabytes) and redirect its logging to
+/var/log/dante/current, rotated based on its size.
+
+\url{http://cr.yp.to/daemontools.html}{http://cr.yp.to/daemontools.html}
+for more information.
+
+\begin{verbatim}
+   /service/dante/run:
+
+#!/bin/sh
+
+exec 2>&1
+exec softlimit -m 5000000 -p 30 -c 0 \
+         /usr/sbin/sockd -f /etc/sockd.conf -N 1 -l # -d
+
+/service/dante/log/run:
+
+#!/bin/sh
+
+exec setuidgid logging multilog t /var/log/dante
+\end{verbatim}
+   \emph{Thanks to: Michael T. Babcock" <mbabcock@fibrespeed.net>}
+
+
+\section{Authentication}
+ \subsection{How do I use LDAP authentication with Dante?}
+
+  First, make sure that you compile Dante with support for PAM.  The
+  configure script should do this for you if the PAM development libraries
+  are installed.  Under RedHat Linux, make sure you have the PAM-devel RPM
+  installed.
+  
+  You will also have to add LDAP support to your PAM implementation, if it
+  is not already there.  Check if you have /lib/security/pam\_ldap.so or
+  the equivalent. If not, use pam\_ldap from
+  \htmladdnormallink{http://www.padl.com/}{http://www.padl.com/}.  
+  
+  pam\_ldap gets its configuration from /etc/ldap.conf.  Make sure you set
+  host to your LDAP server, and base to your base DN.You can also set
+  pam\_filter and pam\_group\_dn to restrict logins to particular objecttypes
+  or members of particular groups.
+  
+  Point sockd at LDAP by creating /etc/pam.d/sockd.  An exapmle of this
+  files contents is;
+
+  \begin{verbatim}
+  #%PAM-1.0
+  auth       sufficient /lib/security/pam_ldap.so
+  auth       required   /lib/security/pam_unix_auth.so try_first_pass
+  account    sufficient /lib/security/pam_ldap.so
+  account    required   /lib/security/pam_unix_acct.so
+  password   required   /lib/security/pam_ldap.so
+  \end{verbatim}
+  
+  Finally, you need to configure sockd.conf to restrict access based on
+  PAM.  this is accomplished with the following:
+  
+  \begin{verbatim}
+  # allowable authentication methods for socks-rules.
+  # values are username, none, rfc931 and pam
+  method: pam none
+  
+  # allowable authentication methods for client-rules.
+  # values are username, none, rfc931 and pam
+  clientmethod: pam none
+  
+  # Client rules, controls who may connect
+  #
+  ## everyone who authenticates is allowed to use tcp
+  ## and udp
+  pass {
+         from: 0.0.0.0/0 to: 0.0.0.0/0
+         protocol: tcp udp
+         log: connect disconnect error
+         method: pam
+  }
+  
+  # last line, block everyone else.  This is the default but if you
+  provide
+  # one  yourself you can specify your own logging/actions
+  block {
+         from: 0.0.0.0/0 to: 0.0.0.0/0
+         log: connect error
+  }
+  \end{verbatim}
+
+  \emph{Thanks to: Sean Burford <sean.burford@adelaide.edu.au>.}
+
+  \subsubsection{... and against Microsoft Active Directory?}
+   To authenticate against a Microsoft Active Directory the following bare
+   minimum example configuration for 'test.org' with an active directory
+   server
+   at 123.123.123.123 of /etc/ldap.conf Directory is what you would
+   require:
+   
+	\begin{verbatim}
+   host 123.123.123.123
+   base cn=Users,dc=test,dc=org
+   rootbinddn cn=Administrator,cn=Users,dc=test,dc=org
+   pam_filter objectclass=user
+   pam_login_attribute cn
+	\end{verbatim}
+   
+   With the password for the Administrator user in the file
+   /etc/ldap.secret and chowned to 0600.
+
+
+   \emph{Thanks to: Alexander Cohen <A.Cohen@latrobe.edu.au>.}
 
 \end{document}

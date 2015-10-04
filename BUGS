@@ -1,4 +1,4 @@
-# $Id: BUGS,v 1.24 2001/12/12 12:54:31 karls Exp $
+# $Id: BUGS,v 1.26 2002/06/06 09:52:22 michaels Exp $
 
 To report a new bug, mail dante-bugs@inet.no.  Make sure you read
 the FAQ first.
@@ -13,3 +13,13 @@ the FAQ first.
   support added to the client.
 
 - 'libtool' is broken on OS X.
+
+- If username/password authentication is used, the socks client will
+  always get a successful response at first.  The username/password
+  is not checked until the full socks request has been received
+  from the client, at which point the request will fail if
+  the username/password is incorrect in the same way it would if
+  there was no "pass" rule for the request.
+
+- The clientlibrary is not threadsafe, this can cause problems
+  when trying to socksify programs that use threads.

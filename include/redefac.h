@@ -10,6 +10,16 @@
 #endif
 
 
+#ifndef HAVE_CMSG_LEN
+#define HAVE_CMSG_LEN 0
+#endif
+
+
+#ifndef HAVE_CMSG_SPACE
+#define HAVE_CMSG_SPACE 0
+#endif
+
+
 #ifndef HAVE_OPTHDR
 #define HAVE_OPTHDR 0
 #endif
@@ -277,6 +287,11 @@
 
 #ifndef HAVE_MODULE_BANDWIDTH
 #define HAVE_MODULE_BANDWIDTH 0
+#endif
+
+
+#ifndef HAVE_SYSTEM_XMSG_MAGIC
+#define HAVE_SYSTEM_XMSG_MAGIC 0
 #endif
 
 
@@ -642,6 +657,11 @@
 
 #ifndef HAVE_ARPA_NAMESER_H
 #define HAVE_ARPA_NAMESER_H 0
+#endif
+
+
+#ifndef HAVE_BINDRESVPORT
+#define HAVE_BINDRESVPORT 0
 #endif
 
 
