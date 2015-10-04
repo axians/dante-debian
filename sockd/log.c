@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: log.c,v 1.41 1999/12/22 09:29:24 karls Exp $";
+"$Id: log.c,v 1.59 2001/12/12 14:42:12 karls Exp $";
 
 __BEGIN_DECLS
 
@@ -62,23 +62,27 @@ logformat __P((int priority, char *buf, size_t buflen, const char *message,
 __END_DECLS
 
 void
-initlog(void)
+newprocinit(void)
 {
 
 #if SOCKS_SERVER	/* don't want to override original clients stuff. */
-	if (config.log.type & LOGTYPE_SYSLOG) {
+	if (sockscf.log.type & LOGTYPE_SYSLOG) {
 		closelog();
 
 		/*
 		 * LOG_NDELAY so we don't end up in a situation where we
 		 * have no free descriptors and haven't yet syslog-ed anything.
 		 */
-		openlog(__progname, LOG_NDELAY | LOG_PID, config.log.facility);
+		openlog(__progname, LOG_NDELAY | LOG_PID, sockscf.log.facility);
 	}
 #endif /* SOCKS_SERVER */
 
-	if (config.log.type & LOGTYPE_FILE)
-		;
+#if SOCKSLIBRARY_DYNAMIC
+	symbolcheck();
+#endif
+
+	sockscf.state.pid = getpid();
+
 }
 
 void
@@ -115,25 +119,47 @@ vslog(priority, message, ap)
 	const int errno_s = errno;
 	char buf[2048];
 
-	if (!config.state.init) {
+#if SOCKS_SERVER /* no idea where stdout points to in client case. */
+	if (!sockscf.state.init) {
+
+#if 0
+		if (priority == LOG_DEBUG)
+			return;
+#endif
+
 		if (logformat(priority, buf, sizeof(buf), message, ap) != NULL)
 			fprintf(stdout, "%s\n", buf);
 		return;
 	}
+#endif
 
-	if (config.log.type & LOGTYPE_SYSLOG)
-		vsyslog(priority, message, ap);
+	if (sockscf.log.type & LOGTYPE_SYSLOG)
+		if (priority == LOG_DEBUG && sockscf.state.init
+		&& !sockscf.option.debug)
+			; /* don't waste resources on this. */
+		else
+			vsyslog(priority, message, ap);
 
-	if (config.log.type & LOGTYPE_FILE) {
-		int i;
+	if (sockscf.log.type & LOGTYPE_FILE) {
+		size_t i;
 
 		if (logformat(priority, buf, sizeof(buf), message, ap) == NULL)
 			return;
 
-		for (i = 0; i < config.log.fpc; ++i) {
-			socks_lock(config.log.fplockv[i], F_WRLCK, -1);
-			fprintf(config.log.fpv[i], "%s\n", buf);
-			socks_unlock(config.log.fplockv[i]);
+		for (i = 0; i < sockscf.log.fpc; ++i) {
+#if SOCKS_CLIENT && SOCKSLIBRARY_DYNAMIC /* XXX should not need SOCKS_CLIENT. */
+			SYSCALL_START(fileno(sockscf.log.fpv[i]));
+#endif
+
+			socks_lock(sockscf.log.fplockv[i], F_WRLCK, -1);
+			fprintf(sockscf.log.fpv[i], "%s%s",
+			buf, buf[strlen(buf) - 1] == '\n' ? "" : "\n");
+/*			fflush(sockscf.log.fpv[i]); */ /* XXX needed or not?  why? */
+			socks_unlock(sockscf.log.fplockv[i]);
+
+#if SOCKS_CLIENT && SOCKSLIBRARY_DYNAMIC
+			SYSCALL_END(fileno(sockscf.log.fpv[i]));
+#endif
 		}
 	}
 
@@ -148,57 +174,24 @@ logformat(priority, buf, buflen, message, ap)
 	const char *message;
 	va_list ap;
 {
-	const char *prefix;
 	size_t bufused;
 	time_t timenow;
 
-	/* not sure if we should use this. */
 	switch (priority) {
-		case LOG_EMERG:
-			prefix = "*** EMERGENCY: ";
-			break;
-
-		case LOG_ALERT:
-			prefix = "*** ALERT: ";
-			break;
-
-		case LOG_CRIT:
-			prefix = "*** Critical: ";
-			break;
-
-		case LOG_ERR:
-			prefix = "error: ";
-			break;
-
-		case LOG_WARNING:
-			prefix = "warning: ";
-			break;
-
-		case LOG_NOTICE:
-			prefix = "notice: ";
-			break;
-
-		case LOG_INFO:
-			prefix = "info: ";
-			break;
-
 		case LOG_DEBUG:
-			if (config.state.init && !config.option.debug)
+			if (sockscf.state.init && !sockscf.option.debug)
 				return NULL;
-			prefix = "debug: ";
 			break;
 
-		default:
-			prefix = "";
 	}
 
 	time(&timenow);
 	bufused = strftime(buf, buflen, "%h %e %T ", localtime(&timenow));
 
-	bufused += snprintf(&buf[bufused], buflen - bufused, "%s[%lu]: ",
+	bufused += snprintfn(&buf[bufused], buflen - bufused, "%s[%lu]: ",
 	__progname,
 #if SOCKS_SERVER
-	(unsigned long)config.state.pid
+	(unsigned long)sockscf.state.pid
 #else /* !SOCKS_SERVER, can't trust saved state. */
 	(unsigned long)getpid()
 #endif /* !SOCKS_SERVER */

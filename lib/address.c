@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: address.c,v 1.75 1999/12/22 09:29:22 karls Exp $";
+"$Id: address.c,v 1.82 2001/12/12 14:42:08 karls Exp $";
 
 __BEGIN_DECLS
 
@@ -84,7 +84,7 @@ socks_addaddr(clientfd, socksfd)
 	||	 socksfd->state.command				== SOCKS_UDPASSOCIATE);
 
 	if (socks_addfd(clientfd) != 0)
-		serrx(EXIT_FAILURE, "%s: %s", function, NOMEM);
+		serrx(EXIT_FAILURE, "%s: error adding descriptor %d", function, clientfd);
 
 	if (socksfdc < dc) { /* init/reallocate */
 		sigset_t oldmask;
@@ -159,12 +159,25 @@ socks_rmaddr(d)
 
 		case SOCKS_V4:
 		case SOCKS_V5:
+		case HTTP_V1_0:
 			if (!socksfdv[d].state.system)
 				switch (socksfdv[d].state.command) {
 					case SOCKS_BIND:
-						if (socksfdv[d].control != -1
-						&& d != (unsigned int)socksfdv[d].control)
-							close(socksfdv[d].control);
+						if (socksfdv[d].control == -1
+						||  socksfdv[d].control == (int)d)
+							break;
+
+						/*
+						 * If we are using the bind extension it's possible
+						 * that this controlconnection is shared with other
+						 * (accept()'ed) addresses, if so we must leave it
+						 * open for the other connections.
+						*/
+						if (socks_addrcontrol(&socksfdv[d].local, &socksfdv[d].remote)
+						== -1)
+							break;
+
+						close(socksfdv[d].control);
 						break;
 
 					case SOCKS_CONNECT:
@@ -355,6 +368,9 @@ socks_addfd(d)
 	unsigned int d;
 {
 	const char *function = "socks_addfd()";
+
+	if (d + 1 < d) /* integer overflow. */
+		return -1;
 
 	if (d >= dc)	{ /* init/reallocate */
 		sigset_t oldmask;

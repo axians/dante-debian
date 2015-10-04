@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: client.c,v 1.43 1999/12/22 09:29:22 karls Exp $";
+"$Id: client.c,v 1.54 2001/12/12 14:42:09 karls Exp $";
 
 #if !HAVE_PROGNAME
 	char *__progname = "danteclient";
@@ -63,27 +63,31 @@ void
 clientinit(void)
 {
 /*	const char *function = "clientinit()"; */
+	static int initing;
 
-	if (config.state.init)
+	if (sockscf.state.init)
 		return;
 
-	config.state.pid = getpid();
+	if (initing)
+		return;
+	initing = 1;
 
 	if (issetugid())
-		config.option.configfile = SOCKS_CONFIGFILE;
+		sockscf.option.configfile = SOCKS_CONFIGFILE;
 	else
-		if ((config.option.configfile = getenv("SOCKS_CONF")) == NULL)
-			config.option.configfile = SOCKS_CONFIGFILE;
+		if ((sockscf.option.configfile = getenv("SOCKS_CONF")) == NULL)
+			sockscf.option.configfile = SOCKS_CONFIGFILE;
 
 	/*
-	 * initialize misc options to sensible default.
+	 * initialize misc. options to sensible default.
 	 */
-	config.resolveprotocol		= RESOLVEPROTOCOL_UDP;
-	config.option.lbuf			= 1;
+	sockscf.resolveprotocol	= RESOLVEPROTOCOL_UDP;
+	sockscf.option.lbuf			= 1;
 
 	genericinit();
 
 	slog(LOG_INFO, "%s/client v%s running", PACKAGE, VERSION);
+	initing = 0;
 }
 
 
@@ -197,6 +201,17 @@ serverreplyisok(version, reply, route)
 					errno = ECONNREFUSED;
 					return 0;
 			}
+
+		case HTTP_V1_0:
+			switch (reply) {
+				case HTTP_SUCCESS:
+					return 1;
+
+				default:
+					errno = ECONNREFUSED;
+					return 0;
+			}
+			break;
 
 		default:
 			SERRX(version);

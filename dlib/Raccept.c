@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: Raccept.c,v 1.67 1999/09/02 10:41:11 michaels Exp $";
+"$Id: Raccept.c,v 1.76 2001/12/12 14:42:05 karls Exp $";
 
 int
 Raccept(s, addr, addrlen)
@@ -59,6 +59,10 @@ Raccept(s, addr, addrlen)
 	struct socksfd_t *socksfd;
 	fd_set rset;
 	int fdbits, p, iotype, remote;
+
+	clientinit();
+
+	slog(LOG_DEBUG, "%s", function);
 
 	/* can't call Raccept() on unknown descriptors. */
 	if (!socks_addrisok((unsigned int)s)) {
@@ -162,9 +166,9 @@ Raccept(s, addr, addrlen)
 			 */
 
 			/* LINTED pointer casts may be troublesome */
-			if (((struct sockaddr_in *)&accepted)->sin_addr.s_addr
-			==  ((struct sockaddr_in *)&socksfd->reply)->sin_addr.s_addr) {
-				/* matches servers ip address, could be forwarded. */
+			if (TOIN(&accepted)->sin_addr.s_addr
+			==  TOIN(&socksfd->reply)->sin_addr.s_addr) {
+				/* matches servers IP address, could be forwarded. */
 				int forwarded;
 
 				switch (socksfd->state.version) {
@@ -176,14 +180,17 @@ Raccept(s, addr, addrlen)
 						sockaddr2sockshost(&accepted, &packet.req.host);
 						packet.req.auth		= &socksfd->state.auth;
 
-						if (socks_sendrequest(socksfd->control, &packet.req) != 0)
+						if (socks_sendrequest(socksfd->control, &packet.req) != 0) {
+							close(remote);
 							return -1;
+						}
 
 						if (socks_recvresponse(socksfd->control, &packet.res,
 						packet.req.version) != 0) {
 #if SOCKS_TRYHARDER
 							socks_unlock(socksfd->state.lock);
 #endif
+							close(remote);
 							return -1;
 						}
 
@@ -193,6 +200,8 @@ Raccept(s, addr, addrlen)
 #if SOCKS_TRYHARDER
 							socks_unlock(socksfd->state.lock);
 #endif
+							close(remote);
+							errno = ECONNABORTED;
 							return -1;
 						}
 
@@ -204,9 +213,10 @@ Raccept(s, addr, addrlen)
 
 					case MSPROXY_V2:
 						if (sockaddrareeq(&socksfd->reply, &accepted)) {
-							/* socksfd->accepted filled in by sigio(). */
-							accepted = socksfd->accepted;
-							sockaddr2sockshost(&socksfd->accepted, &packet.res.host);
+							/* socksfd->forus.accepted filled in by sigio(). */
+							accepted = socksfd->forus.accepted;
+							sockaddr2sockshost(&socksfd->forus.accepted,
+							&packet.res.host);
 
 							/* seems to support only one forward. */
 							socksfd->state.acceptpending = 0;
@@ -225,12 +235,12 @@ Raccept(s, addr, addrlen)
 					socksfd = socks_addaddr((unsigned int)remote, socksfd);
 
 					fakesockshost2sockaddr(&packet.res.host, &accepted);
-					socksfd->accepted = accepted;
+					socksfd->forus.accepted = accepted;
 
 					/* has a different local address if INADDR_ANY was bound. */
 
 					/* LINTED pointer casts may be troublesome */
-					if (((struct sockaddr_in *)&socksfd->local)->sin_addr.s_addr
+					if (TOIN(&socksfd->local)->sin_addr.s_addr
 					== htonl(INADDR_ANY)) {
 						len = sizeof(socksfd->local);
 						if (getsockname(remote, &socksfd->local, &len) != 0)
@@ -260,7 +270,7 @@ Raccept(s, addr, addrlen)
 				}
 
 				fakesockshost2sockaddr(&packet.res.host, &accepted);
-				socksfd->accepted = accepted;
+				socksfd->forus.accepted = accepted;
 				remote = socksfd->control;
 				break;
 

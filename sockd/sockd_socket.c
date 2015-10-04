@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -44,12 +44,12 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: sockd_socket.c,v 1.27 1999/12/15 14:27:44 michaels Exp $";
+"$Id: sockd_socket.c,v 1.33 2001/12/11 12:26:50 michaels Exp $";
 
 int
 sockd_bind(s, addr, retries)
 	int s;
-	const struct sockaddr *addr;
+	struct sockaddr *addr;
 	size_t retries;
 {
 /*	const char *function = "sockd_bind()"; */
@@ -62,7 +62,23 @@ sockd_bind(s, addr, retries)
 		if (tries++ > 0)
 			sleep(tries - 1);
 
-		if ((p = bind(s, addr, sizeof(*addr))) == 0)
+		/* LINTED pointer casts may be troublesome */
+		if (PORTISRESERVED(TOIN(addr)->sin_port) && sockscf.compat.sameport) {
+			uid_t euid;
+
+			socks_seteuid(&euid, sockscf.uid.privileged);
+			/* LINTED pointer casts may be troublesome */
+			p = bindresvport(s, TOIN(addr));
+			socks_reseteuid(sockscf.uid.privileged, euid);
+		}
+		else if ((p = bind(s, addr, sizeof(*addr))) == 0) {
+			socklen_t addrlen;
+
+			addrlen = sizeof(*addr);
+			p = getsockname(s, addr, &addrlen);
+		}
+
+		if (p == 0)
 			break;
 		else {
 			/* non-fatal error? */

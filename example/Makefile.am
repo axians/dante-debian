@@ -1,1 +1,2 @@
-EXTRA_DIST = socks.conf sockd.conf
+EXTRA_DIST = socks-simple.conf socks.conf sockd.conf sockd-basic.conf \
+	 socks-simple-withoutnameserver.conf

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -44,28 +44,54 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: io.c,v 1.39 1999/09/02 10:41:37 michaels Exp $";
+"$Id: io.c,v 1.56 2001/12/12 14:42:12 karls Exp $";
 
 /* this file defines the functions. */
 #undef select
 #undef close
+#undef recvmsg
+#undef sendmsg
+
+/* XXX needed on AIX apparently */
+#ifdef recvmsg_system
+#define recvmsg recvmsg_system
+#endif /* recvmsg_system */
+
+#ifdef sendmsg_system
+#define sendmsg sendmsg_system
+#endif /* sendmsg_system */
 
 
 ssize_t
-readn(d, buf, nbytes)
+readn(d, buf, nbytes, auth)
 	int d;
 	void *buf;
 	size_t nbytes;
+	struct authmethod_t *auth;
 {
+	const char *function = "readn()";
 	ssize_t p;
 	size_t left = nbytes;
 
 	do {
-		if ((p = read(d, &((char *)buf)[nbytes - left], left)) == -1) {
+		if ((p = socks_recvfrom(d, &((char *)buf)[nbytes - left], left, 0, NULL,
+		NULL, auth)) == -1) {
 #if SOCKS_SERVER
 			if (errno == EINTR)
 				continue;
 #endif
+
+			if (errno == EAGAIN) {
+				fd_set rset;
+
+				FD_ZERO(&rset);
+				FD_SET(d, &rset);
+				if (select(d + 1, &rset, NULL, NULL, NULL) == -1)
+					swarn("%s: select()", function);
+
+				continue;
+			}
+
 			break;
 		}
 		else if (p == 0)
@@ -80,20 +106,34 @@ readn(d, buf, nbytes)
 
 
 ssize_t
-writen(d, buf, nbytes)
+writen(d, buf, nbytes, auth)
 	int d;
 	const void *buf;
 	size_t nbytes;
+	struct authmethod_t *auth;
 {
+	const char *function = "writen()";
 	ssize_t p;
 	size_t left = nbytes;
 
 	do {
-		if ((p = write(d, &((const char *)buf)[nbytes - left], left)) == -1) {
+		if ((p = socks_sendto(d, &((const char *)buf)[nbytes - left], left, 0,
+		NULL, 0, auth)) == -1) {
 #if SOCKS_SERVER
 			if (errno == EINTR)
 				continue;
 #endif
+			if (errno == EAGAIN) {
+				fd_set wset;
+
+				FD_ZERO(&wset);
+				FD_SET(d, &wset);
+				if (select(d + 1, NULL, &wset , NULL, NULL) == -1)
+					swarn("%s: select()", function);
+
+				continue;
+			}
+
 			break;
 		}
 		left -= p;
@@ -104,16 +144,79 @@ writen(d, buf, nbytes)
 	return nbytes - left;
 }
 
+ssize_t
+socks_recvfrom(s, buf, len, flags, from, fromlen, auth)
+	int s;
+	void *buf;
+	size_t len;
+	int flags;
+	struct sockaddr *from;
+	socklen_t *fromlen;
+	struct authmethod_t *auth;
+{
+
+	if (auth != NULL)
+		switch (auth->method) {
+			case AUTHMETHOD_NONE:
+			case AUTHMETHOD_UNAME:
+			case AUTHMETHOD_NOACCEPT:
+			case AUTHMETHOD_RFC931:
+			case AUTHMETHOD_PAM:
+				break;
+
+			default:
+				SERRX(auth->method);
+		}
+
+	if (from == NULL && flags == 0)
+		/* may not be a socket and read(2) will work just as well then. */
+		return read(s, buf, len);
+	return recvfrom(s, buf, len, flags, from, fromlen);
+}
 
 ssize_t
-recvmsgn(s, msg, flags, len)
+socks_sendto(s, msg, len, flags, to, tolen, auth)
+	int s;
+	const void *msg;
+	size_t len;
+	int flags;
+	const struct sockaddr *to;
+	socklen_t tolen;
+	struct authmethod_t *auth;
+{
+
+	if (auth != NULL)
+		switch (auth->method) {
+			case AUTHMETHOD_NONE:
+			case AUTHMETHOD_UNAME:
+			case AUTHMETHOD_NOACCEPT:
+			case AUTHMETHOD_RFC931:
+			case AUTHMETHOD_PAM:
+				break;
+
+			default:
+				SERRX(auth->method);
+		}
+
+	if (to == NULL && flags == 0)
+		/* may not be a socket and write(2) will work just as well then. */
+		return write(s, msg, len);
+	return sendto(s, msg, len, flags, to, tolen);
+}
+
+
+ssize_t
+recvmsgn(s, msg, flags)
 	int s;
 	struct msghdr *msg;
 	int flags;
-	size_t len;
 {
-	size_t left = len;
+	const char *function = "recvmsgn()";
 	ssize_t p;
+	size_t len, left;
+
+	for (p = len = 0; p < (ssize_t)msg->msg_iovlen; ++p)
+		len += msg->msg_iov[p].iov_len;
 
 	while ((p = recvmsg(s, msg, flags)) == -1 && errno == EINTR)
 #if SOCKS_SERVER
@@ -125,26 +228,24 @@ recvmsgn(s, msg, flags, len)
 #if HAVE_SOLARIS_BUGS
 	if (p == -1 && (errno == EMFILE || errno == ENFILE)) {
 		/*
-		 * Even if solaris (2.5.1) fails on recvmsg() it may still have
+		 * Even if Solaris (2.5.1) fails on recvmsg() it may still have
 		 * gotten a descriptor or more as ancillary data which it neglects
 		 * to get rid of, so we have to check for it ourselves and close it,
 		 * else it just gets lost in the void.
 		 */
-		int i, leaked;
-		caddr_t mem;
+		size_t leaked;
+		int d;
 
-		mem = msg->msg_accrights;
-		for (i = 0; i * sizeof(leaked) < msg->msg_accrightslen; ++i) {
-			memcpy(&leaked, mem, sizeof(leaked));
-			mem += sizeof(leaked);
-			close(leaked);
+		for (leaked = 0; leaked * sizeof(d) < CMSG_GETLEN(*msg); ++leaked) {
+			CMSG_GETOBJECT(d, CMSG_CONTROLDATA(*msg), leaked * sizeof(d));
+			close(d);
 		}
 	}
 #endif /* HAVE_SOLARIS_BUGS */
 
 	if (p <= 0)
 		return p;
-	left -= p;
+	left = len - p;
 
 	if (left > 0) {
 		size_t i, count, done;
@@ -162,10 +263,27 @@ recvmsgn(s, msg, flags, len)
 			const struct iovec *io = &msg->msg_iov[i];
 
 			count += io->iov_len;
-			if (count > done) {
-				if ((p = readn(s, &((char *)(io->iov_base))[io->iov_len -
-				(count - done)], count - done)) != ((ssize_t)(count - done)))
+			if (count > done) { /* didn't read all of this iovec. */
+				if ((p = readn(s,
+				&((char *)(io->iov_base))[io->iov_len - (count - done)],
+				count - done, NULL)) != ((ssize_t)(count - done))) {
+					/*
+					 * Failed to read all data, close any descriptors we
+					 * may have gotten then.
+					 */
+					size_t leaked;
+					int d;
+
+					swarn("%s: %d bytes left", function, left);
+
+					for (leaked = 0; leaked * sizeof(d) < CMSG_GETLEN(*msg);
+					++leaked) {
+						CMSG_GETOBJECT(d, CMSG_CONTROLDATA(*msg), leaked * sizeof(d));
+						close(d);
+					}
+
 					break;
+				}
 
 				left -= p;
 				done += p;
@@ -179,6 +297,72 @@ recvmsgn(s, msg, flags, len)
 		return p; /* nothing read. */
 	return len - left;
 }
+
+ssize_t
+sendmsgn(s, msg, flags)
+	int s;
+	const struct msghdr *msg;
+	int flags;
+{
+	const char *function = "sendmsgn()";
+	ssize_t p;
+	size_t len, left;
+
+	for (p = len = 0; p < (ssize_t)msg->msg_iovlen; ++p)
+		len += msg->msg_iov[p].iov_len;
+
+	while ((p = sendmsg(s, msg, flags)) == -1 && errno == EINTR)
+#if SOCKS_SERVER
+		;
+#else
+		return -1;
+#endif
+
+	if (p <= 0)
+		return p;
+	left = len - p;
+
+	if (left > 0) {
+		size_t i, count, done;
+
+		/*
+		 * Can't call sendmsg() again since we could be sending ancillary data,
+		 * send the elements one by one.
+		 */
+
+		SASSERTX(p >= 0);
+
+		done = p;
+		i = count = p = 0;
+		while (i < msg->msg_iovlen && left > 0) {
+			const struct iovec *io = &msg->msg_iov[i];
+
+			count += io->iov_len;
+			if (count > done) { /* didn't send all of this iovec. */
+				while ((p = writen(s,
+				&((char *)(io->iov_base))[io->iov_len - (count - done)],
+				count - done, NULL)) != ((ssize_t)(count - done))) {
+					/*
+					 * yes, we only re-try once.  What errors should we
+					 * retry again on?
+					 */
+					swarn("%s: failed on re-try", function);
+					break;
+				}
+
+				left -= p;
+				done += p;
+			}
+
+			++i;
+		}
+	}
+
+	if (left == len)
+		return p; /* nothing read. */
+	return len - left;
+}
+
 
 int
 closen(d)

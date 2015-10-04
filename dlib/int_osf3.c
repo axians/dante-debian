@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -41,25 +41,32 @@
  *
  */
 
-#undef _XOPEN_SOURCE_EXTENDED
-#undef _SOCKADDR_LEN
-#define HAVE_OSF_OLDSTYLE 1
-
-#include "common.h"
+#include "autoconf.h"
 
 #if HAVE_EXTRA_OSF_SYMBOLS
 
 #if SOCKSLIBRARY_DYNAMIC
 
+#undef _XOPEN_SOURCE_EXTENDED
+#undef _SOCKADDR_LEN
+#define HAVE_OSF_OLDSTYLE 1
+
 /*
  * use of bzero in SYSCALL_START produces vast amounts of warnings
- * when compiling int_osf3.c (on osf)
+ * when compiling int_osf3.c (on OSF)
  */
 #define bzero(a, b) (memset(a, 0, b))
-#include "interposition.h"
+
+#define SOCKS_DLIB_OSF
+
+/* XXX prevents DEC cc from redefining these to _Ereadv/_Ewritev */
+#define readv XXX
+#define writev XXX
+
+#include "common.h"
 
 static const char rcsid[] =
-"$Id: int_osf3.c,v 1.15 1999/12/09 08:18:07 karls Exp $";
+"$Id: int_osf3.c,v 1.24 2001/10/06 12:37:12 karls Exp $";
 
 #undef accept
 #undef bind
@@ -232,7 +239,7 @@ sys_readv(d, iov, iovcnt)
 ssize_t
 sys_writev(d, iov, iovcnt)
 	int d;
-	struct iovec *iov;
+	const struct iovec *iov;
 	int iovcnt;
 {
 	ssize_t rc;
@@ -567,7 +574,7 @@ sendto(s, msg, len, flags, to, tolen)
 ssize_t
 writev(d, iov, iovcnt)
 	int d;
-	struct iovec *iov;
+	const struct iovec *iov;
 	int iovcnt;
 {
 	if (ISSYSCALL(d))
@@ -579,7 +586,7 @@ writev(d, iov, iovcnt)
 ssize_t
 readv(d, iov, iovcnt)
 	int d;
-	struct iovec *iov;
+	const struct iovec *iov;
 	int iovcnt;
 {
 	if (ISSYSCALL(d))

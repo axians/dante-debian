@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
  *  Software Distribution Coordinator  or  sdc@inet.no
  *  Inferno Nettverk A/S
  *  Oslo Research Park
- *  Gaustadaléen 21
- *  N-0349 Oslo
+ *  Gaustadalléen 21
+ *  NO-0349 Oslo
  *  Norway
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: connectchild.c,v 1.91 1999/10/04 12:43:37 michaels Exp $";
+"$Id: connectchild.c,v 1.110 2001/12/12 14:42:11 karls Exp $";
 
 #define MOTHER 0	/* descriptor mother reads/writes on.  */
 #define CHILD	1	/* descriptor child reads/writes on.   */
@@ -87,7 +87,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 	socklen_t len;
 	ssize_t p, fdsent;
 	struct msghdr msg;
-	CMSG_AALLOC(sizeof(int) * FDPASS_MAX);
+	CMSG_AALLOC(cmsg, sizeof(int) * FDPASS_MAX);
 
 
 	slog(LOG_DEBUG, function);
@@ -136,7 +136,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 		}
 	}
 
-	if (config.connectchild == 0) {
+	if (sockscf.connectchild == 0) {
 		/*
 		 * Create child process that will do our connections.
 		 */
@@ -147,30 +147,28 @@ socks_nbconnectroute(s, control, packet, src, dst)
 			return NULL;
 		}
 
-		switch (config.connectchild = fork()) {
+		switch (sockscf.connectchild = fork()) {
 			case -1:
 				swarn("%s: fork()", function);
 				return NULL;
 
 			case 0: {
 				struct itimerval timerval;
-				size_t i, max;
-
-				config.state.pid = getpid();
+				int i, max;
 
 				slog(LOG_DEBUG, "%s: connectchild forked", function);
 
-				setsid();
-
 				/* close unknown descriptors. */
 				for (i = 0, max = getdtablesize(); i < max; ++i)
-					if (socks_logmatch(i, &config.log)
-					|| i == (unsigned int)pipev[CHILD])
+					if (socks_logmatch((unsigned int)i, &sockscf.log)
+					|| i == pipev[CHILD])
+						continue;
+					else if (isatty(i))
 						continue;
 					else
-						close((int)i);
+						close(i);
 
-				initlog();
+				newprocinit();
 
 				/*
 				 * in case of using msproxy stuff, don't want mothers mess,
@@ -192,14 +190,15 @@ socks_nbconnectroute(s, control, packet, src, dst)
 			}
 
 			default:
-				config.connect_s = pipev[MOTHER];
+				sockscf.connect_s = pipev[MOTHER];
 				close(pipev[CHILD]);
 		}
 	}
 
 	switch (packet->req.version) {
 		case SOCKS_V4:
-		case SOCKS_V5: {
+		case SOCKS_V5:
+		case HTTP_V1_0: {
 			/*
 			 * Controlsocket is what later becomes datasocket.
 			 * We don't want to allow the client to read/write/select etc.
@@ -266,7 +265,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 	if (!ADDRISBOUND(local)) {
 		bzero(&local, sizeof(local));
 
-		/* bind same ip as control, any fixed address would do though. */
+		/* bind same IP as control, any fixed address would do though. */
 
 		len = sizeof(local);
 		/* LINTED pointer casts may be troublesome */
@@ -281,6 +280,7 @@ socks_nbconnectroute(s, control, packet, src, dst)
 			switch (packet->req.version) {
 				case SOCKS_V4:
 				case SOCKS_V5:
+				case HTTP_V1_0:
 					close(control); /* created in this function. */
 					control = s;
 					break;
@@ -312,11 +312,14 @@ socks_nbconnectroute(s, control, packet, src, dst)
 	len = sizeof(socksfd.local);
 	if (getsockname(s, &socksfd.local, &len) != 0)
 		SERR(s);
+
+	/* this has to be done here or there would be a race against the signal. */
 	socksfd.control				= control;
-	socksfd.state.command		= SOCKS_CONNECT;
+	socksfd.state.command		= packet->req.command;
 	socksfd.state.version		= packet->req.version;
+	socksfd.state.protocol.tcp	= 1;
 	socksfd.state.inprogress	= 1;
-	sockshost2sockaddr(&packet->req.host, &socksfd.connected);
+	sockshost2sockaddr(&packet->req.host, &socksfd.forus.connected);
 
 	socks_addaddr((unsigned int)s, &socksfd);
 
@@ -327,15 +330,16 @@ socks_nbconnectroute(s, control, packet, src, dst)
 	 */
 
 	fdsent = 0;
-	CMSG_ADDOBJECT(control, sizeof(control) * fdsent++);
+	CMSG_ADDOBJECT(control, cmsg, sizeof(control) * fdsent++);
 
 	switch (packet->req.version) {
 		case SOCKS_V4:
 		case SOCKS_V5:
+		case HTTP_V1_0:
 			break;
 
 		case MSPROXY_V2:
-			CMSG_ADDOBJECT(s, sizeof(s) * fdsent++);
+			CMSG_ADDOBJECT(s, cmsg, sizeof(s) * fdsent++);
 			break;
 
 		default:
@@ -355,10 +359,13 @@ socks_nbconnectroute(s, control, packet, src, dst)
 	msg.msg_name			= NULL;
 	msg.msg_namelen		= 0;
 
-	CMSG_SETHDR_SEND(sizeof(int) * fdsent);
+	CMSG_SETHDR_SEND(msg, cmsg, sizeof(int) * fdsent);
 
 	slog(LOG_DEBUG, "sending request to connectchild");
-	if ((p = sendmsg(config.connect_s, &msg, 0)) != (ssize_t)len) {
+#if 0
+	sleep(20);
+#endif
+	if ((p = sendmsg(sockscf.connect_s, &msg, 0)) != (ssize_t)len) {
 		swarn("%s: sendmsg(): %d of %d", function, p, len);
 		return NULL;
 	}
@@ -377,13 +384,14 @@ run_connectchild(mother)
 	int mother;
 {
 	const char *function = "run_connectchild()";
+	char string[MAXSOCKADDRSTRING];
 	int p, rbits;
 	fd_set rset;
 	struct sigaction sig;
 
 #if 0
-	slog(LOG_DEBUG, "%s: sleeping for 10s", function);
-	sleep(10);
+	slog(LOG_DEBUG, "%s: sleeping ...", function);
+	sleep(20);
 #endif
 
 	sigemptyset(&sig.sa_mask);
@@ -422,7 +430,7 @@ run_connectchild(mother)
 			int s, control;
 			struct sockaddr local, remote;
 			struct msghdr msg;
-			CMSG_AALLOC(sizeof(int) * FDPASS_MAX);
+			CMSG_AALLOC(cmsg, sizeof(int) * FDPASS_MAX);
 
 			iov[0].iov_base	= &req;
 			iov[0].iov_len		= sizeof(req);
@@ -433,9 +441,9 @@ run_connectchild(mother)
 			msg.msg_name         = NULL;
 			msg.msg_namelen      = 0;
 
-			CMSG_SETHDR_RECV(sizeof(cmsgmem));
+			CMSG_SETHDR_RECV(msg, cmsg, CMSG_MEMSIZE(cmsg));
 
-			if ((p = recvmsgn(mother, &msg, 0, len)) != (ssize_t)len) {
+			if ((p = recvmsgn(mother, &msg, 0)) != (ssize_t)len) {
 				switch (p) {
 					case -1:
 						serr(EXIT_FAILURE, "%s: recvmsgn()", function);
@@ -461,6 +469,7 @@ run_connectchild(mother)
 
 				case SOCKS_V4:
 				case SOCKS_V5:
+				case HTTP_V1_0:
 					len = 1; /* only controlsocket (which is also datasocket). */
 					break;
 
@@ -474,15 +483,16 @@ run_connectchild(mother)
 #endif
 
 			len = 0;
-			CMSG_GETOBJECT(control, sizeof(control) * len++);
+			CMSG_GETOBJECT(control, cmsg, sizeof(control) * len++);
 
 			switch (req.packet.req.version) {
 				case MSPROXY_V2:
-					CMSG_GETOBJECT(s, sizeof(s) * len++);
+					CMSG_GETOBJECT(s, cmsg, sizeof(s) * len++);
 					break;
 
 				case SOCKS_V4:
 				case SOCKS_V5:
+				case HTTP_V1_0:
 					s = control;	/* datachannel is controlchannel. */
 					break;
 
@@ -491,23 +501,31 @@ run_connectchild(mother)
 			}
 
 #if DIAGNOSTIC
+			/*
+			 * XXX
+			 * This fails (on OpenBSD at least) if the connect(2) failed.
+			 * This means mother does not know what address we are returning
+			 * the error for (we don't know either) and prevents us from
+			 * returning a error to the client, the socket being "in progress"
+			 * all the time as far as mother knows.
+			 */
+
 			len = sizeof(local);
-			if (getsockname(s, &local, &len) != 0)
-				SERR(-1);
-			slog(LOG_DEBUG, "%s: s local: %s",
-			function, sockaddr2string(&local, NULL, 0));
+			if (getsockname(s, &local, &len) == 0)
+				slog(LOG_DEBUG, "%s: s local: %s",
+				function, sockaddr2string(&local, string, sizeof(string)));
 
 			len = sizeof(local);
 			if (getsockname(control, &local, &len) == 0)
 				slog(LOG_DEBUG, "%s: control local: %s",
-				function, sockaddr2string(&local, NULL, 0));
+				function, sockaddr2string(&local, string, sizeof(string)));
 			else
 				swarn("%s: getsockname(%d)", function, control);
 
 			len = sizeof(local);
 			if (getpeername(control, &local, &len) == 0)
 				slog(LOG_DEBUG, "%s: control remote: %s",
-				function, sockaddr2string(&local, NULL, 0));
+				function, sockaddr2string(&local, string, sizeof(string)));
 #endif /* DIAGNOSTIC */
 
 			/* XXX set socket to blocking while we use it. */
@@ -570,10 +588,9 @@ run_connectchild(mother)
 				bzero(&local, sizeof(local));
 				local.sa_family = AF_INET;
 				/* LINTED pointer casts may be troublesome */
-				((struct sockaddr_in *)&local)->sin_addr.s_addr
-				= htonl(INADDR_ANY);
+				TOIN(&local)->sin_addr.s_addr = htonl(INADDR_ANY);
 				/* LINTED pointer casts may be troublesome */
-				((struct sockaddr_in *)&local)->sin_port = htons(0);
+				TOIN(&local)->sin_port = htons(0);
 			}
 
 			len = sizeof(remote);
@@ -584,10 +601,9 @@ run_connectchild(mother)
 				bzero(&remote, sizeof(remote));
 				remote.sa_family = AF_INET;
 				/* LINTED pointer casts may be troublesome */
-				((struct sockaddr_in *)&remote)->sin_addr.s_addr
-				= htonl(INADDR_ANY);
+				TOIN(&remote)->sin_addr.s_addr = htonl(INADDR_ANY);
 				/* LINTED pointer casts may be troublesome */
-				((struct sockaddr_in *)&remote)->sin_port = htons(0);
+				TOIN(&remote)->sin_port = htons(0);
 			}
 
 			sockaddr2sockshost(&local, &req.src);
@@ -599,7 +615,7 @@ run_connectchild(mother)
 			close(s);
 
 			slog(LOG_DEBUG, "raising SIGSTOP");
-			if (kill(config.state.pid, SIGSTOP) != 0)
+			if (kill(sockscf.state.pid, SIGSTOP) != 0)
 				serr(EXIT_FAILURE, "raise(SIGSTOP)");
 		}
 	}
@@ -612,11 +628,12 @@ sigchld(sig)
 {
 	const char *function = "sigchld()";
 	const int errno_s = errno;
+	char string[MAX(sizeof(MAXSOCKADDRSTRING), sizeof(MAXSOCKSHOSTSTRING))];
 	int status;
 
-	slog(LOG_DEBUG, "%s: connectchild: %d", function, config.connectchild);
+	slog(LOG_DEBUG, "%s: connectchild: %d", function, sockscf.connectchild);
 
-	switch (waitpid(config.connectchild, &status, WNOHANG | WUNTRACED)) {
+	switch (waitpid(sockscf.connectchild, &status, WNOHANG | WUNTRACED)) {
 		case -1:
 			break;
 
@@ -641,24 +658,24 @@ sigchld(sig)
 			if (WIFSIGNALED(status)) {
 				swarnx("%s: connectchild terminated on signal %d",
 				function, WTERMSIG(status));
-				config.connectchild = 0;
-				close(config.connect_s);
+				sockscf.connectchild = 0;
+				close(sockscf.connect_s);
 				break;
 			}
 
 			if (WIFEXITED(status)) {
 				swarnx("%s: cconnectchild exited with status %d",
 				function, WEXITSTATUS(status));
-				config.connectchild = 0;
-				close(config.connect_s);
+				sockscf.connectchild = 0;
+				close(sockscf.connect_s);
 				break;
 			}
 
 			SASSERTX(WIFSTOPPED(status));
 
-			kill(config.connectchild, SIGCONT);
+			kill(sockscf.connectchild, SIGCONT);
 
-			if ((p = read(config.connect_s, &childres, sizeof(childres)))
+			if ((p = read(sockscf.connect_s, &childres, sizeof(childres)))
 			!= sizeof(childres)) {
 				swarn("%s: read(): got %d of %d", function, p, sizeof(childres));
 				return;
@@ -668,10 +685,10 @@ sigchld(sig)
 			sockshost2sockaddr(&childres.dst, remote);
 
 			slog(LOG_DEBUG, "%s: local = %s",
-			function, sockaddr2string(local, NULL, 0));
+			function, sockaddr2string(local, string, sizeof(string)));
 
 			slog(LOG_DEBUG, "%s: remote = %s",
-			function, sockaddr2string(remote, NULL, 0));
+			function, sockaddr2string(remote, string, sizeof(string)));
 
 			if ((s = socks_addrcontrol(local, remote)) == -1) {
 				char lstring[MAXSOCKADDRSTRING];
@@ -693,6 +710,7 @@ sigchld(sig)
 
 				case SOCKS_V4:
 				case SOCKS_V5:
+				case HTTP_V1_0:
 					slog(LOG_DEBUG, "%s: duping %d over %d",
 					function, socksfd->control, s);
 
@@ -719,7 +737,7 @@ sigchld(sig)
 				swarn("%s: getsockname(s)", function);
 			else
 				slog(LOG_DEBUG, "%s: socksfd->local: %s",
-				function, sockaddr2string(&socksfd->local, NULL, 0));
+				function, sockaddr2string(&socksfd->local, string, sizeof(string)));
 
 			len = sizeof(socksfd->server);
 			if (getpeername(s, &socksfd->server, &len) != 0)
@@ -737,14 +755,15 @@ sigchld(sig)
 			}
 
 			slog(LOG_DEBUG, "serverreplyisok, server will use as src: %s",
-			sockshost2string(&childres.packet.res.host, NULL, 0));
+			sockshost2string(&childres.packet.res.host, string, sizeof(string)));
 
+			socksfd->state.auth			= childres.packet.auth;
 			socksfd->state.msproxy		= childres.packet.state.msproxy;
 			socksfd->state.inprogress	= 0;
 			sockshost2sockaddr(&childres.packet.res.host, &socksfd->remote);
 
 			/* needed for standard socks bind. */
-			config.state.lastconnect = socksfd->connected;
+			sockscf.state.lastconnect = socksfd->forus.connected;
 		}
 	}
 
