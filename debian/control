@@ -7,8 +7,8 @@ Build-Depends: debhelper(>> 8), autotools-dev (>= 20100122.1~),
 	libtool-bin, libpam0g-dev, libwrap0-dev
 Homepage: http://www.inet.no/dante/
 Standards-Version: 3.9.1
-Vcs-Git: git://gitorious.org/dante/pkg-debian.git
-Vcs-Browser: http://gitorious.org/dante/pkg-debian
+Vcs-Git: https://gitlab.com/dante/pkg-debian-full.git
+Vcs-Browser: https://gitlab.com/dante/pkg-debian-full
 
 Package: libsocksd0
 Architecture: any
