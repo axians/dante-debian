@@ -2,8 +2,8 @@ Source: dante
 Section: net
 Priority: optional
 Maintainer: Peter Pentchev <roam@ringlet.net>
-Build-Depends: debhelper(>> 8), autotools-dev (>= 20100122.1~),
-	dpkg-dev (>= 1.15.7~), flex, hardening-includes,
+Build-Depends: debhelper(>> 8), autotools-dev,
+	flex, hardening-includes,
 	libtool-bin, libpam0g-dev, libwrap0-dev
 Homepage: http://www.inet.no/dante/
 Standards-Version: 3.9.1
