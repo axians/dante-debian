@@ -4,6 +4,7 @@ dante (1.2.2+dfsg-4) UNRELEASED; urgency=medium
     Closes: #776907
   * Remove the obsolete DM-Upload-Allowed source control field.
   * Note the migration to my GitLab repository in the Vcs-* fields.
+  * Use the default dpkg-dev source package compression method.
 
  -- Peter Pentchev <roam@ringlet.net>  Mon, 05 Oct 2015 12:24:45 +0300
 
