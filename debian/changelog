@@ -1,3 +1,10 @@
+dante (1.2.2+dfsg-4) UNRELEASED; urgency=medium
+
+  * Fix FTBFS by depending on libtool-bin instead of libtool.
+    Closes: #776907
+
+ -- Peter Pentchev <roam@ringlet.net>  Mon, 05 Oct 2015 12:24:45 +0300
+
 dante (1.2.2+dfsg-3) experimental; urgency=low
 
   * Depend on a hardening package so that the build hardening is actually
