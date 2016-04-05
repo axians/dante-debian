@@ -1,4 +1,4 @@
-dante (1.2.2+dfsg-4) UNRELEASED; urgency=medium
+dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
 
   * Fix FTBFS by depending on libtool-bin instead of libtool.
     Closes: #776907
@@ -9,6 +9,28 @@ dante (1.2.2+dfsg-4) UNRELEASED; urgency=medium
   * Fix the broken .so symlink in libsocksd0-dev.  Closes: #715117
   * Bump the debhelper compatibility level to 9 and install into
     the multiarch library directory.
+  * New upstream version:
+    - Closes: #740749 (new upstream version)
+    - Closes: #731178 (tries to dlopen a linker script)
+    - rework some of the patches to modify the *.am files instead of
+      the *.in ones; Closes: #716681
+    - use dh-autoreconf
+    - add a lot more filenames to debian/clean
+    - put the preloaded libdsocksd back into a separate package, now named
+      dante-client-lib, in preparation for socksify being able to select
+      the one with the correct ABI/architecture; drop the 15-lib-dante-client
+      patch that is no longer applicable
+    - update the libsocksd0 symbols file - all the internal symbols were
+      dropped from the public interface; this should cause no trouble,
+      since none of these should ever have been used by anything external.
+      Closes: #626316
+    - drop the no longer shipped TODO doc file
+    - update the patches
+    - drop the 07-rconnect patch, it seems to be handled upstream
+    - drop the 13-c-warnings patch, it was integrated upstream
+    - drop the check for PTHREAD_MUTEX_ERRORCHECK, we really need it; if it
+      turns out not to be available on some architectures, we'll figure out
+      ways around that
 
  -- Peter Pentchev <roam@ringlet.net>  Mon, 05 Oct 2015 12:24:45 +0300
 

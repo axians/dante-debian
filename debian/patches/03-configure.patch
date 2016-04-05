@@ -4,36 +4,28 @@ Description: Adapt the configure script for the Debian environment.
 Forwarded: not-needed
 Author: Adrian Bridgett <bridgett@debian.org>,
 	Peter Pentchev <roam@ringlet.net>
-Last-Update: 2010-10-12
+Last-Update: 2016-04-05
 
---- a/configure
-+++ b/configure
-@@ -3279,7 +3279,7 @@
-   CFLAGS=$ac_save_CFLAGS
- elif test $ac_cv_prog_cc_g = yes; then
-   if test "$GCC" = yes; then
--    CFLAGS="-g -O2"
-+    CFLAGS=""
-   else
-     CFLAGS="-g"
-   fi
-@@ -19714,8 +19714,8 @@
- # This can be used to rebuild libtool when needed
- LIBTOOL_DEPS="$ac_aux_dir/ltmain.sh"
- 
--# Always use our own libtool.
--LIBTOOL='$(SHELL) $(top_builddir)/libtool'
-+# Always use Debian's libtool.
-+LIBTOOL='/usr/bin/libtool'
- 
- # Prevent multiple expansion
- 
-@@ -31287,7 +31287,7 @@
+--- a/preload.m4
++++ b/preload.m4
+@@ -563,7 +563,8 @@
  		;;
  
- 		*)
--		    LIBRARY_DLOPEN="${base_library_path}libdl.${SOLIB_POSTFIX}"
-+		    LIBRARY_DLOPEN="/lib/libdl.so.2"
+ 	    *)
+-		LIBRARY_DLOPEN="${base_library_path}libdl.${SOLIB_POSTFIX}"
++	    	# FIXME: this file does not even exist :)
++		LIBRARY_DLOPEN="/lib/libdl.so.2"
  		;;
- 	    esac
- 	    SOCKSIFY_PRELOAD_LIBS="${SOCKSIFY_PRELOAD_LIBS}${LIBRARY_DLOPEN:+${PRELOAD_SEPERATOR}}${LIBRARY_DLOPEN}"
+ 	esac
+ 	SOCKSIFY_PRELOAD_LIBS="${SOCKSIFY_PRELOAD_LIBS}${LIBRARY_DLOPEN:+${PRELOAD_SEPERATOR}}${LIBRARY_DLOPEN}"
+--- a/configure.ac
++++ b/configure.ac
+@@ -79,6 +79,8 @@
+ oCFLAGS="$CFLAGS"
+ unset CFLAGS
+ LT_INIT
++strippedCFLAGS=`echo "$CFLAGS" | sed -e 's/^[[:space:]]*//; s/[[:space:]]\+/ /g; s/[[:space:]]*$//'`
++if test "$strippedCFLAGS" = '-g -O2'; then CFLAGS=''; fi
+ autoconf_compflags="$CFLAGS"
+ CFLAGS=$oCFLAGS
+ 

@@ -4,6 +4,7 @@
 #export DH_VERBOSE=1
 DEB=$(CURDIR)/debian/tmp
 DEV=debian/libsocksd0-dev
+CLIB=debian/dante-client-lib
 
 CFLAGS=		$(shell dpkg-buildflags --get CFLAGS)
 CPPFLAGS=	$(shell dpkg-buildflags --get CPPFLAGS)
@@ -42,6 +43,7 @@ override_dh_install:
 	cp $(DEB)/usr/share/man/man5/sockd.conf.5  $(DEB)/usr/share/man/man5/danted.conf.5
 	cp $(DEB)/usr/share/man/man8/sockd.8 $(DEB)/usr/share/man/man8/danted.8
 	cp $(DEB)/usr/sbin/sockd $(DEB)/usr/sbin/danted
+	(cd $(DEB) && find . -type f -name libdsocksd.so) | while read f; do d=`dirname "$$f"`; mkdir -p "$(CLIB)/$$d/dante-client"; cp "$(DEB)/$$f" "$(CLIB)/$$d/dante-client/"; done
 	mkdir -p example/renamed
 	for i in example/sockd*.conf; do \
 		sed -e 's/sample sockd.conf/sample danted.conf/' < "$$i" > example/renamed/"`basename $$i | sed -e s/sockd/danted/`"; \
@@ -52,7 +54,7 @@ override_dh_install:
 	dh_install
 
 override_dh_installdocs:
-	dh_installdocs -A README doc/README.usage doc/README.survey BUGS CREDITS TODO SUPPORT
+	dh_installdocs -A README doc/README.usage doc/README.survey BUGS CREDITS SUPPORT
 	dh_installdocs -pdante-client doc/README.socksify
 	dh_installdocs -pdante-client -pdante-server
 	dh_installdocs -pdante-server doc/SOCKS4.protocol
@@ -64,4 +66,4 @@ override_dh_installinit:
 	dh_installinit -pdante-server -r --init-script=danted
 
 %:
-	dh "$@" --with autotools_dev
+	dh "$@" --with autotools_dev --with autoreconf

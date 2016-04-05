@@ -14,10 +14,10 @@ Last-Update: 2010-07-02
 -Rbind
 -Rbindresvport
 -Rconnect
--Rgetaddrinfo()
+-Rgetaddrinfo
 -Rgethostbyname
 -Rgethostbyname2
--Rgetipnodebyname()
+-Rgetipnodebyname
 -Rgetpeername
 -Rgetsockname
 -Rlisten
@@ -34,7 +34,7 @@ Last-Update: 2010-07-02
 -Rwrite
 -Rwritev
 +These system calls can be found in the socks include file "socks.h"
-+which should be added to all relevant source files.
++which should be included in all relevant source files.
  
  These calls currently does nothing and are only provided for
  compatibility with programs which use them:

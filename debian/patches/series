@@ -2,11 +2,8 @@
 02-rename-programs.patch
 03-configure.patch
 05-readme-functions.patch
-07-rconnect.patch
 10-config-users.patch
 11-linux-eccentricities.patch
 12-man-errors.patch
-13-c-warnings.patch
-15-lib-dante-client.patch
 16-sa_siginfo.patch
 17-cppcheck.patch
