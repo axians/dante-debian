@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2004, 2008, 2009
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2004, 2008, 2009, 2010, 2011,
+ *               2013
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,17 +42,15 @@
  *
  */
 
-/* $Id: interposition.h,v 1.75 2009/10/23 11:51:21 karls Exp $ */
+/* $Id: interposition.h,v 1.86 2013/10/27 15:24:41 karls Exp $ */
 
 #ifndef _INTERPOSITION_H_
 #define _INTERPOSITION_H_
 
-#if !BAREFOOTD
 #include "symbols.h"
-#endif /* !BAREFOOTD */
 
 typedef enum { pid = 0, thread } which_id_t;
-struct socks_id_t {
+typedef struct socks_id_t {
    which_id_t        whichid;
    union {
       pid_t          pid;
@@ -61,89 +60,79 @@ struct socks_id_t {
    } id;
 
    struct socks_id_t *next;
-};
+} socks_id_t;
 
-struct libsymbol_t {
+typedef struct {
    char  *symbol;         /* name of the symbol.         */
    char  *library;        /* library symbol is in.       */
    void  *handle;         /* handle to the library.      */
    void  *function;       /* the bound symbol.           */
 
-   struct socks_id_t *dosyscall; /*
-                                  * if this value is not set, the corresponding
-                                  * syscall should be used for the given id.
-                                  * This is for cases where we are unable to
-                                  * base the decision concerning whether the
-                                  * function should resolve to a R*() function
-                                  * or a syscall in other ways.
-                                  */
+   socks_id_t *dosyscall; /*
+                           * if this value is not set, the corresponding
+                           * syscall should be used for the given id.
+                           * This is for cases where we are unable to
+                           * base the decision concerning whether the
+                           * function should resolve to a R*() function
+                           * or a syscall in other ways.
+                           */
 
-};
-
-#if SOCKS_CLIENT
-
-#define SYSCALL_START(s)                                             \
-do {                                                                 \
-   struct socksfd_t *p;                                              \
-   addrlockopaque_t opaque;                                          \
-                                                                     \
-   socks_addrlock(F_WRLCK, &opaque);                                 \
-                                                                     \
-   if ((p = socks_getaddr(s, 0)) == NULL) {                          \
-      struct socksfd_t socksfd;                                      \
-                                                                     \
-      bzero(&socksfd, sizeof(socksfd));                              \
-      socksfd.state.command   = -1;                                  \
-      socksfd.state.issyscall = 1;                                   \
-      p = socks_addaddr(s, &socksfd, 0);                             \
-   }                                                                 \
-                                                                     \
-   SASSERTX(p != NULL);                                              \
-   ++p->state.syscalldepth;                                          \
-                                                                     \
-   socks_addrunlock(&opaque);                                        \
-} while (/*CONSTCOND*/0)
-
-#define SYSCALL_END(s)                                               \
-do {                                                                 \
-   addrlockopaque_t opaque;                                          \
-   struct socksfd_t *p;                                              \
-                                                                     \
-   socks_addrlock(F_WRLCK, &opaque);                                 \
-                                                                     \
-   p = socks_getaddr(s, 0);                                          \
-   SASSERTX(p != NULL);                                              \
-   SASSERTX(p->state.syscalldepth > 0);                              \
-                                                                     \
-   --p->state.syscalldepth;                                          \
-                                                                     \
-   if (p->state.syscalldepth <= 0) { /* all finished. */             \
-      if (p->state.issyscall) /* started out as a syscall. */        \
-         socks_rmaddr(s, 0);                                         \
-   }                                                                 \
-                                                                     \
-   socks_addrunlock(&opaque);                                        \
-} while (/*CONSTCOND*/0)
-
-#define ISSYSCALL(s, name)                                           \
-   socks_shouldcallasnative((name))                                  \
-   ||   (socks_getaddr(s, 1) != NULL                                 \
-      && socks_getaddr(s, 1)->state.syscalldepth > 0)
-#else /* !SOCKS_CLIENT */
-#define SYSCALL_START(s)
-#define SYSCALL_END(s)
-#endif /* !SOCKS_CLIENT */
+} libsymbol_t;
 
 #if SOCKS_CLIENT
 
-struct socks_id_t *
-socks_whoami(struct socks_id_t *id);
+void socks_mark_io_as_native(void);
+void socks_mark_io_as_normal(void);
+/*
+ * Marks i/o calls as native or normal,
+ * using the socks_markas{native,normal}() functions.
+ */
+
+void socks_syscall_start(const int s);
+/*
+ * Marks that functions involving the descriptor "s" should resolve
+ * to system calls.
+ */
+
+void socks_syscall_end(const int s);
+/*
+ * Removes the marking that functions involving the descriptor "s" should
+ * resolve to system calls.
+ */
+
+int
+socks_issyscall(const int s, const char *name);
+/*
+ * Checks whether the function with the name "name" should resolve
+ * to a system call when used with the file descriptor "s".
+ *
+ * Returns true if so, false otherwise.
+ */
+
+socks_id_t *
+socks_whoami(socks_id_t *id);
 /*
  * Returns a unique id identifying the calling thread or process,
  * depending on whether the process is threaded or not.
  * The id is stored in the object "id".
  * Returns "id".
  */
+
+
+#else /* !SOCKS_CLIENT */
+
+#define socks_syscall_start(s)
+#define socks_syscall_end(s)
+
+#define socks_whoami(_id)                                                      \
+do {                                                                           \
+   (_id)->whichid = pid;                                                       \
+   (_id)->id.pid  = sockscf.state.pid;                                         \
+   (_id)->next    = NULL;                                                      \
+} while (/* CONSTCOND */ 0)
+
+#endif /* !SOCKS_CLIENT */
+
 
 int
 socks_shouldcallasnative(const char *functionname);
@@ -170,12 +159,6 @@ socks_markasnormal(const char *functionname);
  * the native system call or the corresponding R*() function should be
  * used when resolving "functionname".
  */
-
-#else /* ! SOCKS_CLIENT */
-
-#define socks_shouldcallasnative(name)  (0) /* not needed in the server. */
-
-#endif /* !SOCKS_CLIENT */
 
 void *
 symbolfunction(const char *symbol);

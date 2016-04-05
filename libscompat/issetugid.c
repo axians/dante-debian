@@ -1,11 +1,13 @@
-/* $Id: issetugid.c,v 1.12 2009/08/13 09:03:49 karls Exp $ */
+/* $Id: issetugid.c,v 1.16 2013/01/02 13:22:39 karls Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "autoconf.h"
 #endif /* HAVE_CONFIG_H */
 
+#include "osdep.h"
+
 /*
- * Copyright (c) 1999, 2005, 2008, 2009
+ * Copyright (c) 1999, 2005, 2008, 2009, 2011, 2012
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,16 +53,16 @@
 extern int __libc_enable_secure;
 #endif /* HAVE_LIBC_ENABLE_SECURE */
 
-#include "issetugid.h"
-
 int
 issetugid(void)
 {
 #if HAVE_LIBC_ENABLE_SECURE
-   if (__libc_enable_secure)
-      return 1;
-   else
+   if (!__libc_enable_secure)
       return 0;
-#endif /* HAVE_LIBC_ENABLE_SECURE */
+#elif HAVE_LIBC_ENABLE_SECURE_DISABLED
+   if (getuid() == geteuid() && getgid() == getegid())
+      return 0;
+#endif /* HAVE_LIBC_ENABLE_SECURE_DISABLED */
+
    return 1; /* don't know, better safe than sorry. */
 }

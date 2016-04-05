@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2004, 2008, 2009
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2004, 2008, 2009, 2010, 2011,
+ *               2012, 2013
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,16 +44,10 @@
 
 #include "common.h"
 
-#if HAVE_LIBMINIUPNP
-#include <miniupnpc/miniupnpc.h>
-#include <miniupnpc/upnpcommands.h>
-#include <miniupnpc/upnperrors.h>
-#else
 #include "upnp.h"
-#endif /* HAVE_LIBMINIUPNP */
 
 static const char rcsid[] =
-"$Id: Rgetsockname.c,v 1.68 2009/10/23 11:43:34 karls Exp $";
+"$Id: Rgetsockname.c,v 1.93 2013/10/27 15:24:42 karls Exp $";
 
 int
 Rgetsockname(s, name, namelen)
@@ -61,45 +56,66 @@ Rgetsockname(s, name, namelen)
    socklen_t *namelen;
 {
    const char *function = "Rgetsockname()";
-   struct socksfd_t socksfd;
-   struct sockaddr addr;
+   socksfd_t socksfd;
+   struct sockaddr_storage addr;
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, s);
+   slog(LOG_DEBUG, "%s, fd %d", function, s);
 
-   if (!socks_addrisours(s, 1)) {
+   if (!socks_addrisours(s, &socksfd, 1)) {
       socks_rmaddr(s, 1);
       return getsockname(s, name, namelen);
    }
 
-   socksfd = *socks_getaddr(s, 1);
-
    if (socksfd.state.version == PROXY_UPNP) {
 #if HAVE_LIBMINIUPNP
-      if (ADDRISBOUND(TOIN(&socksfd.remote)))
+      if (ADDRISBOUND(&socksfd.remote))
          addr = socksfd.remote; /* already have it. */
       else {
-         char straddr[INET_ADDRSTRLEN];
+         proxystate_t *state = &socksfd.route->gw.state.data;
+         socksfd_t *p;
+         char straddr[INET_ADDRSTRLEN], emsg[1024];
          int rc;
 
-         socksfd = *socks_getaddr(s, 1);
+         p = socks_getaddr(s, &socksfd, 1);
+         SASSERTX(p != NULL);
 
-         if ((rc = UPNP_GetExternalIPAddress(socksfd.route->gw.state.data.upnp
-         .controlurl, socksfd.route->gw.state.data.upnp.servicetype, straddr))
-         != UPNPCOMMAND_SUCCESS) {
-            swarnx("%s: failed to get external ip address of upnp device: %d",
-            function, rc);
+         if (socks_initupnp(&socksfd.route->gw, emsg, sizeof(emsg)) != 0) {
+            swarnx("%s: socks_initupnp() failed to init upnp device: %s",
+                   function, emsg);
+
+            errno = EOPNOTSUPP;
             return -1;
          }
 
-         slog(LOG_DEBUG, "%s: upnp controlpoint's external ip address is %s",
-         function, straddr);
+         if ((rc = UPNP_GetExternalIPAddress(state->upnp.controlurl,
+                                             state->upnp.servicetype,
+                                             straddr)) != UPNPCOMMAND_SUCCESS) {
+            swarnx("%s: failed to get external ip address of upnp device: %s",
+                   function, strupnperror(rc));
 
-         if (inet_pton(socksfd.remote.sa_family,
-         straddr, &TOIN(&socksfd.remote)->sin_addr) != 1) {
-            swarn("%s: could not convert %s, af %d, to network address",
-            function, straddr, socksfd.remote.sa_family);
+            errno = EOPNOTSUPP;
+            return -1;
+         }
+
+         slog(LOG_INFO, "%s: upnp control point's external ip address is %s",
+              function, straddr);
+
+         if (socks_inet_pton(AF_INET,
+                             straddr,
+                             &TOIN(&socksfd.remote)->sin_addr,
+                             NULL) == 1)
+            SET_SOCKADDR(TOSS(&socksfd.remote), AF_INET);
+         else if (socks_inet_pton(AF_INET6,
+                                  straddr,
+                                  &TOIN(&socksfd.remote)->sin_addr,
+                                  &TOIN6(&socksfd.remote)->sin6_scope_id) == 1)
+            SET_SOCKADDR(TOSS(&socksfd.remote), AF_INET6);
+         else {
+            swarn("%s: could not convert string %s to network address",
+                  function, straddr);
+
             return -1;
          }
 
@@ -115,9 +131,9 @@ Rgetsockname(s, name, namelen)
          case SOCKS_CONNECT: {
             sigset_t set, oset;
 
-            /* for non-blocking connect, we get a SIGCHLD upon completion. */
+            /* for non-blocking connect, we get a SIGIO upon completion. */
             (void)sigemptyset(&set);
-            (void)sigaddset(&set, SIGCHLD);
+            (void)sigaddset(&set, SIGIO);
             if (sigprocmask(SIG_BLOCK, &set, &oset) != 0) {
                swarn("%s: sigprocmask()", function);
                return -1;
@@ -126,13 +142,13 @@ Rgetsockname(s, name, namelen)
             if (socksfd.state.inprogress) { /* non-blocking connect. */
                /*
                 * this is bad.  We don't know what address the socks server
-                * will use on our behalf yet.  Lets wait for a SIGCHLD
+                * will use on our behalf yet.  Lets wait for a SIGIO
                 * and then retry, unless client is blocking that signal,
                 * then we can only hope the client will retry on ENOBUFS,
                 * but we are probably screwed anyway.
                */
-               if (sigismember(&oset, SIGCHLD)) {
-                  slog(LOG_DEBUG, "%s: SIGCHLD blocked by client", function);
+               if (sigismember(&oset, SIGIO)) {
+                  swarnx("%s: SIGIO is being blocked by client", function);
 
                   if (sigprocmask(SIG_BLOCK, &oset, NULL) != 0) {
                      swarn("%s: sigprocmask()", function);
@@ -176,11 +192,8 @@ Rgetsockname(s, name, namelen)
              */
 
             addr = socksfd.remote;
-            /* LINTED pointer casts may be troublesome */
-            TOIN(&addr)->sin_family      = AF_INET;
-            /* LINTED pointer casts may be troublesome */
+            SET_SOCKADDR(&addr, AF_INET);
             TOIN(&addr)->sin_addr.s_addr = htonl(INADDR_ANY);
-            /* LINTED pointer casts may be troublesome */
             TOIN(&addr)->sin_port        = htons(0);
             break;
 
@@ -189,8 +202,8 @@ Rgetsockname(s, name, namelen)
       }
    }
 
-   *namelen = MIN(*namelen, (socklen_t)sizeof(addr));
-   memcpy(name, &addr, (size_t)*namelen);
+   *namelen = MIN(*namelen, salen(addr.ss_family));
+   sockaddrcpy(TOSS(name), &addr, (size_t)*namelen);
 
    return 0;
 }

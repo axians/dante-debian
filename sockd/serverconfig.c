@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
- *               2008, 2009, 2010
+ *               2008, 2009, 2010, 2011, 2012, 2013, 2014
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,1879 +44,1876 @@
 
 #include "common.h"
 
-#include "ifaddrs_compat.h"
-#include "config_parse.h"
-
 static const char rcsid[] =
-"$Id: serverconfig.c,v 1.305.2.2 2010/05/24 16:39:12 karls Exp $";
-
-static void
-showlist(const struct linkedname_t *list, const char *prefix);
-/*
- * shows user names in "list".
- */
-
-static void
-showlog(const struct log_t *log);
-/*
- * shows what type of logging is specified in "log".
- */
-
-#if HAVE_LIBWRAP
-   extern jmp_buf tcpd_buf;
-
-static void
-libwrapinit(int s, struct request_info *request);
-/*
- * Initializes "request" for later usage via libwrap.
- */
+"$Id: serverconfig.c,v 1.567.4.12 2014/08/24 11:41:34 karls Exp $";
 
 static int
-connectisok(struct request_info *request, const struct rule_t *rule);
-#else /* !HAVE_LIBWRAP */
-static int
-connectisok(void *request, const struct rule_t *rule);
-#endif /* !HAVE_LIBWRAP */
+safamily_isenabled(const sa_family_t family, const char *addrstr,
+                   const interfaceside_t side);
 /*
- * Checks the connection on "s".
- * "rule" is the rule that matched the connection.
- * This function should be called after each rulecheck for a new
- * connection/packet.
+ * Returns true if the address family "family" is enabled on the
+ * interface-side "side".  "addrstr" is a printable representation of
+ * the address we tried to add.
  *
- * Returns:
- *      If connection is acceptable: true
- *      If connection is not acceptable: false
+ * Returns false if the address family "family" is not enabled.
  */
 
-static struct rule_t *
-addrule(const struct rule_t *newrule, struct rule_t **rulebase,
-        const int isclientrule);
+static int addexternaladdr(const struct ruleaddr_t *ra);
 /*
- * Appends a copy of "newrule" to "rulebase", setting sensible
- * defaults where appropriate.
- * If "client" is true, "newrule" is a clientrule.
- * Returns a pointer to the added rule (not "newrule").
+ * Returns 0 if the address "ra" was addedd to the list of external addresses.
+ *
+ * Returns -1 if the address "ra" was not added for a non-fatal reason,
+ * after loging a message if apropriate.
  */
+
+static int addinternaladdr(const char *ifname,
+                           const struct sockaddr_storage *sa,
+                           const int protocol);
+/*
+ * Returns 0 if the address "ra" was addedd to the list of internal addresses.
+ *
+ * Returns -1 if the address "ra" was not added for a non-fatal reason,
+ * after loging a message if apropriate.
+ */
+
 
 static void
-checkrule(const struct rule_t *rule, const int isclientrule);
+add_more_old_shmem(struct config *config, const size_t memc,
+                   const oldshmeminfo_t memv[]);
 /*
- * Check that the rule "rule" makes sense.
- * If "isclientrule" is true, "rule" is a client-rule.  Otherwise,
- * it's a socks-rule.
+ * Adds "memv" to the list of old shmem entries stored in "config".
  */
 
-struct config_t sockscf;
-const int socks_configtype = CONFIGTYPE_SERVER;
-
-#if HAVE_LIBWRAP
-int allow_severity, deny_severity;
-#endif /* HAVE_LIBWRAP */
-
-/* expand array by one, increment argc. */
-#define NEWINTERNAL_EXTERNAL(argc, argv)                       \
-do {                                                           \
-   if ((argv = realloc(argv, sizeof(*argv) * ++argc)) == NULL) \
-      yyerror(NOMEM);                                          \
-   bzero(&argv[argc - 1], sizeof(*argv));                      \
-} while (/*CONSTCOND*/0)
+struct config sockscf;        /* current config.   */
 
 void
-addinternal(addr)
-   const struct ruleaddr_t *addr;
+addinternal(addr, protocol)
+   const ruleaddr_t *addr;
+   const int protocol;
 {
+   const char *function = "addinternal()";
+   struct sockaddr_storage sa;
+   char ifname[MAXIFNAMELEN];
+   int changesupported;
 
-   if (sockscf.state.init) {
-#if 0 /* XXX don't know how to do this now, seems like too much work. */
-      int i;
-
-      for (i = 0; i < sockscf.internalc; ++i)
-         if (memcmp(&sockscf.internalv[i], addr, sizeof(addr)) == 0)
-            break;
-
-      if (i == sockscf.internalc)
-         swarnx("can't change internal addresses once running");
-#endif
-   }
+   if (sockscf.option.serverc == 1
+   ||  sockscf.state.inited   == 0
+   ||  protocol               == SOCKS_UDP)
+      changesupported = 1;
    else
-      switch (addr->atype) {
-         case SOCKS_ADDR_IPV4: {
-            struct sockshost_t host;
+      changesupported = 0;
 
-            NEWINTERNAL_EXTERNAL(sockscf.internalc, sockscf.internalv);
+   slog(LOG_DEBUG, "%s: (%s, %s).  Change supported: %d",
+        function,
+        ruleaddr2string(addr,
+                        ADDRINFO_PORT | ADDRINFO_ATYPE,
+                        NULL,
+                        0),
+        protocol2string(protocol),
+        changesupported);
 
-            sockshost2sockaddr(ruleaddr2sockshost(addr, &host, SOCKS_TCP),
-            &sockscf.internalv[sockscf.internalc - 1].addr);
+   switch (addr->atype) {
+       case SOCKS_ADDR_IPV4:
+       case SOCKS_ADDR_IPV6:
+         if (addr->atype == SOCKS_ADDR_IPV4)
+            SASSERTX(addr->addr.ipv4.mask.s_addr == htonl(IPV4_FULLNETMASK));
+         else if (addr->atype == SOCKS_ADDR_IPV6)
+            SASSERTX(addr->addr.ipv6.maskbits    == IPV6_NETMASKBITS);
+
+         ruleaddr2sockaddr(addr, &sa, protocol);
+
+         if (!PORTISBOUND(&sa))
+            yyerrorx("%s: address %s does not specify a portnumber to bind",
+                     function, sockaddr2string(&sa, NULL, 0));
+
+         if (addrindex_on_listenlist(sockscf.internal.addrc,
+                                     sockscf.internal.addrv,
+                                     &sa,
+                                     protocol) == -1) {
+            if (!changesupported) {
+               yywarnx("cannot change internal addresses once running.  "
+                       "%s looks like a new address and will be ignored",
+                       sockaddr2string(&sa, NULL, 0));
+
+               break;
+            }
+         }
+         else {
+            /*
+             * Already here, but do make sure to update globalstate to reflect
+             * it too.
+             */
+            add_internal_safamily(sa.ss_family);
             break;
          }
 
-         case SOCKS_ADDR_DOMAIN: {
-            struct sockaddr sa;
-            int i;
+         if (sa.ss_family == AF_INET
+         &&  TOIN(&sa)->sin_addr.s_addr == htonl(INADDR_ANY))
+            STRCPY_ASSERTSIZE(ifname, "<any IPv4-interface>");
+         else if (sa.ss_family == AF_INET6
+         &&  memcmp(&TOIN6(&sa)->sin6_addr,
+                    &in6addr_any,
+                    sizeof(in6addr_any)) == 0)
+            STRCPY_ASSERTSIZE(ifname, "<any IPv6-interface>");
+         else if (sockaddr2ifname(&sa, ifname, sizeof(ifname)) == NULL) {
+            /*
+             * Probably config-error, but could be a bug in sockaddr2ifname(),
+             * so don't error out yet.  Will know for sure when we try to bind
+             * the address later.
+             */
+            strncpy(ifname, "<unknown>", sizeof(ifname) - 1);
+            ifname[sizeof(ifname) - 1] = NUL;
 
-            i = 0;
-            while (hostname2sockaddr(addr->addr.domain, i, &sa) != NULL) {
-               NEWINTERNAL_EXTERNAL(sockscf.internalc,
-               sockscf.internalv);
+            yywarn("%s: could not find address %s on any network interface",
+                   function, sockaddr2string2(&sa, 0, NULL, 0));
+         }
 
-               /* LINTED pointer casts may be troublesome */
-               TOIN(&sa)->sin_port = addr->port.tcp;
-               sockscf.internalv[sockscf.internalc - 1].addr = sa;
-               ++i;
+         addinternaladdr(ifname, &sa, protocol);
+         break;
+
+      case SOCKS_ADDR_DOMAIN: {
+         size_t i;
+         char emsg[1024];
+         int gaierr;
+
+         for (i = 0;
+              hostname2sockaddr2(addr->addr.domain,
+                                 i,
+                                 &sa,
+                                 &gaierr,
+                                 emsg,
+                                 sizeof(emsg)) != NULL;
+              ++i) {
+            SET_SOCKADDRPORT(&sa,
+                             protocol == SOCKS_TCP ?
+                                       addr->port.tcp : addr->port.udp);
+
+            if (addrindex_on_listenlist(sockscf.internal.addrc,
+                                        sockscf.internal.addrv,
+                                        &sa,
+                                        protocol) == -1) {
+               if (!changesupported) {
+                  swarnx("cannot change internal addresses once running "
+                         "and %s looks like a new address.  Ignored",
+                         sockaddr2string(&sa, NULL, 0));
+
+                  continue;
+               }
+            }
+            else {
+               /*
+                * Already here, but do make sure to update globalstate to
+                * reflect it too.
+                */
+               add_internal_safamily(sa.ss_family);
+               continue;
             }
 
-            if (i == 0)
-               yyerror("could not resolve name %s: %s",
-               addr->addr.domain, hstrerror(h_errno));
-            break;
+            if (sockaddr2ifname(&sa, ifname, sizeof(ifname)) == NULL) {
+               /*
+                * Probably config-error, but could be bug in our
+                * sockaddr2ifname().
+                * Will know for sure when we try to bind the address later,
+                * so don't error out quite yet.
+                */
+
+               yywarn("%s: could not find address %s (resolved from %s) on "
+                      "any network interface",
+                      function,
+                      sockaddr2string(&sa, NULL, 0),
+                      addr->addr.domain);
+
+               STRCPY_ASSERTSIZE(ifname, "<unknown>");
+            }
+
+            addinternaladdr(ifname, &sa, protocol);
          }
 
-         case SOCKS_ADDR_IFNAME: {
-            struct ifaddrs *ifap, *iface;
-            int m;
+         if (i == 0)
+            yyerrorx("%s", emsg);
 
-            if (getifaddrs(&ifap) != 0)
-               serr(EXIT_FAILURE, "getifaddrs()");
-
-            for (m = 0, iface = ifap; iface != NULL; iface = iface->ifa_next)
-               if (strcmp(iface->ifa_name, addr->addr.ifname) == 0
-               && iface->ifa_addr != NULL
-               && iface->ifa_addr->sa_family == AF_INET) {
-                  NEWINTERNAL_EXTERNAL(sockscf.internalc,
-                  sockscf.internalv);
-
-                  /* LINTED pointer casts may be troublesome */
-                  TOIN(iface->ifa_addr)->sin_port = addr->port.tcp;
-
-                  sockscf.internalv[sockscf.internalc - 1].addr
-                  = *iface->ifa_addr;
-
-                  m = 1;
-               }
-            freeifaddrs(ifap);
-
-            if (!m)
-               yyerror("can't find interface/address: %s", addr->addr.ifname);
-            break;
-         }
-
-         default:
-            SERRX(addr->atype);
+         break;
       }
+
+      case SOCKS_ADDR_IFNAME: {
+         struct ifaddrs *ifap, *iface;
+         int isvalidif;
+
+         ifap = NULL;
+
+         if (getifaddrs(&ifap) != 0)
+            serr("getifaddrs()");
+
+         SASSERTX(ifap != NULL);
+
+         for (isvalidif = 0, iface = ifap;
+         iface != NULL;
+         iface = iface->ifa_next) {
+            if (iface->ifa_addr == NULL)
+               continue;
+
+            if (!safamily_issupported(iface->ifa_addr->sa_family))
+               continue;
+
+            if (strcmp(iface->ifa_name, addr->addr.ifname) != 0)
+               continue;
+
+            isvalidif = 1;
+
+            sockaddrcpy(&sa, TOSS(iface->ifa_addr), sizeof(sa));
+
+            SET_SOCKADDRPORT(&sa, protocol == SOCKS_TCP ?
+                                       addr->port.tcp : addr->port.udp);
+
+            if (addrindex_on_listenlist(sockscf.internal.addrc,
+                                        sockscf.internal.addrv,
+                                        &sa,
+                                        protocol) == -1) {
+               if (!changesupported) {
+                  swarnx("cannot change internal addresses once running, "
+                         "and %s, expanded from the ifname \"%s\" looks "
+                         "like a new address.  Ignored",
+                         sockaddr2string(&sa, NULL, 0),
+                         addr->addr.ifname);
+
+                  continue;
+               }
+            }
+            else {
+               /*
+                * Already here, but do make sure to update globalstate to
+                * reflect it too.
+                */
+               add_internal_safamily(sa.ss_family);
+               continue;
+            }
+
+            addinternaladdr(addr->addr.ifname, &sa, protocol);
+         }
+
+         freeifaddrs(ifap);
+
+         if (!isvalidif)
+            swarnx("cannot find interface/address for %s", addr->addr.ifname);
+
+         break;
+      }
+
+      default:
+         SERRX(addr->atype);
+   }
 }
 
 void
 addexternal(addr)
-   const struct ruleaddr_t *addr;
+   const ruleaddr_t *addr;
 {
+   const char *function = "addexternal()";
+   ruleaddr_t ra;
+   int added_ipv4 = 0, added_ipv6 = 0, added_ipv6_gs = 0;
+
+   SASSERTX(ntohs(addr->port.tcp) == 0);
+   SASSERTX(ntohs(addr->port.udp) == 0);
 
    switch (addr->atype) {
-         case SOCKS_ADDR_DOMAIN: {
-            struct sockaddr sa;
-            int i;
+      case SOCKS_ADDR_DOMAIN: {
+         /*
+          * XXX this is not good.  It is be better to not resolve this now,
+          * but resolve it when using.  Since we have a hostcache, that
+          * should not add too much expense.  Sending servers a SIGHUP
+          * when local addresses change is quite common though, so
+          * assume it's good enough for now.
+          */
+         struct sockaddr_storage sa;
+         size_t i;
+         char emsg[1024];
+         int gaierr;
 
-            i = 0;
-            while (hostname2sockaddr(addr->addr.domain, i, &sa) != NULL) {
-               NEWINTERNAL_EXTERNAL(sockscf.external.addrc,
-               sockscf.external.addrv);
+         for (i = 0;
+         hostname2sockaddr2(addr->addr.domain,
+                            i,
+                            &sa,
+                            &gaierr,
+                            emsg,
+                            sizeof(emsg)) != NULL;
+          ++i) {
+            SET_SOCKADDRPORT(&sa, addr->port.tcp);
 
-               /* LINTED pointer casts may be troublesome */
-               TOIN(&sa)->sin_port = addr->port.tcp;
-               sockaddr2ruleaddr(&sa,
-               &sockscf.external.addrv[sockscf.external.addrc - 1]);
-               ++i;
+            sockaddr2ruleaddr(&sa, &ra);
+
+            if (addexternaladdr(&ra) == 0) {
+               switch (sa.ss_family) {
+                  case AF_INET:
+                     added_ipv4 = 1;
+                     break;
+
+                  case AF_INET6:
+                     added_ipv6 = 1;
+
+                     if (!IN6_IS_ADDR_LINKLOCAL(&TOIN6(&sa)->sin6_addr))
+                        added_ipv6_gs = 1;
+
+                     break;
+
+                  default:
+                     SERRX(sa.ss_family);
+               }
             }
-
-            if (i == 0)
-               yyerror("could not resolve name %s: %s",
-               addr->addr.domain, hstrerror(h_errno));
-            break;
          }
 
-      case SOCKS_ADDR_IPV4: {
-         if (addr->addr.ipv4.ip.s_addr == htonl(INADDR_ANY))
-            yyerror("external address (%s) can't be a wildcard address",
-            ruleaddr2string(addr, NULL, 0));
+         if (i == 0)
+            yyerrorx("%s", emsg);
 
-         NEWINTERNAL_EXTERNAL(sockscf.external.addrc,
-         sockscf.external.addrv);
-         sockscf.external.addrv[sockscf.external.addrc - 1] = *addr;
-         sockscf.external.addrv[sockscf.external.addrc - 1]
-         .addr.ipv4.mask.s_addr = htonl(0xffffffff);
+         break;
+      }
+
+      case SOCKS_ADDR_IPV4:
+         if (addr->addr.ipv4.ip.s_addr == htonl(INADDR_ANY))
+            yyerrorx("external address (%s) to connect out from cannot "
+                     "be a wildcard address",
+                     ruleaddr2string(addr, 0, NULL, 0));
+
+         ra                       = *addr;
+         ra.addr.ipv4.mask.s_addr = htonl(IPV4_FULLNETMASK);
+
+         if (addexternaladdr(&ra) == 0)
+            added_ipv4 = 1;
 
          break;
 
-      case SOCKS_ADDR_IFNAME:
-         NEWINTERNAL_EXTERNAL(sockscf.external.addrc,
-         sockscf.external.addrv);
-         sockscf.external.addrv[sockscf.external.addrc - 1] = *addr;
+      case SOCKS_ADDR_IPV6:
+         if (memcmp(&addr->addr.ipv6.ip, &in6addr_any, sizeof(in6addr_any))
+         == 0)
+            yyerrorx("external address (%s) cannot be a wildcard address",
+                     ruleaddr2string(addr, 0, NULL, 0));
+
+         ra                    = *addr;
+         ra.addr.ipv6.maskbits = IPV6_NETMASKBITS;
+
+         if (addexternaladdr(&ra) == 0) {
+            added_ipv6 = 1;
+
+            if (!IN6_IS_ADDR_LINKLOCAL(&ra.addr.ipv6.ip))
+               added_ipv6_gs = 1;
+         }
+
+         break;
+
+      case SOCKS_ADDR_IFNAME: {
+         /*
+          * Would be nice if this could be cached, e.g. by monitoring a
+          * routing socket for changes.  Have no code for that however.
+          */
+         struct sockaddr_storage sa, t;
+         size_t i;
+
+         /*
+          * We add the interface, not the addresses.  But we want to
+          * know whether the addresses, at least currently, resolve
+          * to ipv4 or ipv6 so we can resolve hostnames appropriately.
+          * E.g., no need to resolve hostname to ipv6 address if we do
+          * not have ipv6 on the external interface.
+          */
+         for (i = 0;
+         ifname2sockaddr(addr->addr.ifname, i, &sa, &t) != NULL;
+         ++i) {
+            const int enabled
+            = safamily_isenabled(sa.ss_family,
+                                 sockaddr2string(&sa, NULL, 0),
+                                 EXTERNALIF);
+
+            slog(LOG_DEBUG, "%s: ifname %s resolved to address %s.  %s",
+                 function,
+                 addr->addr.ifname,
+                 sockaddr2string2(&sa, ADDRINFO_ATYPE, NULL, 0),
+                 enabled ? "enabled" : "not enabled due to address family");
+
+            if (!enabled)
+               continue;
+
+            switch (sa.ss_family) {
+               case AF_INET:
+                  added_ipv4 = 1;
+                  break;
+
+               case AF_INET6:
+                  added_ipv6 = 1;
+
+                  if (!IN6_IS_ADDR_LINKLOCAL(&TOIN6(&sa)->sin6_addr))
+                     added_ipv6_gs = 1;
+
+                  break;
+
+               default:
+                  SERRX(sa.ss_family);
+            }
+         }
+
+         /*
+          * Not resolving but adding the ifname itself.
+          */
+         (void)addexternaladdr(addr);
+
          break;
       }
 
       default:
          SERRX(addr->atype);
    }
-}
 
-struct rule_t *
-addclientrule(newrule)
-   const struct rule_t *newrule;
-{
-   struct rule_t *rule, ruletoadd;
+   if (added_ipv4)
+      add_external_safamily(AF_INET, 1);
 
-   ruletoadd = *newrule; /* for const. */
-
-   rule = addrule(&ruletoadd, &sockscf.crule, 1);
-
-   checkrule(rule, 1);
-
-#if BAREFOOTD
-   /*
-    * Barefoot only has client-rules, so auto-add a socks-rule(s) that
-    * matches the given client-rule.
-    */
-   if (rule->state.protocol.udp) {
-      struct rule_t srule;
-
-      /* most things in the socks-rule are the same. */
-      srule = *rule;
-
-      bzero(&srule.state.protocol, sizeof(srule.state.protocol));
-      bzero(&srule.state.command, sizeof(srule.state.command));
-
-      srule.state.protocol.udp         = 1;
-
-      /* add a rule for letting the packet from the client out ... */
-      srule.bounced                    = 0;
-      srule.dst                        = rule->bounce_to;
-      srule.state.command.udpassociate = 1;
-      srule.ss                         = rule->ss;
-      rule->ss = NULL;
-
-      srule.crule = rule; /* need to know which crule generated this srule. */
-
-      addsocksrule(&srule);
-
-      /* ... and a rule allowing the reply back in. */
-
-      bzero(&srule.state.command, sizeof(srule.state.command));
-
-      srule.bounced = 1; /* reply-rule has no bounce to setup. */
-      srule.ss = NULL;   /* only limiting on the client-side. */
-
-      if (sockscf.option.udpconnectdst) /* only allow replies from dst. */
-         srule.src = rule->bounce_to;
-      else { /* allow replies from everyone. */
-         bzero(&srule.src, sizeof(srule.src));
-         srule.src.atype                         = SOCKS_ADDR_IPV4;
-         srule.src.addr.ipv4.ip.s_addr           = htonl(0);
-         srule.src.addr.ipv4.mask.s_addr         = htonl(0);
-         srule.src.port.tcp = srule.src.port.udp = htons(0);
-      }
-
-      if (rule->bw != NULL) {
-         /*
-          * need to duplicate it for reply-rule too.  Afterwards,
-          * clear it from client-rule.  Copied to socks-rule, and only
-          * needed there.
-          */
-
-         if ((srule.bw = malloc(sizeof(*srule.bw))) == NULL)
-            yyerror(NOMEM);
-
-         *srule.bw = *rule->bw;
-         rule->bw  = NULL;
-      }
-
-      if (rule->ss != NULL) {
-         /*
-          * move it from client-rule to socks-rule; barefoot has no
-          * negotiation.  We could get the same result, but faster,
-          * by keeping it in the client-rule and limit on that only,
-          * but requires #ifdef code in the children.
-          */
-
-         srule.ss = rule->ss;
-         rule->ss = NULL;
-      }
-
-      srule.dst                    = rule->src;
-      srule.state.command.udpreply = 1;
-
-      addsocksrule(&srule);
-   }
-
-   if (rule->state.protocol.tcp) {
-      struct rule_t srule;
-
-      /* most things in the socks-rule are the same. */
-      srule = *rule;
-
-      bzero(&srule.state.protocol, sizeof(srule.state.protocol));
-      bzero(&srule.state.command, sizeof(srule.state.command));
-
-      srule.state.protocol.tcp         = 1;
-      srule.dst                        = rule->bounce_to;
-      srule.state.command.connect      = 1;
-      srule.ss                         = NULL; /* copied later, if needed. */
-      /* record which crule generated this srule. */
-      srule.crule                      = rule;
-
-      if (rule->bw != NULL) { /* move to socks-rule, only needed there. */
-         srule.bw = rule->bw;
-         rule->bw = NULL;
-      }
-
-      if (rule->ss != NULL) {
-         /*
-          * move it from client-rule to socks-rule; barefoot has no
-          * negotiation.  We could get the same result, but faster,
-          * by keeping it in the client-rule and limit on that only,
-          * but requires #ifdef code in the children.
-          */
-
-         srule.ss = rule->ss;
-         rule->ss = NULL;
-      }
-
-      addsocksrule(&srule);
-   }
-#endif /* BAREFOOTD */
-
-   return rule;
-}
-
-struct rule_t *
-addsocksrule(newrule)
-   const struct rule_t *newrule;
-{
-   struct rule_t *rule;
-
-   rule = addrule(newrule, &sockscf.srule, 0);
-   checkrule(rule, 0);
-
-   /* LINTED cast discards 'const' from pointer target type */
-   return (struct rule_t *)rule;
-}
-
-struct linkedname_t *
-addlinkedname(linkedname, name)
-   struct linkedname_t **linkedname;
-   const char *name;
-{
-   struct linkedname_t *user, *last;
-
-   for (user = *linkedname, last = NULL; user != NULL; user = user->next)
-      last = user;
-
-   if ((user = malloc(sizeof(*user))) == NULL)
-      return NULL;
-
-   if ((user->name = strdup(name)) == NULL) {
-      free(user);
-      return NULL;
-   }
-
-   user->next = NULL;
-
-   if (*linkedname == NULL)
-      *linkedname = user;
-   else
-      last->next = user;
-
-   return *linkedname;
+   if (added_ipv6)
+      add_external_safamily(AF_INET6, added_ipv6_gs);
 }
 
 void
-showrule(rule)
-   const struct rule_t *rule;
+resetconfig(config, exiting)
+   struct config *config;
+   const int exiting;
 {
-   char addr[MAXRULEADDRSTRING];
+   const char *function = "resetconfig()";
+   const int ismainmother = pidismainmother(config->state.pid);
+   rule_t *rulev[] = { config->crule, config->hrule, config->srule };
+   monitor_t *monitor;
+   size_t oldc, i;
 
-   slog(LOG_INFO, "socks-rule #%lu, line #%lu",
-   (unsigned long)rule->number, (unsigned long)rule->linenumber);
+   slog(LOG_DEBUG, "%s: exiting? %s, ismainmother? %s",
+        function,
+        exiting ?       "yes" : "no",
+        ismainmother?   "yes" : "no");
 
-   slog(LOG_INFO, "verdict: %s", verdict2string(rule->verdict));
-
-   slog(LOG_INFO, "src: %s",
-   ruleaddr2string(&rule->src, addr, sizeof(addr)));
-
-   slog(LOG_INFO, "dst: %s",
-   ruleaddr2string(&rule->dst, addr, sizeof(addr)));
-
-   if (rule->udprange.op == range)
-      slog(LOG_INFO, "udp port range: %u - %u",
-      ntohs(rule->udprange.start), ntohs(rule->udprange.end));
-
-   if (rule->rdr_from.addr.ipv4.ip.s_addr != htonl(INADDR_ANY))
-      slog(LOG_INFO, "redirect from: %s",
-      ruleaddr2string(&rule->rdr_from, addr, sizeof(addr)));
-
-   if (rule->rdr_to.addr.ipv4.ip.s_addr != htonl(INADDR_ANY))
-      slog(LOG_INFO, "redirect to: %s",
-      ruleaddr2string(&rule->rdr_to, addr, sizeof(addr)));
-
-   if (rule->bw != NULL)
-      slog(LOG_INFO, "max bandwidth allowed: %ld B/s", rule->bw->maxbps);
-
-   if (rule->ss != NULL)
-      slog(LOG_INFO, "max sessions allowed: %d", rule->ss->maxsessions);
-
-   showlist(rule->user, "user: ");
-   showlist(rule->group, "group: ");
-
-#if HAVE_PAM
-   if (methodisset(AUTHMETHOD_PAM, rule->state.methodv, rule->state.methodc))
-      slog(LOG_INFO, "pam.servicename: %s", rule->state.pamservicename);
-#endif /* HAVE_PAM */
-
-   showstate(&rule->state);
-   showlog(&rule->log);
-
-#if HAVE_LIBWRAP
-   if (*rule->libwrap != NUL)
-      slog(LOG_INFO, "libwrap: %s", rule->libwrap);
-#endif /* HAVE_LIBWRAP */
-}
-
-void
-showclient(rule)
-   const struct rule_t *rule;
-{
-   char addr[MAXRULEADDRSTRING];
-
-   slog(LOG_INFO, "client-rule #%lu, line #%lu",
-   (unsigned long)rule->number, (unsigned long)rule->linenumber);
-
-   slog(LOG_INFO, "verdict: %s", verdict2string(rule->verdict));
-
-   slog(LOG_INFO, "src: %s",
-   ruleaddr2string(&rule->src, addr, sizeof(addr)));
-
-   slog(LOG_INFO, "dst: %s",
-   ruleaddr2string(&rule->dst, addr, sizeof(addr)));
-
-#if BAREFOOTD
-   slog(LOG_INFO, "bounce to: %s",
-   ruleaddr2string(&rule->bounce_to, addr, sizeof(addr)));
-#endif /* BAREFOOTD */
-
-   showmethod(rule->state.methodc, rule->state.methodv);
-
-#if !BAREFOOTD
-   showlist(rule->user, "user: ");
-   showlist(rule->group, "group: ");
-#endif /* !BAREFOOTD */
-
-#if HAVE_PAM
-   if (methodisset(AUTHMETHOD_PAM, rule->state.methodv, rule->state.methodc))
-      slog(LOG_INFO, "pam.servicename: %s", rule->state.pamservicename);
-#endif /* HAVE_PAM */
-
-   showlog(&rule->log);
-   showstate(&rule->state);
-
-   if (rule->bw != NULL)
-      slog(LOG_INFO, "max bandwidth allowed: %ld B/s", rule->bw->maxbps);
-
-   if (rule->ss != NULL)
-      slog(LOG_INFO, "max sessions allowed: %d", rule->ss->maxsessions);
-
-#if HAVE_LIBWRAP
-   if (*rule->libwrap != NUL)
-      slog(LOG_INFO, "libwrap: %s", rule->libwrap);
-#endif /* HAVE_LIBWRAP */
-}
-
-void
-showconfig(sockscf)
-   const struct config_t *sockscf;
-{
-   char address[MAXRULEADDRSTRING], buf[1024];
-   size_t i, bufused;
-
-   slog(LOG_DEBUG, "internal addresses (%lu):",
-   (unsigned long)sockscf->internalc);
-   for (i = 0; i < sockscf->internalc; ++i)
-      slog(LOG_DEBUG, "\t%s",
-      sockaddr2string(&sockscf->internalv[i].addr, address,
-      sizeof(address)));
-
-   slog(LOG_DEBUG, "external addresses (%lu):",
-   (unsigned long)sockscf->external.addrc);
-   for (i = 0; i < sockscf->external.addrc; ++i) {
-      ruleaddr2string(&sockscf->external.addrv[i], address,
-      sizeof(address));
-
-      slog(LOG_DEBUG, "\t%s", address);
+   if (!exiting) {
+#if !HAVE_NO_RESOLVESTUFF
+      _res.options = config->initial.res_options;
+#endif /* !HAVE_NO_RESOLVSTUFF */
    }
-   slog(LOG_DEBUG, "external address rotation: %s",
-   rotation2string(sockscf->external.rotation));
 
-   slog(LOG_DEBUG, "compatibility options: %s",
-   compats2string(&sockscf->compat, buf, sizeof(buf)));
-
-   slog(LOG_DEBUG, "extensions enabled: %s",
-   extensions2string(&sockscf->extension, buf, sizeof(buf)));
-
-   slog(LOG_DEBUG, "logoutput goes to: %s",
-   logtypes2string(&sockscf->log, buf, sizeof(buf)));
-
-   slog(LOG_DEBUG, "cmdline options:\n%s",
-   options2string(&sockscf->option, "", buf, sizeof(buf)));
-
-   slog(LOG_DEBUG, "resolveprotocol: %s",
-   resolveprotocol2string(sockscf->resolveprotocol));
-
-   slog(LOG_DEBUG, "direct route fallback: %s",
-   sockscf->option.directfallback ? "enabled" : "disabled");
-
-   slog(LOG_DEBUG, "srchost:\n%s",
-   srchosts2string(&sockscf->srchost, "", buf, sizeof(buf)));
-
-   slog(LOG_DEBUG, "negotiate timeout: %lds",
-   (long)sockscf->timeout.negotiate);
-   slog(LOG_DEBUG, "i/o timeout: tcp: %lds, udp: %lds",
-   (long)sockscf->timeout.tcpio, (long)sockscf->timeout.udpio);
-
-   slog(LOG_DEBUG, "euid: %d", sockscf->state.euid);
-
-#if !HAVE_PRIVILEGES
-   slog(LOG_DEBUG, "userid:\n%s",
-   userids2string(&sockscf->uid, "", buf, sizeof(buf)));
-#endif /* !HAVE_PRIVILEGES */
-
-   slog(LOG_DEBUG, "child.maxrequests: %lu",
-   (unsigned long)sockscf->child.maxrequests);
-
-   slog(LOG_DEBUG, "child.maxidle: %lu",
-   (unsigned long)sockscf->child.maxidle);
-
-   bufused = snprintfn(buf, sizeof(buf), "method(s): ");
-   for (i = 0; (size_t)i < sockscf->methodc; ++i)
-      bufused += snprintfn(&buf[bufused], sizeof(buf) - bufused, "%s%s",
-      i > 0 ? ", " : "", method2string(sockscf->methodv[i]));
-   slog(LOG_DEBUG, buf);
-
-   bufused = snprintfn(buf, sizeof(buf), "clientmethod(s): ");
-   for (i = 0; (size_t)i < sockscf->clientmethodc; ++i)
-      bufused += snprintfn(&buf[bufused], sizeof(buf) - bufused, "%s%s",
-      i > 0 ? ", " : "", method2string(sockscf->clientmethodv[i]));
-   slog(LOG_DEBUG, buf);
-
-   if (sockscf->option.debug) {
-      struct rule_t *rule;
-      struct route_t *route;
-      int count;
-
-      for (count = 0, rule = sockscf->crule; rule != NULL; rule = rule->next)
-         ++count;
-      slog(LOG_DEBUG, "client-rules (%d): ", count);
-      for (rule = sockscf->crule; rule != NULL; rule = rule->next)
-         showclient(rule);
-
-      for (count = 0, rule = sockscf->srule; rule != NULL; rule = rule->next)
-         ++count;
-      slog(LOG_DEBUG, "socks-rules (%d): ", count);
-      for (rule = sockscf->srule; rule != NULL; rule = rule->next)
-         showrule(rule);
-
-      for (count = 0, route = sockscf->route; route != NULL;
-      route = route->next)
-         ++count;
-
-      slog(LOG_DEBUG, "routes (%d): ", count);
-      for (route = sockscf->route; route != NULL; route = route->next)
-         socks_showroute(route);
-   }
-}
-
-void
-resetconfig(void)
-{
-   struct rule_t *rule;
-   struct route_t *route;
-
-   /*
-    * internal; don't touch, only settable at start.
-    */
-
-   /* external addresses can be changed. */
-   free(sockscf.external.addrv);
-   sockscf.external.addrv = NULL;
-   sockscf.external.addrc = 0;
-
-   /* delete all old socks rules */
-   rule = sockscf.srule;
-   while (rule != NULL) {
-      struct rule_t *next = rule->next;
-      struct linkedname_t *user, *nextuser;
-
-      user = rule->user;
-      while (user != NULL) {
-         nextuser = user->next;
-         free(user);
-         user = nextuser;
-      }
-
-      free(rule);
-      rule = next;
-   }
-   sockscf.srule = NULL;
-
-   /* clientrules too. */
-   rule = sockscf.crule;
-   while (rule != NULL) {
-      struct rule_t *next = rule->next;
-      struct linkedname_t *user, *nextuser;
-
-      user = rule->user;
-      while (user != NULL) {
-         nextuser = user->next;
-         free(user);
-         user = nextuser;
-      }
-
-      free(rule);
-      rule = next;
-   }
-   sockscf.crule = NULL;
-
-   /* and routes. */
-   route = sockscf.route;
-   while (route != NULL) {
-      struct route_t *next = route->next;
-
-      free(route);
-      route = next;
-   }
-   sockscf.route = NULL;
-
-   /* compat, read from configfile. */
-   bzero(&sockscf.compat, sizeof(sockscf.compat));
-
-   /* extensions, read from configfile. */
-   bzero(&sockscf.extension, sizeof(sockscf.extension));
-
-   /* log; only settable at start. */
-
-   /*
-    * option; some only setable at commandline, some only read from configfile.
-    * Those read from configfile will be reset to default in optioninit().
-    */
-
-   /* resolveprotocol, read from configfile. */
-   bzero(&sockscf.resolveprotocol, sizeof(sockscf.resolveprotocol));
-
-   /* srchost, read from configfile. */
-   bzero(&sockscf.srchost, sizeof(sockscf.srchost));
-
-   /* stat: keep it. */
-
-   /* state; keep it. */
-
-   /* methods, read from configfile. */
-   bzero(sockscf.methodv, sizeof(sockscf.methodv));
-   sockscf.methodc = 0;
-
-   bzero(sockscf.clientmethodv, sizeof(sockscf.clientmethodv));
-   sockscf.clientmethodc = 0;
-
-   /* timeout, read from configfile. */
-   bzero(&sockscf.timeout, sizeof(sockscf.timeout));
-
-#if !HAVE_PRIVILEGES
-   /* uid, read from configfile. */
-   bzero(&sockscf.uid, sizeof(sockscf.uid));
-#endif /* !HAVE_PRIVILEGES */
-
-   /* childstate, most read from configfile, but some not. */
-   sockscf.child.maxidle = 0;
-}
-
-void
-iolog(rule, state, operation, src, srcauth, dst, dstauth, data, count)
-   struct rule_t *rule;
-   const struct connectionstate_t *state;
-   int operation;
-   const struct sockshost_t *src;
-   const struct authmethod_t *srcauth;
-   const struct sockshost_t *dst;
-   const struct authmethod_t *dstauth;
-   const char *data;
-   size_t count;
-{
-   /* CONSTCOND */
-   char srcstring[MAXSOCKSHOSTSTRING + MAXAUTHINFOLEN];
-   char dststring[sizeof(srcstring)];
-   char rulecommand[256];
-   int p;
-
-   authinfo(srcauth, srcstring, sizeof(srcstring));
-   p = strlen(srcstring);
-   sockshost2string(src, &srcstring[p], sizeof(srcstring) - p);
-
-   authinfo(dstauth, dststring, sizeof(dststring));
-   p = strlen(dststring);
-   sockshost2string(dst, &dststring[p], sizeof(dststring) - p);
-
-   snprintfn(rulecommand, sizeof(rulecommand), "%s(%lu): %s/%s",
-   verdict2string(rule->verdict),
-   (unsigned long)rule->number,
-   protocol2string(state->protocol),
-   command2string(state->command));
-
-   switch (operation) {
-      case OPERATION_ACCEPT:
-      case OPERATION_CONNECT:
-         if (rule->log.connect)
-            slog(LOG_INFO, "%s [: %s -> %s%s%s",
-            rulecommand, srcstring, dststring,
-            (data == NULL || *data == NUL) ? "" : ": ",
-            (data == NULL || *data == NUL) ? "" : data);
+   switch (sockscf.state.type) {
+      case PROC_MOTHER:
+         mother_preconfigload();
          break;
 
-      case OPERATION_ABORT:
-         if (rule->log.disconnect || rule->log.error)
-            slog(LOG_INFO, "%s ]: %s -> %s: %s",
-            rulecommand, srcstring, dststring,
-            (data == NULL || *data == NUL) ? strerror(errno) : data);
+      case PROC_MONITOR:
+         monitor_preconfigload();
          break;
 
-      case OPERATION_ERROR:
-         if (rule->log.error)
-            slog(LOG_INFO, "%s ]: %s -> %s: %s",
-            rulecommand, srcstring, dststring,
-            (data == NULL || *data == NUL) ? strerror(errno) : data);
+      case PROC_NEGOTIATE:
+         negotiate_preconfigload();
          break;
 
-      case OPERATION_TMPERROR:
-         if (rule->log.error)
-            slog(LOG_INFO, "%s -: %s -> %s: %s",
-            rulecommand, srcstring, dststring,
-            (data == NULL || *data == NUL) ? strerror(errno) : data);
+      case PROC_REQUEST:
+         request_preconfigload();
          break;
 
-      case OPERATION_IO:
-         if (rule->log.data && count != 0) {
-            char visdata[SOCKD_BUFSIZE * 4 + 1];
-
-            slog(LOG_INFO, "%s -: %s -> %s (%lu): %s",
-            rulecommand, srcstring, dststring, (unsigned long)count,
-            str2vis(data, count, visdata, sizeof(visdata)));
-
-            break;
-         }
-
-         if (rule->log.iooperation || rule->log.data)
-            slog(LOG_INFO, "%s -: %s -> %s (%lu)",
-            rulecommand, srcstring, dststring, (unsigned long)count);
-         break;
-
-      default:
-         SERRX(operation);
-   }
-}
-
-int
-rulespermit(s, peer, local, clientauth, match, srcauth, state,
-            src, dst, msg, msgsize)
-   int s;
-   const struct sockaddr *peer, *local;
-   struct authmethod_t *clientauth;
-   struct rule_t *match;
-   struct authmethod_t *srcauth;
-   const struct connectionstate_t *state;
-   const struct sockshost_t *src;
-   const struct sockshost_t *dst;
-   char *msg;
-   size_t msgsize;
-{
-   const char *function = "rulespermit()";
-   static int init;
-   static struct rule_t defrule;
-   struct rule_t *rule;
-   struct authmethod_t oldauth;
-   int *methodv, methodc;
-#if HAVE_LIBWRAP
-   struct request_info libwraprequest;
-
-   libwrapinit(s, &libwraprequest);
-#else /* !HAVE_LIBWRAP */
-   void *libwraprequest = NULL;
-#endif /* !HAVE_LIBWRAP */
-
-   /* make a somewhat sensible default rule for entries with no match. */
-   if (!init) {
-      defrule.verdict                     = VERDICT_BLOCK;
-      defrule.number                      = 0;
-
-      defrule.src.atype                   = SOCKS_ADDR_IPV4;
-      defrule.src.addr.ipv4.ip.s_addr     = htonl(INADDR_ANY);
-      defrule.src.addr.ipv4.mask.s_addr   = htonl(0);
-      defrule.src.port.tcp                = htons(0);
-      defrule.src.port.udp                = htons(0);
-      defrule.src.portend                 = htons(0);
-      defrule.src.operator                = none;
-
-      defrule.dst                         = defrule.src;
-
-      memset(&defrule.log, 0, sizeof(defrule.log));
-      defrule.log.connect     = 1;
-      defrule.log.iooperation = 1; /* blocked iooperations. */
-
-      if (sockscf.option.debug) {
-         defrule.log.disconnect = 1;
-         defrule.log.error      = 1;
-      }
-
-      memset(&defrule.state.command, UCHAR_MAX, sizeof(defrule.state.command));
-
-      defrule.state.methodc = 0;
-
-      memset(&defrule.state.protocol, UCHAR_MAX,
-      sizeof(defrule.state.protocol));
-
-      memset(&defrule.state.proxyprotocol, UCHAR_MAX,
-      sizeof(defrule.state.proxyprotocol));
-
-#if HAVE_LIBWRAP
-      *defrule.libwrap = NUL;
-#endif /* HAVE_LIBWRAP */
-
-      init = 1;
-   }
-
-   if (src != NULL)
-      slog(LOG_DEBUG, "%s: src is %s\n",
-      function, sockshost2string(src, NULL, 0));
-
-   if (dst != NULL)
-      slog(LOG_DEBUG, "%s: dst is %s\n",
-      function, sockshost2string(dst, NULL, 0));
-
-   if (state->extension.bind && !sockscf.extension.bind) {
-      snprintf(msg, msgsize, "client requested disabled extension: bind");
-      *match         = defrule;
-      match->verdict = VERDICT_BLOCK;
-
-      return 0; /* will never succeed. */
-   }
-
-   if (msgsize > 0)
-      *msg = NUL;
-
-   /* what rulebase to use. */
-   switch (state->command) {
-      case SOCKS_ACCEPT:
-         /* clientrule. */
-         rule      = sockscf.crule;
-         methodv   = sockscf.clientmethodv;
-         methodc   = sockscf.clientmethodc;
-         break;
-
-      default:
-         /* everyone else, socksrules. */
-         rule      = sockscf.srule;
-         methodv   = sockscf.methodv;
-         methodc   = sockscf.methodc;
+      case PROC_IO:
+         io_preconfigload();
          break;
    }
 
    /*
-    * let srcauth be unchanged from original unless we actually get a match.
+    * config->initial: nothing to do here.
     */
-   for (oldauth = *srcauth;
-   rule != NULL;
-   rule = rule->next, *srcauth = oldauth) {
-      int i;
 
-      /* current rule covers desired command? */
-      switch (state->command) {
-         /* client-rule commands. */
-         case SOCKS_ACCEPT:
-            break;
+   /*
+    * Internal interface.
+    */
 
-         /* socks-rule commands. */
-         case SOCKS_BIND:
-            if (!rule->state.command.bind)
-               continue;
-            break;
-
-         case SOCKS_CONNECT:
-            if (!rule->state.command.connect)
-               continue;
-            break;
-
-         case SOCKS_UDPASSOCIATE:
-            if (!rule->state.command.udpassociate)
-               continue;
-            break;
-
-         /* pseudo commands. */
-
-         case SOCKS_BINDREPLY:
-            if (!rule->state.command.bindreply)
-               continue;
-            break;
-
-         case SOCKS_UDPREPLY:
-            if (!rule->state.command.udpreply)
-               continue;
-            break;
-
-         default:
-            SERRX(state->command);
-      }
-
-      /* current rule covers desired protocol? */
-      switch (state->protocol) {
-         case SOCKS_TCP:
-            if (!rule->state.protocol.tcp)
-               continue;
-            break;
-
-         case SOCKS_UDP:
-            if (!rule->state.protocol.udp)
-               continue;
-            break;
-
-         default:
-            SERRX(state->protocol);
-      }
-
-      /* current rule covers desired version? */
-      if (state->command != SOCKS_ACCEPT) /* no version possible for accept. */
-         switch (state->version) {
-            case PROXY_SOCKS_V4:
-               if (!rule->state.proxyprotocol.socks_v4)
-                  continue;
-               break;
-
-            case PROXY_SOCKS_V5:
-               if (!rule->state.proxyprotocol.socks_v5)
-                  continue;
-               break;
-
-            default:
-               SERRX(state->version);
-         }
-
+   if (config->option.serverc == 1 || !ismainmother) {
       /*
-       * This is a little tricky.  For some commands we may not have
-       * all info at time of (preliminary) rulechecks.  What we want
-       * to do if there is no (complete) address given is to see if
-       * there's any chance at all the rules will permit this request
-       * when the address (later) becomes available.  We therefore
-       * continue to scan the rules until we either get a pass
-       * (ignoring peer with missing info), or the default block is
-       * triggered.
-       *
-       * This is the case for e.g. bindreply and udp, where we will
-       * have to call this function again when we get the addresses in
-       * question.
+       * We only support changing these as long as we only have one mother
+       * process.
+       * If we are not the main mother, we do need to free the memory as
+       * usual however, so it will not be leaked when we realloc based on
+       * the config in shmem that main mother has now installed and from
+       * which we will update.
        */
 
-      /*
-       * XXX why addrmatch() without alias?
-       * If e.g. /etc/hosts has localhost localhost.example.com,
-       * we fail to match 127.0.0.1 against localhost.example.com.
-       */
-      if (src != NULL) {
-         if (!addrmatch(&rule->src, src, state->protocol, 0))
+      free(config->internal.addrv);
+      config->internal.addrv = NULL;
+      config->internal.addrc = 0;
+
+      bzero(&config->internal.protocol, sizeof(config->internal.protocol));
+   }
+
+   bzero(&config->internal.log, sizeof(config->internal.log));
+
+   /*
+    * External interface.
+    */
+
+   /* external addresses can always be changed. */
+   free(config->external.addrv);
+   config->external.addrv = NULL;
+   config->external.addrc = 0;
+
+   config->external.rotation = ROTATION_NOTSET;
+   bzero(&config->external.log, sizeof(config->external.log));
+   bzero(&config->external.protocol, sizeof(config->external.protocol));
+
+   /* can always be changed from config. */
+   bzero(&config->cpu, sizeof(config->cpu));
+
+   for (i = 0; i < ELEMENTS(rulev); ++i) {
+      rule_t *rule, prevrule, *next;
+      int haveprevrule;
+
+      haveprevrule = 0;
+      rule         = rulev[i];
+
+      while (rule != NULL) {
+         /*
+          * Free normal process-local memory.
+          */
+         int rule_is_autoexpanded;
+
+#if !HAVE_SOCKS_RULES
+         if (rule->type == object_srule) {
+            /*
+             * All pointers are pointers to the same memory in the clientrule,
+             * so it has already been freed and only the rule itself remains
+             * to be freed.
+             */
+            next = rule->next;
+            free(rule);
+            rule = next;
+
             continue;
-      }
-      else
-         if (rule->verdict == VERDICT_BLOCK)
-            continue; /* don't have complete address. */
+         }
+#endif /* !HAVE_SOCKS_RULES */
 
-      if (dst != NULL) {
-          if (!addrmatch(&rule->dst, dst, state->protocol, 0))
-            continue;
-      }
-      else
-         if (rule->verdict == VERDICT_BLOCK)
-            continue; /* don't have complete address. */
+         if (haveprevrule
+         &&  prevrule.type   == rule->type
+         &&  prevrule.number == rule->number) {
+            slog(LOG_DEBUG,
+                 "%s: another %s with same rule-number (%lu).  "
+                 "Must be expanded from the same \"to\"-address",
+                 function,
+                 objecttype2string(rule->type),
+                 (unsigned long)rule->number);
 
-      /*
-       * Does this rule's authentication match authentication in use?
-       */
-      if ((state->command == SOCKS_BINDREPLY
-        || state->command == SOCKS_UDPREPLY)
-      && !sockscf.srchost.checkreplyauth) {
-         /*
-          * To be consistent, we should insist that the user specifies
-          * authmethod none for replies, unless he really wants to use
-          * an authmethod in these cases also, which is possible (e.g.
-          * method rfc931, or ip-only based pam), though probably
-          * extremely unlikely.
-          *
-          * That can make the configfile look weird though; if the
-          * user e.g. wants all access to be password-authenticated,
-          * and thus specifies method "uname" on the global
-          * method-line, he can not do that without also adding method
-          * "none", as the global method-line is a superset of the
-          * methods specified in the individual rules.  That means he
-          * then needs to set the method on a rule-by-rule basis;
-          * "none" for replies, and "username" for all others.  With
-          * more than a few rules, this can become quite a hassle, is
-          * unexpected, and only needed because the server supports
-          * this probably quite unusual and rarely used feature.
-          *
-          * We therefor try to be more user-friendly about this, so
-          * unless "checkreplyauth" is set in "srchost:", assume
-          * authmethod should not be checked for replies also.
-          */
-          srcauth->method = AUTHMETHOD_NONE; /* don't bother checking. */
-      }
-      else if (!methodisset(srcauth->method, rule->state.methodv,
-      rule->state.methodc)) {
-         /*
-          * No.  There are however some methods which it's possible to get
-          * a match on, even if above check failed.
-          * I.e. it's possible to change/upgrade the method.
-          * E.g. PAM is based on UNAME; if we have UNAME, we _may_ be
-          * able to get PAM, using the data gotten in UNAME.
-          *
-          * We therefore look at what methods this rule wants and see
-          * if can match it with what the client _can_ provide, if we
-          * do some more work to get that information.
-          *
-          * Currently these methods are: gssapi (only during negotiation),
-          * AUTHMETHOD_NOTSET, rfc931, and pam.
-          */
+            rule_is_autoexpanded = 1;
+            SASSERTX(BAREFOOTD);
+         }
+         else
+            rule_is_autoexpanded = 0;
 
-         /*
-          * This variable only says if current client has provided the
-          * necessary information to check it's access with one of the
-          * methods required by the current rule.  It does not mean the
-          * information was checked.  I.e. if it's AUTHMETHOD_RFC931,
-          * and methodischeckable is set, it means we were able to retrieve
-          * rfc931 info, but not that we checked the retrieved information
-          * against the passsword database.
-          *
-          * XXX would be nice to cache this, so we don't have to
-          * copy memory around each time.
-          */
-         size_t methodischeckable = 0;
+         if (!rule_is_autoexpanded)
+            /*
+             * We don't bother allocating identical memory for auto-expanded
+             * rules, so only need to free it if it is not auto-expanded.
+             */
+            freelinkedname(rule->user);
+         rule->user = NULL;
 
-         for (i = 0; i < methodc; ++i) {
-            if (methodisset(methodv[i], rule->state.methodv,
-            rule->state.methodc)) {
-               slog(LOG_DEBUG, "%s: trying to find match for %s, "
-                               "for command %s ...",
-                               function, method2string(methodv[i]),
-                               command2string(state->command));
+         if (!rule_is_autoexpanded)
+            freelinkedname(rule->group);
+         rule->group = NULL;
 
-               switch (methodv[i]) {
-                  case AUTHMETHOD_NONE:
-                     methodischeckable = 1; /* anything is good enough. */
-                     break;
+         if (!rule_is_autoexpanded)
+            free(rule->socketoptionv);
+         rule->socketoptionv = NULL;
+         rule->socketoptionc = 0;
 
-#if HAVE_LIBWRAP
-                  case AUTHMETHOD_RFC931:
-                     if (clientauth        != NULL
-                     && clientauth->method == AUTHMETHOD_RFC931) {
-                        slog(LOG_DEBUG, "%s: already have rfc931 name %s from "
-                                        "clientauthentication done before",
-                                        function,
-                                        clientauth->mdata.rfc931.name);
+         if (ismainmother) {
+            /*
+             * Next go through the shmem in this rule.  It's possible
+             * we have children that are still using, or about to use,
+             * these segments, so don't delete them now, but save
+             * them for later.  Only upon exit we delete them all.
+             *
+             * This means we may have a lot of unneeded shmem segments
+             * laying around, but since they are just files, rather
+             * than the, on some systems very scarce, sysv-style shmem
+             * segments, that should not be any problem.  It allows
+             * us to ignore a lot of nasty locking issues.
+             */
+            size_t moreoldshmemc = 0;
+            oldshmeminfo_t moreoldshmemv[   1 /* bw             */
+                                          + 1 /* session        */
+                                          + 1 /* session state. */
+                                        ];
 
-                        srcauth->mdata.rfc931 = clientauth->mdata.rfc931;
-                     }
-                     else { /* need to do a tcp lookup. */
-                        slog(LOG_DEBUG, "%s: doing a tcp lookup to get rfc931 "
-                                        "name ...",
-                                        function);
+            if (rule_is_autoexpanded) {
+               SASSERTX(BAREFOOTD);
+               SHMEM_CLEAR(rule, SHMEM_ALL, 1);
+            }
+            else {
+               if (rule->bw_shmid != 0) {
+                  moreoldshmemv[moreoldshmemc].id   = rule->bw_shmid;
+                  moreoldshmemv[moreoldshmemc].key  = key_unset;
+                  moreoldshmemv[moreoldshmemc].type = SHMEM_BW;
 
-
-                        strncpy((char *)srcauth->mdata.rfc931.name,
-                        eval_user(&libwraprequest),
-                        sizeof(srcauth->mdata.rfc931.name) - 1);
-
-                        /* libwrap sets it to unknown if no identreply. */
-                        if (strcmp((char *)srcauth->mdata.rfc931.name,
-                        STRING_UNKNOWN) == 0) {
-                           *srcauth->mdata.rfc931.name = NUL;
-                           slog(LOG_DEBUG, "%s: no rfc931 name", function);
-                        }
-                        else if (srcauth->mdata.rfc931.name[
-                        sizeof(srcauth->mdata.rfc931.name) - 1] != NUL) {
-                           srcauth->mdata.rfc931.name[
-                              sizeof(srcauth->mdata.rfc931.name) - 1] = NUL;
-
-                           swarnx("%s: rfc931 name \"%s\" truncated",
-                           function, srcauth->mdata.rfc931.name);
-
-                           *srcauth->mdata.rfc931.name = NUL; /* unusable */
-                        }
-                     }
-
-                     if (*srcauth->mdata.rfc931.name != NUL)
-                        methodischeckable = 1;
-                     break;
-#endif /* HAVE_LIBWRAP */
-
-#if HAVE_PAM
-                  case AUTHMETHOD_PAM:
-                     /*
-                      * PAM can support username/password, just username,
-                      * or neither username nor password (i.e. based on
-                      * only ip address).
-                      */
-                     switch (srcauth->method) {
-                        case AUTHMETHOD_UNAME: {
-                           /* it's a union, make a copy first. */
-                           const struct authmethod_uname_t uname
-                           = srcauth->mdata.uname;
-
-                           /*
-                            * similar enough, just copy name/password.
-                            */
-
-                           strcpy((char *)srcauth->mdata.pam.name,
-                           (const char *)uname.name);
-
-                           strcpy((char *)srcauth->mdata.pam.password,
-                           (const char *)uname.password);
-
-                           methodischeckable = 1;
-                           break;
-                        }
-
-#if HAVE_LIBWRAP
-                        case AUTHMETHOD_RFC931: {
-                             /* it's a union, make a copy first. */
-                             const struct authmethod_rfc931_t rfc931
-                             = srcauth->mdata.rfc931;
-
-                            /*
-                             * no password, but we can check for the username
-                             * we got from ident, with an empty password.
-                             */
-
-                            strcpy((char *)srcauth->mdata.pam.name,
-                            (const char *)rfc931.name);
-
-                           *srcauth->mdata.pam.password = NUL;
-
-                           methodischeckable = 1;
-                           break;
-                        }
-#endif /* HAVE_LIBWRAP */
-
-                        case AUTHMETHOD_NOTSET:
-                        case AUTHMETHOD_NONE:
-                           /*
-                            * PAM can also support no username/password.
-                            */
-
-                           *srcauth->mdata.pam.name     = NUL;
-                           *srcauth->mdata.pam.password = NUL;
-
-                           methodischeckable = 1;
-                           break;
-
-                     }
-
-                     strcpy(srcauth->mdata.pam.servicename,
-                     rule->state.pamservicename);
-
-                     break;
-#endif /* HAVE_PAM */
-
-#if HAVE_GSSAPI
-                  case AUTHMETHOD_GSSAPI:
-                     /*
-                      * GSSAPI can only be checked/established during
-                      * negotiation (command = SOCKS_ACCEPT).
-                      * After that stage has completed, we either have
-                      * it or we don't.
-                      */
-                     if (state->command != SOCKS_ACCEPT)
-                        continue;
-
-                     strcpy(srcauth->mdata.gssapi.servicename,
-                     rule->state.gssapiservicename);
-
-                     strcpy(srcauth->mdata.gssapi.keytab,
-                     rule->state.gssapikeytab);
-
-                     srcauth->mdata.gssapi.encryption.nec
-                     = rule->state.gssapiencryption.nec;
-
-                     srcauth->mdata.gssapi.encryption.clear
-                     = rule->state.gssapiencryption.clear;
-
-                     srcauth->mdata.gssapi.encryption.integrity
-                     = rule->state.gssapiencryption.integrity;
-
-                     srcauth->mdata.gssapi.encryption.confidentiality
-                     = rule->state.gssapiencryption.confidentiality;
-
-                     methodischeckable = 1;
-                     break;
-#endif /* HAVE_GSSAPI */
+                  ++moreoldshmemc;
                }
 
-               if (methodischeckable) {
-                  slog(LOG_DEBUG, "%s: changing authmethod from %d to %d",
-                  function, srcauth->method, methodv[i]);
+               if (rule->ss_shmid != 0) {
+                  /*
+                   * session-module supports statekeys too, so need to save that
+                   * too.
+                   */
+                  if (sockd_shmat(rule, SHMEM_SS) == 0) {
+                     moreoldshmemv[moreoldshmemc].id   = rule->ss_shmid;
+                     moreoldshmemv[moreoldshmemc].key  = rule->ss->keystate.key;
+                     moreoldshmemv[moreoldshmemc].type = SHMEM_SS;
 
-                  srcauth->method = methodv[i]; /* changing method. */
-                  break;
+                     ++moreoldshmemc;
+
+                     sockd_shmdt(rule, SHMEM_SS);
+                  }
                }
+
+               if (moreoldshmemc > 0)
+                  add_more_old_shmem(config, moreoldshmemc, moreoldshmemv);
             }
          }
 
-         if (i == methodc)
-            /*
-             * current rules methods differs from what client can
-             * provide us with.  Go to next rule.
-             */
-            continue;
+         prevrule = *rule;
+         haveprevrule = 1;
+
+         next     = rule->next;
+         free(rule);
+         rule     = next;
       }
-
-      SASSERTX(state->command == SOCKS_BINDREPLY
-      ||       state->command == SOCKS_UDPREPLY
-      ||       methodisset(srcauth->method, rule->state.methodv,
-                           rule->state.methodc));
-
-      if (srcauth->method != AUTHMETHOD_NONE && rule->user != NULL) {
-         /* rule requires user.  Covers current? */
-         if (!usermatch(srcauth, rule->user)) {
-            slog(LOG_DEBUG,
-            "%s: username \"%s\" did not match rule #%lu for command %s",
-            function,
-            authname(srcauth) == NULL ? "<null>" : authname(srcauth),
-            (unsigned long)rule->number,
-            command2string(state->command));
-
-            continue; /* no match. */
-         }
-      }
-
-      if (srcauth->method != AUTHMETHOD_NONE && rule->group != NULL) {
-         /* rule requires group.  Current included? */
-         if (!groupmatch(srcauth, rule->group)) {
-            slog(LOG_DEBUG,
-            "%s: groupname \"%s\" did not match rule #%lu for command %s",
-            function,
-            authname(srcauth) == NULL ? "<null>" : authname(srcauth),
-            (unsigned long)rule->number,
-            command2string(state->command));
-
-            continue; /* no match. */
-         }
-      }
-
-      /* last step.  Does the authentication match? */
-      i = accesscheck(s, srcauth, peer, local, msg, msgsize);
-
-      /*
-       * two fields we want to copy.  This is to speed things up so
-       * we don't re-check the same method.
-      */
-      memcpy(oldauth.methodv, srcauth->methodv,
-      srcauth->methodc * sizeof(*srcauth->methodv));
-
-      oldauth.methodc = srcauth->methodc;
-      memcpy(oldauth.badmethodv, srcauth->badmethodv,
-      srcauth->badmethodc * sizeof(*srcauth->badmethodv));
-
-      oldauth.badmethodc = srcauth->badmethodc;
-
-      if (!i) {
-         *match         = defrule;
-         match->verdict = VERDICT_BLOCK;
-
-         return 0;
-      }
-
-      break;
    }
 
-   if (rule == NULL) /* no rules matched; match default rule. */
-      rule = &defrule;
+   config->crule = config->hrule = config->srule = NULL;
 
-   *match = *rule;
+   /* routeoptions, read from config file. */
+   bzero(&config->routeoptions, sizeof(config->routeoptions));
+
+   /* free routes. */
+   freeroutelist(config->route);
+   config->route = NULL;
+
+   /* and monitors. */
+   monitor = sockscf.monitor;
+   while (monitor != NULL) {
+      monitor_t *next = monitor->next;
+
+      if (ismainmother && monitor->mstats_shmid != 0) {
+         oldshmeminfo_t moreoldshmemv[   1 /* just the monitor shmid. */ ];
+
+         moreoldshmemv[0].id    = monitor->mstats_shmid;
+         moreoldshmemv[0].key   = key_unset;
+         moreoldshmemv[0].type  = SHMEM_MONITOR;
+
+         add_more_old_shmem(config, ELEMENTS(moreoldshmemv), moreoldshmemv);
+      }
+
+      free(monitor);
+      monitor = next;
+   }
+   config->monitor = NULL;
+
+   /* monitoroptions.  Reset on each reload. */
+   bzero(&config->monitorspec, sizeof(config->monitorspec));
+
+   free(config->socketoptionv);
+   config->socketoptionv = NULL;
+   config->socketoptionc = 0;
+
+   /* compat, read from config file. */
+   bzero(&config->compat, sizeof(config->compat));
+
+   /* extensions, read from config file. */
+   bzero(&config->extension, sizeof(config->extension));
 
    /*
-    * got our rule, now check connection.  Connectioncheck
-    * requires the rule matched so needs to be delayed til here.
+    * log, errlog; handled specially when parsing.
     */
 
-   if (!connectisok(&libwraprequest, match))
-      match->verdict = VERDICT_BLOCK;
+   /*
+    * option; some only settable at commandline, some only read from config
+    * file.  Those only read from config file will be reset to default in
+    * optioninit().
+    */
 
-   return match->verdict == VERDICT_PASS;
-}
+   /* resolveprotocol, read from config file. */
+   bzero(&config->resolveprotocol, sizeof(config->resolveprotocol));
 
-const char *
-authname(auth)
-   const struct authmethod_t *auth;
-{
+   /*
+    * socketconfig, read from config file, but also has defaults set by
+    * optioninit(), so don't need to touch it.
+    */
 
-   if (auth == NULL)
-      return NULL;
+   /* srchost, read from config file. */
+   bzero(&config->srchost, sizeof(config->srchost));
 
-   switch (auth->method) {
-      case AUTHMETHOD_NOTSET:
-      case AUTHMETHOD_NONE:
-      case AUTHMETHOD_NOACCEPT: /* closing connection next presumably. */
-         return NULL;
+   /* stat: not touch.  Accumulated continously. */
 
-      case AUTHMETHOD_UNAME:
-         return (const char *)auth->mdata.uname.name;
+   /*
+    * state; keep most of it, with the following exceptions:
+    */
+   /* don't want to have too much code for tracking this, so regen this now. */
+   config->state.highestfdinuse = 0;
+
+   /* timeout, read from config file. */
+   bzero(&config->timeout, sizeof(config->timeout));
+
+#if HAVE_SOLARIS_PRIVS
+   /* uid; is special.  Needs clearing, but must reopen config-file first. */
+#endif /* HAVE_SOLARIS_PRIVS */
+
+   /* (child)state: not touched. */
+
+
+   /*
+    * various method settings.  All read from config file.
+    */
+
+   bzero(config->cmethodv, sizeof(config->cmethodv));
+   config->cmethodc = 0;
+
+   bzero(config->smethodv, sizeof(config->smethodv));
+   config->smethodc = 0;
+
+   /* udpconnectdst.  No need to touch.  Reset to default on reload. */
 
 #if HAVE_LIBWRAP
-      case AUTHMETHOD_RFC931:
-         return (const char *)auth->mdata.rfc931.name;
+   if (config->hosts_allow_original != NULL
+   && hosts_allow_table             != config->hosts_allow_original) {
+      free(hosts_allow_table);
+      hosts_allow_table = config->hosts_allow_original;
+   }
+
+   if (config->hosts_deny_original != NULL
+   && hosts_deny_table             != config->hosts_deny_original) {
+      free(hosts_deny_table);
+      hosts_deny_table = config->hosts_deny_original;
+   }
 #endif /* HAVE_LIBWRAP */
 
-#if HAVE_PAM
-      case AUTHMETHOD_PAM:
-         return (const char *)auth->mdata.pam.name;
-#endif /* HAVE_PAM */
+   if (exiting && ismainmother && config->oldshmemc > 0) {
+      /*
+       * Go through the list of saved segments and delete them.
+       * Any (io) children using them should already have them open,
+       * and nobody not already using them should need to attach to them
+       * after we exit.  The exception is clients using the session module,
+       * where we do not keep attached to the segment, but who need to attach
+       * to it when removing the client.  Unfortunately failure to attach
+       * to a shmem segment is normally a serious error and logged as thus,
+       * but if mother has removed the segment, then obviously the other
+       * processes can not attach to it again.
+       *
+       * There is some code to only debug log failure to attach to the
+       * shmem segments (or rather, failure to open the file) if mother
+       * does not exist (presumably having deleted the files before exiting),
+       * rather than warn.  It depends on mother having exited before the
+       * child process tries to remove the client though, which may not
+       * be the case even though we do a little work to increase the odds.
+       * Worst case is that we end up with some useless warnings though,
+       * so not worth going overboard with it.
+       */
 
-#if HAVE_GSSAPI
-      case AUTHMETHOD_GSSAPI:
-         return (const char *)auth->mdata.gssapi.name;
-#endif /* HAVE_GSSAPI */
+      SASSERTX(ismainmother);
+      SASSERTX(sockscf.state.type == PROC_MOTHER);
 
-      default:
-         SERRX(auth->method);
+      /*
+       * Lock to increase the chance of us having time to exit before
+       * any children try to attach/detach (they will be blocked waiting for
+       * the lock).  Don't unlock ourselves, but let the kernel release the
+       * lock when we exit, further reducing gap between us exiting and
+       * a child process being able to detect it.
+       */
+      socks_lock(config->shmemfd, 0, 0, 1, 1);
+
+      slog(LOG_DEBUG, "%s: %ld old shmem entr%s saved.  Deleting now",
+                      function, (unsigned long)config->oldshmemc,
+                      config->oldshmemc == 1 ? "y" : "ies");
+
+      for (oldc = 0; oldc < config->oldshmemc; ++oldc) {
+         char fname[PATH_MAX];
+
+         snprintf(fname, sizeof(fname), "%s",
+                  sockd_getshmemname(config->oldshmemv[oldc].id, key_unset));
+
+         slog(LOG_DEBUG,
+              "%s: deleting shmem segment shmid %lu in file %s at index #%lu",
+              function,
+              (unsigned long)config->oldshmemv[oldc].id,
+              fname,
+              (unsigned long)oldc);
+
+         if (unlink(fname) != 0)
+            swarn("%s: failed to unlink shmem segment %ld in file %s",
+                  function, config->oldshmemv[oldc].id, fname);
+
+         if (config->oldshmemv[oldc].key != key_unset) {
+            snprintf(fname, sizeof(fname), "%s",
+                     sockd_getshmemname(config->oldshmemv[oldc].id,
+                                        config->oldshmemv[oldc].key));
+
+            slog(LOG_DEBUG,
+                 "%s: deleting shmem segment shmid %lu/key %lu in file %s",
+                 function,
+                 (unsigned long)config->oldshmemv[oldc].id,
+                 (unsigned long)config->oldshmemv[oldc].key,
+                 fname);
+
+            if (unlink(fname) != 0)
+               swarn("%s: failed to unlink shmem segment %ld.%d in file %s",
+                     function,
+                     config->oldshmemv[oldc].id,
+                     (int)config->oldshmemv[oldc].key,
+                     fname);
+         }
+      }
    }
-
-   /* NOTREACHED */
 }
 
-const char *
-authinfo(auth, info, infolen)
-   const struct authmethod_t *auth;
-   char *info;
-   size_t infolen;
+void
+freeroutelist(routehead)
+   route_t *routehead;
 {
-   const char *name, *method, *methodinfo = NULL;
 
-   if (auth != NULL) {
-      name   = authname(auth);
-      method = method2string(auth->method);
+   while (routehead != NULL) {
+      route_t *next = routehead->next;
 
-#if HAVE_GSSAPI
-      if (auth->method == AUTHMETHOD_GSSAPI)
-         methodinfo
-         = gssapiprotection2string(auth->mdata.gssapi.state.protection);
-#endif /* HAVE_GSSAPI */
+      free(routehead->socketoptionv);
+      free(routehead);
+      routehead = next;
    }
-   else
-      name = method = NULL;
-
-   if (name == NULL || *name == NUL)
-      *info = NUL;
-   else
-      snprintfn(info, infolen, "%s%s%s%%%s@",
-                method,
-                methodinfo == NULL ? "" : "/",
-                methodinfo == NULL ? "" : methodinfo,
-                name);
-
-   return info;
 }
 
 int
-addressisbindable(addr)
-   const struct ruleaddr_t *addr;
+addrisbindable(addr)
+   const ruleaddr_t *addr;
 {
-   const char *function = "addressisbindable()";
-   struct sockaddr saddr;
-   char saddrs[MAX(MAXSOCKSHOSTSTRING, MAXSOCKADDRSTRING)];
-   int s;
+   const char *function = "addrisbindable()";
+   struct sockaddr_storage saddr;
+   int rc, s;
 
-   if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+   switch (addr->atype) {
+      case SOCKS_ADDR_IPV4:
+      case SOCKS_ADDR_IPV6:
+         sockshost2sockaddr(ruleaddr2sockshost(addr, NULL, SOCKS_TCP), &saddr);
+         break;
+
+      case SOCKS_ADDR_IFNAME: {
+         struct sockaddr_storage mask;
+
+         if (ifname2sockaddr(addr->addr.ifname, 0, &saddr, &mask) == NULL) {
+            swarn("%s: cannot find interface named %s with ip configured",
+                  function, addr->addr.ifname);
+
+            return 0;
+         }
+
+         break;
+      }
+
+      case SOCKS_ADDR_DOMAIN: {
+         sockshost_t host;
+
+         sockshost2sockaddr(ruleaddr2sockshost(addr, &host, SOCKS_TCP), &saddr);
+         if (!IPADDRISBOUND(&saddr)) {
+            swarnx("%s can not resolve host %s: %s",
+                  function,
+                  sockshost2string(&host, NULL, 0),
+                  hstrerror(h_errno));
+
+            return 0;
+         }
+
+         break;
+      }
+
+      default:
+         SERRX(addr->atype);
+   }
+
+   if ((s = socket(saddr.ss_family, SOCK_STREAM, 0)) == -1) {
       swarn("%s: socket(SOCK_STREAM)", function);
       return 0;
    }
 
-   switch (addr->atype) {
-      case SOCKS_ADDR_IPV4: {
-         struct sockshost_t host;
-
-         sockshost2sockaddr(ruleaddr2sockshost(addr, &host, SOCKS_TCP),
-         &saddr);
-
-         if (sockd_bind(s, &saddr, 0) != 0) {
-            swarn("%s: can't bind address: %s",
-            function, sockaddr2string(&saddr, saddrs, sizeof(saddrs)));
-
-            close(s);
-            return 0;
-         }
-         break;
-      }
-
-      case SOCKS_ADDR_IFNAME:
-         if (ifname2sockaddr(addr->addr.ifname, 0, &saddr, NULL) == NULL) {
-            swarnx("%s: can't find interface named %s with ip configured",
-            function, addr->addr.ifname);
-
-            close(s);
-            return 0;
-         }
-
-         if (sockd_bind(s, &saddr, 0) != 0) {
-            swarn("%s: can't bind address %s of interface %s",
-            function, sockaddr2string(&saddr, saddrs, sizeof(saddrs)),
-            addr->addr.ifname);
-
-            close(s);
-            return 0;
-         }
-         break;
-
-      case SOCKS_ADDR_DOMAIN: {
-         struct sockshost_t host;
-
-         sockshost2sockaddr(ruleaddr2sockshost(addr, &host, SOCKS_TCP),
-         &saddr);
-
-         if (TOIN(&saddr)->sin_addr.s_addr == htonl(INADDR_ANY)) {
-            swarn("%s: can't resolve %s to an ip address",
-            function, addr->addr.domain);
-
-            close(s);
-            return 0;
-         }
-
-         if (sockd_bind(s, &saddr, 0) != 0) {
-            swarn("%s: can't bind address %s from hostname %s",
-            function, sockaddr2string(&saddr, saddrs, sizeof(saddrs)),
-            addr->addr.domain);
-
-            close(s);
-            return 0;
-         }
-         break;
-      }
-
-      default:
-         SERRX(addr->atype);
-   }
-
+   rc = socks_bind(s, &saddr, 0);
    close(s);
-   return 1;
+
+   if (rc != 0)
+      swarn("%s: cannot bind address: %s (from address specification %s)",
+            function,
+            sockaddr2string(&saddr, NULL, 0),
+            ruleaddr2string(addr, 0, NULL, 0));
+
+   return rc == 0;
 }
 
 int
 isreplycommandonly(command)
-   const struct command_t *command;
+   const command_t *command;
 {
 
    if ((command->bindreply || command->udpreply)
    && !(command->connect || command->bind || command->udpassociate))
       return 1;
+   else
+      return 0;
+}
 
+int
+hasreplycommands(command)
+   const command_t *command;
+{
+
+   if (command->bindreply || command->udpreply)
+      return 1;
+   else
+      return 0;
+}
+
+
+ssize_t
+addrindex_on_listenlist(listc, listv, _addr, protocol)
+   const size_t listc;
+   const listenaddress_t *listv;
+   const struct sockaddr_storage *_addr;
+   const int protocol;
+{
+   size_t i;
+
+   for (i = 0; i < listc; ++i) {
+      struct sockaddr_storage addr = *(const struct sockaddr_storage *)_addr;
+
+      if (listv[i].protocol != protocol)
+         continue;
+
+      if (GET_SOCKADDRPORT(&addr) == htons(0)) /* match any internal port. */
+         SET_SOCKADDRPORT(&addr, GET_SOCKADDRPORT(&listv[i].addr));
+
+      if (sockaddrareeq(&addr, &listv[i].addr, 0))
+         return (ssize_t)i;
+   }
+
+   return (ssize_t)-1;
+}
+
+ssize_t
+addrindex_on_externallist(external, _addr)
+   const externaladdress_t *external;
+   const struct sockaddr_storage *_addr;
+{
+   const char *function = "addrindex_on_externallist()";
+   struct sockaddr_storage sa, addr;
+   size_t i;
+
+   /*
+    * Not interested in comparing portnumber.
+    */
+   sockaddrcpy(&addr, _addr, sizeof(addr));
+   SET_SOCKADDRPORT(&addr, htons(0));
+
+   slog(LOG_DEBUG,
+        "%s: checking if address %s is a configured external address",
+        function, sockaddr2string(&addr, NULL, 0));
+
+   for (i = 0; i < external->addrc; ++i) {
+      slog(LOG_DEBUG, "%s: external address #%lu: %s",
+           function,
+           (unsigned long)i,
+           ruleaddr2string(&external->addrv[i], ADDRINFO_ATYPE, NULL, 0));
+
+      switch (external->addrv[i].atype) {
+         case SOCKS_ADDR_IPV4:
+         case SOCKS_ADDR_IPV6: {
+            sockshost_t host;
+
+            sockshost2sockaddr(ruleaddr2sockshost(&external->addrv[i],
+                                                  &host,
+                                                  SOCKS_TCP),
+                               &sa);
+#if DIAGNOSTIC
+            SASSERTX(safamily_isenabled(sa.ss_family,
+                                        sockaddr2string(&sa, NULL, 0),
+                                        EXTERNALIF));
+#endif /* DIAGNOSTIC */
+
+            if (sockaddrareeq(&addr, &sa, 0))
+               return (ssize_t)i;
+
+            break;
+         }
+         case SOCKS_ADDR_DOMAIN: {
+            char emsg[1024];
+            int gaierr;
+            size_t ii;
+
+            ii = 0;
+            while (hostname2sockaddr2(external->addrv[i].addr.domain,
+                                      ii++,
+                                      &sa,
+                                      &gaierr,
+                                      emsg,
+                                      sizeof(emsg)) != NULL) {
+               slog(LOG_DEBUG, "%s: checking resolved address %s ...",
+                    function, sockaddr2string(&sa, NULL, 0));
+
+               if (!safamily_isenabled(sa.ss_family,
+                                       sockaddr2string(&sa, NULL, 0),
+                                       EXTERNALIF))
+                  continue;
+
+               if (sockaddrareeq(&addr, &sa, 0))
+                  return (ssize_t)i;
+            }
+
+            if (ii == 0)
+               swarnx("%s: problem with address on external interface: %s",
+                      function, emsg);
+
+            break;
+         }
+
+         case SOCKS_ADDR_IFNAME: {
+            struct sockaddr_storage mask;
+            size_t ii;
+
+            ii = 0;
+            while (ifname2sockaddr(external->addrv[i].addr.ifname,
+                                   ii++,
+                                   &sa,
+                                   &mask) != NULL) {
+               if (!safamily_isenabled(sa.ss_family,
+                                       sockaddr2string(&sa, NULL, 0),
+                                       EXTERNALIF))
+                  continue;
+
+               if (sockaddrareeq(&addr, &sa, 0))
+                  return (ssize_t)i;
+            }
+
+            break;
+         }
+
+         default:
+            SERRX(external->addrv[i].atype);
+      }
+   }
+
+   return (ssize_t)-1;
+}
+
+void
+checkconfig(void)
+{
+   const char *function = "checkconfig()";
+
+#if HAVE_PAM
+   char *pamservicename = NULL;
+#endif /* HAVE_PAM */
+
+#if HAVE_BSDAUTH
+   char *bsdauthstylename = NULL;
+#endif /* HAVE_BSDAUTH */
+
+#if HAVE_GSSAPI
+   char *gssapiservicename = NULL, *gssapikeytab = NULL;
+#endif /* HAVE_GSSAPI */
+
+   /* XXX add same for LDAP */
+
+   rule_t *rulebasev[]   =  { sockscf.crule,
+                              sockscf.hrule,
+                              sockscf.srule
+                            };
+
+#if HAVE_PAM || HAVE_BSDAUTH || HAVE_GSSAPI
+   int *methodbasev[]    =  { sockscf.cmethodv,
+                              sockscf.cmethodv,
+                              sockscf.smethodv
+                            };
+
+   size_t *methodbasec[] =  { &sockscf.cmethodc,
+                              &sockscf.cmethodc,
+                              &sockscf.smethodc
+                            };
+#endif /* HAVE_PAM || HAVE_BSDAUTH || HAVE_GSSAPI */
+
+   size_t i, basec;
+   int usinglibwrap = 0;
+
+   for (i = 0; i < sockscf.cmethodc; ++i) {
+      SASSERTX(sockscf.cmethodv[i] >= AUTHMETHOD_NONE);
+      SASSERTX(sockscf.cmethodv[i] <= AUTHMETHOD_MAX);
+
+      SASSERTX(methodisvalid(sockscf.cmethodv[i], object_crule));
+
+      if (sockscf.cmethodv[i] == AUTHMETHOD_RFC931)
+         usinglibwrap = 1;
+   }
+
+#if HAVE_SOCKS_RULES
+   if (sockscf.smethodc == 0)
+      swarnx("%s: no socks authentication methods enabled.  This means all "
+             "socks requests will be blocked after negotiation.  "
+             "Perhaps this is not intended?",
+             function);
+   else {
+      for (i = 0; i < sockscf.smethodc; ++i) {
+         SASSERTX(sockscf.smethodv[i] >= AUTHMETHOD_NONE);
+         SASSERTX(sockscf.smethodv[i] <= AUTHMETHOD_MAX);
+
+         if (sockscf.smethodv[i] == AUTHMETHOD_RFC931)
+            usinglibwrap = 1;
+
+         if (sockscf.smethodv[i] == AUTHMETHOD_NONE
+         &&  i + 1               < sockscf.smethodc)
+            yywarnx("authentication method \"%s\" is configured in the "
+                    "global socksmethod list, but since authentication "
+                    "methods are selected by the priority given, we will "
+                    "never try to match any of the subsequent authentication "
+                    "methods.  I.e., no match will ever be attempted on the "
+                    "next method, method \"%s\"",
+                    method2string(sockscf.smethodv[i]),
+                    method2string(sockscf.smethodv[i + 1]));
+
+      }
+   }
+#endif /* HAVE_SOCKS_RULES */
+
+   /*
+    * Check rules, including if some rule-specific settings vary across
+    * rules.  If they don't, we can optimize things when running.
+    */
+   basec = 0;
+   while (basec < ELEMENTS(rulebasev)) {
+      rule_t *rule = rulebasev[basec++];
+
+      if (rule == NULL)
+         continue;
+
+      for (; rule != NULL; rule = rule->next) {
+         size_t methodc;
+         int *methodv;
+
+
+#if HAVE_LIBWRAP
+         if (*rule->libwrap != NUL)
+            usinglibwrap = 1;
+#endif /* HAVE_LIBWRAP */
+
+         /*
+          * What methods do we need to check?  clientmethods for
+          * client-rules, socksmethods for socks-rules.
+          */
+         switch (rule->type) {
+            case object_crule:
+#if HAVE_SOCKS_HOSTID
+            case object_hrule:
+#endif /* HAVE_SOCKS_HOSTID */
+               methodc = rule->state.cmethodc;
+               methodv = rule->state.cmethodv;
+               break;
+
+            case object_srule:
+               methodc = rule->state.smethodc;
+               methodv = rule->state.smethodv;
+               break;
+
+            default:
+               SERRX(rule->type);
+         }
+
+         for (i = 0; i < methodc; ++i) {
+            switch (methodv[i]) {
+#if HAVE_PAM
+               case AUTHMETHOD_PAM_ANY:
+               case AUTHMETHOD_PAM_ADDRESS:
+               case AUTHMETHOD_PAM_USERNAME:
+                  if (*sockscf.state.pamservicename == NUL)
+                     break; /* already found to vary. */
+
+                  if (pamservicename == NULL) /* first pam rule. */
+                     pamservicename = rule->state.pamservicename;
+                  else if (strcmp(pamservicename, rule->state.pamservicename)
+                  != 0) {
+                     slog(LOG_DEBUG, "%s: pam.servicename varies, %s ne %s",
+                          function,
+                          pamservicename,
+                          rule->state.pamservicename);
+
+                     *sockscf.state.pamservicename = NUL;
+                  }
+
+                  break;
+#endif /* HAVE_PAM */
+
+#if HAVE_BSDAUTH
+               case AUTHMETHOD_BSDAUTH:
+                  if (*sockscf.state.bsdauthstylename == NUL)
+                     break; /* already found to vary. */
+
+                  if (bsdauthstylename == NULL) /* first bsdauth rule. */
+                     bsdauthstylename = rule->state.bsdauthstylename;
+                  else if (strcmp(bsdauthstylename,
+                                  rule->state.bsdauthstylename) != 0) {
+                     slog(LOG_DEBUG,
+                          "%s: bsdauth.stylename varies, %s ne %s",
+                          function,
+                          bsdauthstylename,
+                          rule->state.bsdauthstylename);
+
+                     *sockscf.state.bsdauthstylename = NUL;
+                  }
+
+                  break;
+#endif /* HAVE_BSDAUTH */
+
+#if HAVE_GSSAPI
+               case AUTHMETHOD_GSSAPI:
+                  if (*sockscf.state.gssapiservicename != NUL) {
+                     if (gssapiservicename == NULL) /* first gssapi rule. */
+                        gssapiservicename = rule->state.gssapiservicename;
+                     else if (strcmp(gssapiservicename,
+                              rule->state.gssapiservicename) != 0) {
+                        slog(LOG_DEBUG,
+                             "%s: gssapi.servicename varies, %s ne %s",
+                              function,
+                              gssapiservicename,
+                              rule->state.gssapiservicename);
+
+                        *sockscf.state.gssapiservicename = NUL;
+                     }
+                  }
+                  /* else; already found to vary. */
+
+                  if (*sockscf.state.gssapikeytab != NUL) {
+                     if (gssapikeytab == NULL) /* first gssapi rule. */
+                        gssapikeytab = rule->state.gssapikeytab;
+                     else if (strcmp(gssapikeytab, rule->state.gssapikeytab)
+                     != 0) {
+                        slog(LOG_DEBUG, "%s: gssapi.keytab varies, %s ne %s",
+                             function,
+                             gssapikeytab,
+                             rule->state.gssapikeytab);
+
+                        *sockscf.state.gssapikeytab = NUL;
+                     }
+                  }
+                  /* else; already found to vary. */
+
+                  break;
+#endif /* HAVE_GSSAPI */
+
+               default:
+                  break;
+            }
+         }
+
+#if BAREFOOTD
+         if (rule->type == object_crule) {
+            if (rule->state.protocol.tcp)
+               /*
+                * Add all "to:" addresses to the list of internal interfaces;
+                * barefootd doesn't use a separate "internal:" keyword for it.
+                */
+                addinternal(&rule->dst, SOCKS_TCP);
+
+            if (rule->state.protocol.udp)
+               sockscf.state.alludpbounced = 0;
+         }
+#endif /* BAREFOOTD */
+
+      }
+   }
+
+   /*
+    * Check that the main configured privileges work.
+    */
+   sockd_priv(SOCKD_PRIV_PRIVILEGED, PRIV_ON);
+   sockd_priv(SOCKD_PRIV_PRIVILEGED, PRIV_OFF);
+
+   sockd_priv(SOCKD_PRIV_UNPRIVILEGED, PRIV_ON);
+   sockd_priv(SOCKD_PRIV_UNPRIVILEGED, PRIV_OFF);
+
+   sockd_priv(SOCKD_PRIV_LIBWRAP, PRIV_ON);
+   sockd_priv(SOCKD_PRIV_LIBWRAP, PRIV_OFF);
+
+#if !HAVE_PRIVILEGES
+   SASSERTX(sockscf.state.euid == geteuid());
+   SASSERTX(sockscf.state.egid == getegid());
+
+   if (sockscf.uid.unprivileged_uid == 0)
+      swarnx("%s: setting the unprivileged uid to %d is not recommended "
+             "for security reasons",
+             function, sockscf.uid.unprivileged_uid);
+
+#if HAVE_LIBWRAP
+   if (usinglibwrap && sockscf.uid.libwrap_uid == 0)
+      swarnx("%s: setting the libwrap uid to %d is almost never needed, and "
+             "is not recommended for security reasons",
+             function, sockscf.uid.libwrap_uid);
+#endif /* HAVE_LIBWRAP */
+#endif /* !HAVE_PRIVILEGES */
+
+#if HAVE_PAM
+   if (*sockscf.state.pamservicename != NUL
+   &&  pamservicename                != NULL) {
+      /*
+       * pamservicename does not vary, but is not necessarily the
+       * the same as sockscf.state.pamservicename (default).
+       * If it is not, set sockscf.state.pamservicename to
+       * what the user used in one or more of the rules, since
+       * it is the same in all rules, i.e. making it that value
+       * we use to make passworddbisunique() work as expected.
+       *
+       * Likewise for bsdauth, gssapi, etc.
+      */
+
+      if (strcmp(pamservicename, sockscf.state.pamservicename) != 0)
+         STRCPY_CHECKLEN(sockscf.state.pamservicename,
+                         pamservicename,
+                         sizeof(sockscf.state.pamservicename) - 1,
+                         yyerrorx);
+   }
+#endif /* HAVE_PAM */
+
+#if HAVE_BSDAUTH
+   if (*sockscf.state.bsdauthstylename != NUL
+   &&  bsdauthstylename                != NULL) {
+      if (strcmp(bsdauthstylename, sockscf.state.bsdauthstylename) != 0)
+         STRCPY_CHECKLEN(sockscf.state.bsdauthstylename,
+                         bsdauthstylename,
+                         sizeof(sockscf.state.bsdauthstylename) - 1,
+                         yyerrorx);
+   }
+#endif /* HAVE_BSDAUTH */
+
+#if HAVE_GSSAPI
+   if (*sockscf.state.gssapiservicename != NUL
+   &&  gssapiservicename                != NULL) {
+      if (strcmp(gssapiservicename, sockscf.state.gssapiservicename) != 0)
+         STRCPY_CHECKLEN(sockscf.state.gssapiservicename,
+                         gssapiservicename,
+                         sizeof(sockscf.state.gssapiservicename) - 1,
+                         yyerrorx);
+   }
+
+   if (*sockscf.state.gssapikeytab != NUL
+   &&  gssapikeytab                != NULL) {
+      if (strcmp(gssapikeytab, sockscf.state.gssapikeytab) != 0)
+         STRCPY_CHECKLEN(sockscf.state.gssapikeytab,
+                         gssapikeytab,
+                         sizeof(sockscf.state.gssapikeytab) - 1,
+                         yyerrorx);
+   }
+#endif /* HAVE_GSSAPI */
+
+   /*
+    * Go through all rules again and set default values for
+    * authentication-methods based on the global method-lines, if none set.
+    */
+   basec = 0;
+   while (basec < ELEMENTS(rulebasev)) {
+#if HAVE_PAM || HAVE_BSDAUTH || HAVE_GSSAPI
+      const int *methodv    = methodbasev[basec];
+      const size_t methodc  = *methodbasec[basec];
+#endif /* HAVE_PAM || HAVE_BSDAUTH || HAVE_GSSAPI */
+
+      rule_t *rule = rulebasev[basec];
+      ++basec;
+
+      if (rule == NULL)
+         continue;
+
+      for (; rule != NULL; rule = rule->next) {
+#if HAVE_PAM
+         if (methodisset(AUTHMETHOD_PAM_ANY,      methodv, methodc)
+         ||  methodisset(AUTHMETHOD_PAM_ADDRESS,  methodv, methodc)
+         ||  methodisset(AUTHMETHOD_PAM_USERNAME, methodv, methodc))
+            if (*rule->state.pamservicename == NUL) /* set to default. */
+               STRCPY_ASSERTSIZE(rule->state.pamservicename,
+                                 sockscf.state.pamservicename);
+#endif /* HAVE_PAM */
+
+#if HAVE_BSDAUTH
+         if (methodisset(AUTHMETHOD_BSDAUTH, methodv, methodc))
+            if (*rule->state.bsdauthstylename == NUL) { /* set to default. */
+               if (*sockscf.state.bsdauthstylename != NUL)
+                  STRCPY_ASSERTSIZE(rule->state.bsdauthstylename,
+                                   sockscf.state.bsdauthstylename);
+            }
+#endif /* HAVE_BSDAUTH */
+
+#if HAVE_GSSAPI
+         if (methodisset(AUTHMETHOD_GSSAPI, methodv, methodc)) {
+            if (*rule->state.gssapiservicename == NUL) /* set to default. */
+               STRCPY_ASSERTSIZE(rule->state.gssapiservicename,
+                                sockscf.state.gssapiservicename);
+
+            if (*rule->state.gssapikeytab == NUL) /* set to default. */
+               STRCPY_ASSERTSIZE(rule->state.gssapikeytab,
+                                sockscf.state.gssapikeytab);
+
+            /*
+             * can't do memcmp since we don't want to include
+             * gssapiencryption.nec in the compare.
+             */
+            if (rule->state.gssapiencryption.clear           == 0
+            &&  rule->state.gssapiencryption.integrity       == 0
+            &&  rule->state.gssapiencryption.confidentiality == 0
+            &&  rule->state.gssapiencryption.permessage      == 0) {
+               rule->state.gssapiencryption.clear           = 1;
+               rule->state.gssapiencryption.integrity       = 1;
+               rule->state.gssapiencryption.confidentiality = 1;
+               rule->state.gssapiencryption.permessage      = 0;
+            }
+         }
+#endif /* HAVE_GSSAPI */
+
+#if HAVE_LDAP
+         if (*rule->state.ldap.keytab == NUL) /* set to default. */
+            STRCPY_ASSERTSIZE(rule->state.ldap.keytab, DEFAULT_GSSAPIKEYTAB);
+
+         if (*rule->state.ldap.filter == NUL) /* set to default. */
+            STRCPY_ASSERTSIZE(rule->state.ldap.filter, DEFAULT_LDAP_FILTER);
+
+         if (*rule->state.ldap.filter_AD == NUL) /* set to default. */
+            STRCPY_ASSERTSIZE(rule->state.ldap.filter_AD,
+                             DEFAULT_LDAP_FILTER_AD);
+
+         if (*rule->state.ldap.attribute == NUL) /* set to default. */
+            STRCPY_ASSERTSIZE(rule->state.ldap.attribute,
+                             DEFAULT_LDAP_ATTRIBUTE);
+
+         if (*rule->state.ldap.attribute_AD == NUL) /* set to default. */
+            STRCPY_ASSERTSIZE(rule->state.ldap.attribute_AD,
+                             DEFAULT_LDAP_ATTRIBUTE_AD);
+
+         if (*rule->state.ldap.certfile == NUL) /* set to default. */
+            STRCPY_ASSERTSIZE(rule->state.ldap.certfile,
+                             DEFAULT_LDAP_CACERTFILE);
+
+         if (*rule->state.ldap.certpath == NUL) /* set to default. */
+            STRCPY_ASSERTSIZE(rule->state.ldap.certpath,
+                             DEFAULT_LDAP_CERTDBPATH);
+
+         if (rule->state.ldap.port == 0) /* set to default */
+            rule->state.ldap.port = SOCKD_EXPLICIT_LDAP_PORT;
+
+         if (rule->state.ldap.portssl == 0) /* set to default */
+            rule->state.ldap.portssl = SOCKD_EXPLICIT_LDAPS_PORT;
+#endif /* HAVE_LDAP */
+      }
+   }
+
+#if BAREFOOTD
+   if (sockscf.internal.addrc == 0 && ALL_UDP_BOUNCED())
+      serrx("%s: no client-rules to accept clients on specified", function);
+
+#else /* !BAREFOOTD */
+   if (sockscf.internal.addrc == 0)
+      serrx("%s: no internal address given for server to listen for clients on",
+            function);
+#endif /* !BAREFOOTD */
+
+
+   if (sockscf.external.addrc == 0)
+      serrx("%s: no external address specified for server to use when "
+            "forwarding data on behalf of clients",
+            function);
+
+   if (sockscf.external.rotation == ROTATION_NONE) {
+      size_t ipv4c = 0, ipv6c = 0;
+
+      for (i = 0; i < sockscf.external.addrc; ++i) {
+         switch (sockscf.external.addrv[i].atype) {
+            case SOCKS_ADDR_IPV4:
+               ++ipv4c;
+               break;
+
+            case SOCKS_ADDR_IPV6:
+               ++ipv6c;
+               break;
+
+            case SOCKS_ADDR_IFNAME:
+            case SOCKS_ADDR_DOMAIN:
+               break;
+
+            default:
+               SERRX(sockscf.external.addrv[i].atype);
+         }
+      }
+
+      if (ipv4c > 1 || ipv6c > 1)
+         swarnx("%s: more than one external address has been specified, but "
+                "as long as external.rotation has the default value %s "
+                "only the first address specified will be used",
+                function, rotation2string(sockscf.external.rotation));
+   }
+
+   if (sockscf.external.rotation == ROTATION_SAMESAME
+   &&  sockscf.external.addrc    == 1)
+      swarnx("%s: rotation for external addresses is set to same-same, but "
+             "the number of external addresses is only one, so this does "
+             "not make sense",
+             function);
+
+   if (sockscf.routeoptions.maxfail == 0 && sockscf.routeoptions.badexpire != 0)
+      swarnx("%s: it does not make sense to set \"route.badexpire\" "
+             "when \"route.maxfail\" is set to zero",
+             function);
+
+#if COVENANT
+   if (*sockscf.realmname == NUL)
+      STRCPY_ASSERTSIZE(sockscf.realmname, DEFAULT_REALMNAME);
+#endif /* COVENANT */
+
+#if HAVE_SCHED_SETAFFINITY
+{
+   const cpusetting_t *cpuv[] = { &sockscf.cpu.mother,
+                                  &sockscf.cpu.monitor,
+                                  &sockscf.cpu.negotiate,
+                                  &sockscf.cpu.request,
+                                  &sockscf.cpu.io };
+
+   const int proctypev[]      = { PROC_MOTHER,
+                                  PROC_MONITOR,
+                                  PROC_NEGOTIATE,
+                                  PROC_REQUEST,
+                                  PROC_IO };
+   size_t i;
+
+   for (i = 0; i < ELEMENTS(cpuv); ++i)
+   if (cpuv[i]->affinity_isset && !sockd_cpuset_isok(&cpuv[i]->mask))
+      serrx("%s: invalid cpu mask configured for %s process: %s",
+            function,
+            childtype2string(proctypev[i]),
+            cpuset2string(&cpuv[i]->mask, NULL, 0));
+}
+#endif /* HAVE_SCHED_SETAFFINITY */
+
+   for (i = 0; i < sockscf.external.addrc; ++i)
+      if (!addrisbindable(&sockscf.external.addrv[i]))
+         serrx("%s: cannot bind external address #%ld: %s",
+               function,
+               (long)i,
+               ruleaddr2string(&sockscf.external.addrv[i], 0, NULL, 0));
+}
+
+void
+add_external_safamily(safamily, globalscope)
+   const sa_family_t safamily;
+   const int globalscope;
+{
+   switch (safamily) {
+      case AF_INET:
+         sockscf.external.protocol.hasipv4 = 1;
+         break;
+
+      case AF_INET6:
+         sockscf.external.protocol.hasipv6 = 1;
+
+         if (globalscope)
+            sockscf.external.protocol.hasipv6_globalscope = 1;
+
+         break;
+
+      default:
+         SERRX(safamily);
+   }
+}
+
+
+int
+external_has_safamily(safamily)
+   const sa_family_t safamily;
+{
+   const char *function = "external_has_safamily()";
+
+   SASSERTX(sockscf.shmeminfo != NULL);
+
+#if 0
+   slog(LOG_DEBUG, "%s: hasipv4: %d, hasipv6: %d, hasipv6_globalscope: %d",
+        function,
+        sockscf.shmeminfo->state.external_hasipv4,
+        sockscf.shmeminfo->state.external_hasipv6,
+        sockscf.shmeminfo->state.external_hasipv6_globalscope);
+#endif
+
+   switch (safamily) {
+      case AF_INET:
+         return sockscf.external.protocol.hasipv4;
+
+      case AF_INET6:
+         return sockscf.external.protocol.hasipv6;
+
+      default:
+         SERRX(safamily);
+   }
+}
+
+void
+add_internal_safamily(safamily)
+   const sa_family_t safamily;
+{
+   switch (safamily) {
+      case AF_INET:
+         sockscf.internal.protocol.hasipv4 = 1;
+         break;
+
+      case AF_INET6:
+         sockscf.internal.protocol.hasipv6 = 1;
+         break;
+
+      default:
+         SERRX(safamily);
+   }
+}
+
+
+int
+internal_has_safamily(safamily)
+   const sa_family_t safamily;
+{
+   const char *function = "internal_has_safamily()";
+
+   SASSERTX(sockscf.shmeminfo != NULL);
+
+#if 0
+   slog(LOG_DEBUG, "%s: hasipv4: %d, hasipv6: %d",
+        function,
+        sockscf.internal.protocol.hasipv4,
+        sockscf.internal.protocol.hasipv6);
+#endif
+
+   switch (safamily) {
+      case AF_INET:
+         return sockscf.internal.protocol.hasipv4;
+
+      case AF_INET6:
+         return sockscf.internal.protocol.hasipv6;
+
+      default:
+         SERRX(safamily);
+   }
+}
+
+int
+external_has_only_safamily(safamily)
+   const sa_family_t safamily;
+{
+
+   switch (safamily) {
+      case AF_INET:
+         return   (external_has_safamily(AF_INET)
+               && !external_has_safamily(AF_INET6));
+
+      case AF_INET6:
+         return   (external_has_safamily(AF_INET6)
+               && !external_has_safamily(AF_INET));
+
+      default:
+         SERRX(safamily);
+   }
+}
+
+
+int
+external_has_global_safamily(safamily)
+   const sa_family_t safamily;
+{
+
+   SASSERTX(sockscf.shmeminfo != NULL);
+
+   switch (safamily) {
+      case AF_INET: /* don't care about scope for IPv4. */
+         return sockscf.external.protocol.hasipv4;
+
+      case AF_INET6:
+         return sockscf.external.protocol.hasipv6_globalscope;
+
+      default:
+         SERRX(safamily);
+   }
+}
+
+
+
+
+static void
+add_more_old_shmem(config, memc, memv)
+   struct config *config;
+   const size_t memc;
+   const oldshmeminfo_t memv[];
+{
+   const char *function = "add_more_old_shmem()";
+   void *old;
+   size_t i;
+
+   if ((old = realloc(config->oldshmemv,
+                      sizeof(*config->oldshmemv) * (config->oldshmemc + memc)))
+   == NULL) {
+      swarn("%s: could not allocate %lu bytes of memory to "
+            "hold old shmids for later removal",
+            function,
+            (unsigned long)(sizeof(*config->oldshmemv)
+                            * (config->oldshmemc + memc)));
+      return;
+   }
+   config->oldshmemv = old;
+
+   for (i = 0; i < memc; ++i) {
+      const char *type;
+
+      switch (memv[i].type) {
+         case SHMEM_BW:
+            type = "bw";
+            break;
+
+         case SHMEM_MONITOR:
+            type = "monitor";
+            break;
+
+         case SHMEM_SS:
+            type = "session";
+            break;
+
+         default:
+            SERRX(memv[i].type);
+      }
+
+      slog(LOG_DEBUG,
+           "%s: saving old shmem-object of type %lu (%s), with "
+           "shmid %lu/key %lu, at index #%lu, for removal upon exit",
+           function,
+           (unsigned long)memv[i].type,
+           type,
+           (unsigned long)memv[i].id,
+           (unsigned long)memv[i].key,
+           (unsigned long)i);
+
+      config->oldshmemv[config->oldshmemc++] = memv[i];
+   }
+}
+
+static int
+safamily_isenabled(safamily, addrstr, side)
+   const sa_family_t safamily;
+   const char *addrstr;
+   const interfaceside_t side;
+{
+   const char *function = "safamily_isenabled()";
+   interfaceprotocol_t *interface;
+   int isenabled;
+
+   switch (side) {
+      case INTERNALIF:
+         interface = &sockscf.internal.protocol;
+         break;
+
+      case EXTERNALIF:
+         interface = &sockscf.external.protocol;
+         break;
+
+      default:
+         SERRX(side);
+   }
+
+   isenabled = 0;
+   switch (safamily) {
+      case AF_INET:
+         if (interface->ipv4)
+            isenabled = 1;
+         break;
+
+      case AF_INET6:
+         if (interface->ipv6)
+            isenabled = 1;
+         break;
+
+      default:
+         SERRX(safamily);
+   }
+
+   if (!isenabled)
+      slog(LOG_DEBUG,
+           "%s: address family %s option is not enabled on the %s-side "
+           "interface. Can not use address \"%s\"",
+           function,
+           safamily2string(safamily),
+           interfaceside2string(side),
+           addrstr);
+
+   return isenabled;
+}
+
+static int
+addexternaladdr(ra)
+   const struct ruleaddr_t *ra;
+{
+   void *old;
+
+   switch (ra->atype) {
+      case SOCKS_ADDR_IPV4:
+      case SOCKS_ADDR_IPV6:
+         if (!safamily_isenabled(atype2safamily(ra->atype),
+                                 ruleaddr2string(ra, ADDRINFO_ATYPE, NULL, 0),
+                                 EXTERNALIF))
+            return -1;
+         break;
+
+      default:
+         /*
+          * Will be resolved when needed.
+          */
+         break;
+   }
+
+   old = realloc(sockscf.external.addrv,
+                sizeof(*sockscf.external.addrv) * (sockscf.external.addrc + 1));
+
+   if (old == NULL)
+      yyerror(NOMEM);
+
+   sockscf.external.addrv = old;
+
+   sockscf.external.addrv[sockscf.external.addrc++] = *ra;
    return 0;
 }
 
 
-static struct rule_t *
-addrule(newrule, rulebase, isclientrule)
-   const struct rule_t *newrule;
-   struct rule_t **rulebase;
-   const int isclientrule;
-{
-   static const struct serverstate_t state;
-   const char *function = "addrule()";
-   struct rule_t *rule;
-   size_t i;
-   int *methodv;
-   size_t methodc;
-
-   if (isclientrule) {
-      methodv = sockscf.clientmethodv;
-      methodc = sockscf.clientmethodc;
-   }
-   else {
-      methodv = sockscf.methodv;
-      methodc = sockscf.methodc;
-   }
-
-   if ((rule = malloc(sizeof(*rule))) == NULL)
-      serrx(EXIT_FAILURE, "%s: %s", function, NOMEM);
-   *rule = *newrule;
-
-   if (rule->src.atype == SOCKS_ADDR_IFNAME) {
-      struct sockaddr addr, mask;
-
-      if (ifname2sockaddr(rule->src.addr.ifname, 0, &addr, &mask) == NULL)
-         yyerror("no ip address found on interface %s", rule->src.addr.ifname);
-
-      if (rule->src.operator == none || rule->src.operator == eq)
-         TOIN(&addr)->sin_port
-         = rule->state.protocol.tcp ? rule->src.port.tcp : rule->src.port.udp;
-
-      sockaddr2ruleaddr(&addr, &rule->src);
-      rule->src.addr.ipv4.mask = TOIN(&mask)->sin_addr;
-
-      if (ifname2sockaddr(rule->src.addr.ifname, 1, &addr, &mask) != NULL)
-         yywarn("interfacenames with multiple ip addresses not yet supported "
-                "in rules.  Will only use first address on interface");
-   }
-
-   if (rule->dst.atype == SOCKS_ADDR_IFNAME) {
-      struct sockaddr addr, mask;
-
-      if (ifname2sockaddr(rule->dst.addr.ifname, 0, &addr, &mask) == NULL)
-         yyerror("no ip address found on interface %s", rule->dst.addr.ifname);
-
-      if (rule->dst.operator == none || rule->dst.operator == eq)
-         TOIN(&addr)->sin_port
-         = rule->state.protocol.tcp ? rule->dst.port.tcp : rule->dst.port.udp;
-
-      sockaddr2ruleaddr(&addr, &rule->dst);
-      rule->dst.addr.ipv4.mask = TOIN(&mask)->sin_addr;
-
-      if (ifname2sockaddr(rule->dst.addr.ifname, 1, &addr, &mask) != NULL)
-         yywarn("interface names with multiple ip addresses not yet supported "
-                "in rules.  Will only use first address on interface");
-   }
-
-   /*
-    * try to set values not set to a sensible default.
-    */
-
-   if (sockscf.option.debug) {
-      rule->log.connect       = 1;
-      rule->log.disconnect    = 1;
-      rule->log.error         = 1;
-      rule->log.iooperation   = 1;
-   }
-   /* else; don't touch logging, no logging is ok. */
-
-
-   /* if no command set, set all. */
-   if (memcmp(&state.command, &rule->state.command, sizeof(state.command)) == 0)
-      memset(&rule->state.command, UCHAR_MAX, sizeof(rule->state.command));
-
-   /*
-    * If no method set, set all set from global methodline that make sense.
-    */
-   if (rule->state.methodc == 0) {
-      for (i = 0; i < methodc; ++i) {
-         switch (methodv[i]) {
-            case AUTHMETHOD_NONE:
-               if (rule->user == NULL && rule->group == NULL)
-                  rule->state.methodv[rule->state.methodc++] = methodv[i];
-               break;
-
-            case AUTHMETHOD_GSSAPI:
-               /*
-                * GSSAPI is a little quirky.  Settings are in
-                * client-rules, but some fields can only be checked
-                * as part of socks-rules (user/group-settings).
-                */
-
-               if (isreplycommandonly(&rule->state.command))
-                  continue;
-
-               if (isclientrule)
-                  if (rule->user != NULL || rule->group != NULL) {
-                     if (methodc == 1)
-                        slog(LOG_DEBUG, "%s: let checkrules() error out about "
-                                        "username in gssapi-based client-rule",
-                                        function);
-                     else
-                        break;
-                  }
-
-               rule->state.methodv[rule->state.methodc++] = methodv[i];
-               break;
-
-           case AUTHMETHOD_UNAME:
-               if (isreplycommandonly(&rule->state.command))
-                  continue;
-
-               rule->state.methodv[rule->state.methodc++] = methodv[i];
-
-            default:
-               rule->state.methodv[rule->state.methodc++] = methodv[i];
-         }
-      }
-   }
-
-
-   for (i = 0; i < rule->state.methodc; ++i)
-      if (!methodisset(rule->state.methodv[i], methodv, methodc))
-         yyerror("method \"%s\" set in local rule, but not in global "
-                 "%smethod specification",
-                 method2string(rule->state.methodv[i]),
-                 methodv == sockscf.clientmethodv ? "isclientrule" : "");
-
-#if !BAREFOOTD
-   /* if no protocol is set, set all for socks-rules, tcp for client-rules. */
-   if (memcmp(&state.protocol, &rule->state.protocol, sizeof(state.protocol))
-   == 0) {
-      if (isclientrule)
-         rule->state.protocol.tcp = 1;
-      else
-         memset(&rule->state.protocol, UCHAR_MAX, sizeof(rule->state.protocol));
-   }
-#endif /* !BAREFOOTD */
-
-   /* if no proxyprotocol set, set all socks protocols. */
-   if (memcmp(&state.proxyprotocol, &rule->state.proxyprotocol,
-   sizeof(state.proxyprotocol)) == 0) {
-      rule->state.proxyprotocol.socks_v4 = 1;
-      rule->state.proxyprotocol.socks_v5 = 1;
-   }
-
-   /*
-    * Set default values for some authentication-methods, if none
-    * set.  Note that this needs to be set regardless of what the
-    * method set in the rule is, as checkconfig() might add methods
-    * to the rules as part of it's operation.  This happens e.g. when
-    * adding default methods to the global clientmethod line, if appropriate,
-    * and then adding the same methods to the client-rules, if the rules
-    * do not already have a method.
-    */
-
-#if HAVE_PAM
-   if (*rule->state.pamservicename == NUL) { /* set to default. */
-      SASSERTX(sizeof(DEFAULT_PAMSERVICENAME)
-      <= sizeof(rule->state.pamservicename));
-
-      strcpy(rule->state.pamservicename, DEFAULT_PAMSERVICENAME);
-   }
-#endif /* HAVE_PAM */
-
-#if HAVE_GSSAPI
-   if (*rule->state.gssapiservicename == NUL) { /* set to default. */
-      SASSERTX(sizeof(DEFAULT_GSSAPISERVICENAME)
-      <= sizeof(rule->state.gssapiservicename));
-
-      strcpy(rule->state.gssapiservicename, DEFAULT_GSSAPISERVICENAME);
-   }
-
-   if (*rule->state.gssapikeytab == NUL) { /* set to default. */
-      SASSERTX(sizeof(DEFAULT_GSSAPIKEYTAB)
-      <= sizeof(rule->state.gssapikeytab));
-      strcpy(rule->state.gssapikeytab, DEFAULT_GSSAPIKEYTAB);
-   }
-
-   /*
-    * can't do memcmp since we don't want to include
-    * gssapiencryption.nec in the compare.
-    */
-   if (rule->state.gssapiencryption.clear           == 0
-   &&  rule->state.gssapiencryption.integrity       == 0
-   &&  rule->state.gssapiencryption.confidentiality == 0
-   &&  rule->state.gssapiencryption.permessage      == 0) {
-      rule->state.gssapiencryption.clear          = 1;
-      rule->state.gssapiencryption.integrity      = 1;
-      rule->state.gssapiencryption.confidentiality= 1;
-      rule->state.gssapiencryption.permessage     = 0;
-   }
-#endif /* HAVE_GSSAPI */
-
-   if (*rulebase == NULL) {
-      *rulebase = rule;
-      (*rulebase)->number = 1;
-   }
-   else {
-      struct rule_t *lastrule;
-
-      /* append this rule to the end of our list. */
-
-      lastrule = *rulebase;
-      while (lastrule->next != NULL)
-         lastrule = lastrule->next;
-
-      rule->number = lastrule->number + 1;
-      lastrule->next = rule;
-   }
-
-   rule->next = NULL;
-
-   return rule;
-}
-
-static void
-checkrule(rule, isclientrule)
-   const struct rule_t *rule;
-   const int isclientrule;
-{
-/*   const char *function = "checkrule()"; */
-   size_t i;
-   struct ruleaddr_t ruleaddr;
-
-   if (isclientrule) {
-      for (i = 0; i < rule->state.methodc; ++i) {
-         switch (rule->state.methodv[i]) {
-            case AUTHMETHOD_NONE:
-            case AUTHMETHOD_GSSAPI:
-            case AUTHMETHOD_RFC931:
-            case AUTHMETHOD_PAM:
-               break;
-
-            default:
-               yyerror("method %s is not valid for clientrules",
-               method2string(rule->state.methodv[i]));
-         }
-      }
-   }
-
-   if (rule->user != NULL || rule->group != NULL) {
-      /* check that any methods given in rule provide usernames. */
-      for (i = 0; i < rule->state.methodc; ++i) {
-         switch (rule->state.methodv[i]) {
-            case AUTHMETHOD_UNAME:
-            case AUTHMETHOD_RFC931:
-            case AUTHMETHOD_PAM:
-               break;
-
-            case AUTHMETHOD_GSSAPI:
-               if (isclientrule)
-                  yyerror("user/group-names are not supported for method \"%s\""
-                          " in client-rules.  Move the name(s) to a socks-rule",
-                          method2string(rule->state.methodv[i]));
-
-               break;
-
-            default:
-               yyerror("method \"%s\" can not provide usernames",
-               method2string(rule->state.methodv[i]));
-         }
-      }
-   }
-
-   if (rule->rdr_from.atype != 0) {
-      switch (rule->rdr_from.atype) {
-         case SOCKS_ADDR_IPV4:
-         case SOCKS_ADDR_IFNAME:
-         case SOCKS_ADDR_DOMAIN:
-            break;
-
-         default:
-            yyerror("redirect from address can not be a %s",
-            atype2string(rule->rdr_from.atype));
-      }
-
-      ruleaddr          = rule->rdr_from;
-      ruleaddr.port.tcp = htons(0); /* any port is good for testing. */
-
-      if (!addressisbindable(&ruleaddr)) {
-         char addr[MAXRULEADDRSTRING];
-
-         yyerror("%s is not bindable",
-         ruleaddr2string(&ruleaddr, addr, sizeof(addr)));
-      }
-   }
-
-   if (rule->rdr_to.atype == SOCKS_ADDR_IFNAME) {
-      switch (rule->rdr_to.atype) {
-         case SOCKS_ADDR_IPV4:
-         case SOCKS_ADDR_DOMAIN:
-            break;
-
-         default:
-            yyerror("redirect to a %s-type address is not supported "
-                    "(or meaningful?)",
-                    atype2string(rule->rdr_to.atype));
-      }
-   }
-
-}
-
-static void
-showlist(list, prefix)
-   const struct linkedname_t *list;
-   const char *prefix;
-{
-   char buf[10240];
-
-   list2string(list, buf, sizeof(buf));
-   if (strlen(buf) > 0)
-      slog(LOG_INFO, "%s%s", prefix, buf);
-}
-
-static void
-showlog(log)
-   const struct log_t *log;
-{
-   char buf[1024];
-
-   slog(LOG_INFO, "log: %s", logs2string(log, buf, sizeof(buf)));
-}
-
-
-#if HAVE_LIBWRAP
-static void
-libwrapinit(s, request)
-   int s;
-   struct request_info *request;
-{
-   const int errno_s = errno;
-
-   request_init(request, RQ_FILE, s, RQ_DAEMON, __progname, 0);
-   fromhost(request);
-
-   errno = errno_s;
-}
-#endif /* HAVE_LIBWRAP */
-
 static int
-connectisok(request, rule)
-#if HAVE_LIBWRAP
-   struct request_info *request;
-#else
-   void *request;
-#endif /* HAVE_LIBWRAP */
-   const struct rule_t *rule;
+addinternaladdr(ifname, sa, protocol)
+   const char *ifname;
+   const struct sockaddr_storage *sa;
+   const int protocol;
 {
+   const char *function = "addinternaladdr()";
+   void *old;
 
-#if HAVE_LIBWRAP
+   if (!safamily_isenabled(sa->ss_family,
+                           sockaddr2string2(sa, ADDRINFO_ATYPE, NULL, 0),
+                           INTERNALIF) != 0)
+      return -1;
 
-   /* do we need to involve libwrap for this rule? */
-   if (*rule->libwrap != NUL
-   ||  sockscf.srchost.nomismatch
-   ||  sockscf.srchost.nounknown) {
-      const char *function = "connectisok()";
-      char libwrap[LIBWRAPBUF];
+   slog(LOG_DEBUG, "%s: adding address %s on nic %s to the internal list",
+        function, sockaddr2string(sa, NULL, 0), ifname);
 
-      /* libwrap modifies the passed buffer. */
-      SASSERTX(strlen(rule->libwrap) < sizeof(libwrap));
-      strcpy(libwrap, rule->libwrap);
+   old = realloc(sockscf.internal.addrv,
+                sizeof(*sockscf.internal.addrv) * (sockscf.internal.addrc + 1));
 
-      /* Wietse Venema says something along the lines of: */
-      if (setjmp(tcpd_buf) != 0) {
-         sockd_priv(SOCKD_PRIV_LIBWRAP, PRIV_OFF);
+   if (old == NULL)
+      yyerror(NOMEM);
 
-         swarnx("%s: failed libwrap line: %s", function, libwrap);
-         return 0;   /* something got screwed up. */
-      }
+   sockscf.internal.addrv = old;
 
-      sockd_priv(SOCKD_PRIV_LIBWRAP, PRIV_ON);
-      process_options(libwrap, request);
-      sockd_priv(SOCKD_PRIV_LIBWRAP, PRIV_OFF);
+#if 0
+   bzero(&sockscf.internal.addrv[sockscf.internal.addrc],
+         sizeof(sockscf.internal.addrv[sockscf.internal.addrc]));
+#endif
+   sockaddrcpy(&sockscf.internal.addrv[sockscf.internal.addrc].addr,
+               sa,
+               sizeof(sockscf.internal.addrv[sockscf.internal.addrc].addr));
 
-      if (sockscf.srchost.nounknown)
-         if (strcmp(eval_hostname(request->client), STRING_UNKNOWN) == 0) {
-            slog(LOG_INFO, "%s: srchost unknown",
-            eval_hostaddr(request->client));
+   sockscf.internal.addrv[sockscf.internal.addrc].protocol = protocol;
+   sockscf.internal.addrv[sockscf.internal.addrc].s        = -1;
 
-            return 0;
-         }
+   ++sockscf.internal.addrc;
 
-      if (sockscf.srchost.nomismatch)
-         if (strcmp(eval_hostname(request->client), STRING_PARANOID) == 0) {
-            slog(LOG_INFO, "%s: srchost ip/host mismatch",
-            eval_hostaddr(request->client));
+   add_internal_safamily(sa->ss_family);
 
-            return 0;
-      }
-   }
-#endif /* !HAVE_LIBWRAP */
-
-   return 1;
+   return 0;
 }

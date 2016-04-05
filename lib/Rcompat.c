@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2001, 2002, 2004, 2008, 2009
+ * Copyright (c) 1997, 1998, 1999, 2001, 2002, 2004, 2008, 2009, 2010, 2011,
+ *               2012, 2013, 2014
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +45,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: Rcompat.c,v 1.60 2009/10/23 11:43:34 karls Exp $";
+"$Id: Rcompat.c,v 1.89.4.2 2014/08/15 18:16:40 karls Exp $";
 
 int
 Rselect(nfds, readfds, writefds, exceptfds, timeout)
@@ -67,7 +68,7 @@ Rwrite(d, buf, nbytes)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d, bytes %lu", function, d, (unsigned long)nbytes);
 
    return Rsend(d, buf, nbytes, 0);
 }
@@ -83,13 +84,11 @@ Rwritev(d, iov, iovcnt)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
-
+   slog(LOG_DEBUG, "%s: fd %d, iovcnt %d", function, d, iovcnt);
 
    bzero(&msg, sizeof(msg));
-   /* LINTED operands have incompatible pointer types */
-   msg.msg_iov         = (const struct iovec *)iov;
-   msg.msg_iovlen      = iovcnt;
+   msg.msg_iov    = iov;
+   msg.msg_iovlen = iovcnt;
 
    return Rsendmsg(d, &msg, 0);
 }
@@ -101,18 +100,15 @@ Rsend(s, msg, len, flags)
    size_t len;
    int flags;
 {
-   struct msghdr msghdr;
-   struct iovec iov;
    const char *function = "Rsend()";
+   struct msghdr msghdr;
+   /* any way to get rid of warning about losing const except make a copy? */
+   struct iovec iov = { msg, len };
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, s);
-
-   bzero(&iov, sizeof(iov));
-   /* LINTED operands have incompatible pointer types */
-   iov.iov_base = msg;
-   iov.iov_len  = len;
+   slog(LOG_DEBUG, "%s: fd %d, bytes %lu, flags %d",
+        function, s, (unsigned long)len, flags);
 
    bzero(&msghdr, sizeof(msghdr));
    msghdr.msg_iov    = &iov;
@@ -130,41 +126,42 @@ Rsendmsg(s, msg, flags)
    const int errno_s = errno;
    size_t sent, ioc;
    ssize_t rc;
-   struct sockaddr name;
+   struct sockaddr_storage name;
    socklen_t namelen;
    const char *function = "Rsendmsg()";
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d, msg %p", function, s, msg);
+   slog(LOG_DEBUG, "%s: fd %d, msg %p, flags %d",
+        function, s, msg, flags);
 
    if (msg == NULL)
       return write(s, NULL, 0);
 
    namelen = sizeof(name);
-   if (getsockname(s, &name, &namelen) == -1) {
+   if (getsockname(s, TOSA(&name), &namelen) == -1) {
       errno = errno_s;
       return writev(s, msg->msg_iov, (int)msg->msg_iovlen);
    }
 
-   switch (name.sa_family) {
+   switch (TOSA(&name)->sa_family) {
       case AF_INET:
          break;
 
-#ifdef AF_INET6
       case AF_INET6:
          break;
-#endif /* AF_INET6 */
 
       default:
          return sendmsg(s, msg, flags);
    }
 
    for (sent = ioc = rc = 0; ioc < (size_t)msg->msg_iovlen; ++ioc) {
-      /* LINTED pointer casts may be troublesome */
-      if ((rc = Rsendto(s, msg->msg_iov[ioc].iov_base,
-      msg->msg_iov[ioc].iov_len, flags, (struct sockaddr *)msg->msg_name,
-      msg->msg_namelen)) == -1)
+      if ((rc = Rsendto(s,
+                        msg->msg_iov[ioc].iov_base,
+                        msg->msg_iov[ioc].iov_len,
+                        flags,
+                        TOSA(msg->msg_name),
+                        msg->msg_namelen)) == -1)
          break;
 
       sent += rc;
@@ -189,27 +186,29 @@ Rread(d, buf, nbytes)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d, bytes %lu",
+        function, d, (unsigned long)nbytes);
 
    return Rrecv(d, buf, nbytes, 0);
 }
 
 ssize_t
-Rreadv(d, iov, iovcnt)
+Rreadv(d, _iov, iovcnt)
    int d;
-   const struct iovec *iov;
+   const struct iovec *_iov;
    int iovcnt;
 {
    const char *function = "Rreadv()";
+   struct iovec iov[1] = { { _iov->iov_base, _iov->iov_len } };
    struct msghdr msg;
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d, iovcnt %d", function, d, iovcnt);
 
    bzero(&msg, sizeof(msg));
    /* LINTED operands have incompatible pointer types */
-   msg.msg_iov      = (struct iovec *)iov;
+   msg.msg_iov      = iov;
    msg.msg_iovlen   = iovcnt;
 
    return Rrecvmsg(d, &msg, 0);
@@ -228,7 +227,8 @@ Rrecv(s, msg, len, flags)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, s);
+   slog(LOG_DEBUG, "%s: fd %d, len %lu, flags %d",
+        function, s, (unsigned long)len, flags);
 
    /* LINTED cast discards 'const' from pointer target type */
    bzero(&iov, sizeof(iov));
@@ -251,27 +251,34 @@ Rrecvmsg(s, msg, flags)
    const int errno_s = errno;
    size_t received, ioc;
    ssize_t rc;
-   struct sockaddr name;
+   struct sockaddr_storage name;
    socklen_t namelen;
    const char *function = "Rrecvmsg()";
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d, msg %s",
-   function, s, msg == NULL ? "= NULL" : "!= NULL");
+   slog(LOG_DEBUG, "%s: fd %d, msg %p, flags %d",
+        function, s, msg, flags);
 
-   if (msg == NULL)
-      return recvmsg(s, msg, flags);
+   if (msg == NULL) {
+      rc = recvmsg(s, msg, flags);
+      slog(LOG_DEBUG, "%s: rc = %ld", function, (long)rc);
+
+      return rc;
+   }
 
    namelen = sizeof(name);
-   if (getsockname(s, &name, &namelen) == -1) {
+   if (getsockname(s, TOSA(&name), &namelen) == -1) {
       errno = errno_s;
 
       /* readv(2).  recvmsg(2) is only for sockets. */
-      return readv(s, msg->msg_iov, (int)msg->msg_iovlen);
+      rc = readv(s, msg->msg_iov, (int)msg->msg_iovlen);
+      slog(LOG_DEBUG, "%s: rc = %ld", function, (long)rc);
+
+      return rc;
    }
 
-   switch (name.sa_family) {
+   switch (TOSA(&name)->sa_family) {
       case AF_INET:
          break;
 
@@ -289,10 +296,12 @@ Rrecvmsg(s, msg, flags)
    CMSG_CONTROLDATA(*msg) = NULL;
 
    for (received = ioc = rc = 0; ioc < (size_t)msg->msg_iovlen; ++ioc) {
-      /* LINTED pointer casts may be troublesome */
-      if ((rc = Rrecvfrom(s, msg->msg_iov[ioc].iov_base,
-      msg->msg_iov[ioc].iov_len, flags, (struct sockaddr *)msg->msg_name,
-      &msg->msg_namelen)) == -1)
+      if ((rc = Rrecvfrom(s,
+                          msg->msg_iov[ioc].iov_base,
+                          msg->msg_iov[ioc].iov_len,
+                          flags,
+                          TOSA(msg->msg_name),
+                          &msg->msg_namelen)) == -1)
          break;
 
       received += rc;
@@ -300,6 +309,9 @@ Rrecvmsg(s, msg, flags)
       if (rc != (ssize_t)msg->msg_iov[ioc].iov_len)
          break;
    }
+
+   slog(LOG_DEBUG, "%s: bytes received on fd %d: %ld (%s)",
+        function, s, (long)rc, strerror(errno));
 
    if (received <= 0)
       return rc;
@@ -323,14 +335,14 @@ Rfputc(c, stream)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (!gssapi_isencrypted(d))
       return fputc(c, stream);
 
-   socks_setbuffer(d, _IOFBF);
+   socks_setbufferfd(d, _IOFBF, -1);
 
-   return Rsend(d, &c, 1, 0);
+   return Rsend(d, &c, sizeof(char), 0);
 }
 
 int
@@ -343,12 +355,12 @@ Rfputs(buf, stream)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (!gssapi_isencrypted(d))
       return fputs(buf,stream);
 
-   socks_setbuffer(d, _IOFBF);
+   socks_setbufferfd(d, _IOFBF, -1);
 
    return Rsend(d, buf, strlen(buf), 0);
 }
@@ -364,12 +376,12 @@ Rfwrite(ptr, size, nmb, stream)
    const int d = fileno(stream);
    size_t i;
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (!gssapi_isencrypted(d))
       return fwrite(ptr, size, nmb, stream);
 
-   socks_setbuffer(d, _IOFBF);
+   socks_setbufferfd(d, _IOFBF, -1);
 
    for (i = 0; i < nmb; ++i)
        if (Rwrite(d,buf+i*size,size) <= 0)
@@ -386,11 +398,11 @@ Rfprintf(FILE *stream, const char *format, ...)
    va_list ap;
    int rc;
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    va_start(ap, format);
 
-   socks_setbuffer(d, _IOFBF);
+   socks_setbufferfd(d, _IOFBF, -1);
 
    rc = Rvfprintf(stream, format, ap);
 
@@ -407,21 +419,21 @@ Rvfprintf(stream,  format, ap)
 {
    const char *function = "Rvfprintf()";
    const int d = fileno(stream);
+   ssize_t len;
    char buf[8 * BUFSIZ];
-   int rc;
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (!gssapi_isencrypted(d))
       return vfprintf(stream, format, ap);
 
-   vsnprintf(buf, 8 * BUFSIZ, format, ap);
+   len = vsnprintf(buf, sizeof(buf), format, ap);
+   if (len > (ssize_t)sizeof(buf))
+      len = (ssize_t)sizeof(buf);
 
-   socks_setbuffer(d, _IOFBF);
+   socks_setbufferfd(d, _IOFBF, -1);
 
-   rc = Rwrite(d, buf, strlen(buf));
-
-   return rc;
+   return Rwrite(d, buf, len);
 }
 
 int
@@ -432,18 +444,18 @@ Rfflush(s)
    int d;
 
    if (s == NULL) {
-      socks_flushbuffer(-1, -1);
+      (void)socks_flushbuffer(-1, -1, NULL);
       return fflush(s);
    }
 
    d = fileno(s);
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (!gssapi_isencrypted(d))
       return fflush(s);
 
-   socks_flushbuffer(d, -1);
+   (void)socks_flushbuffer(d, -1, NULL);
    return 0;
 }
 
@@ -456,10 +468,10 @@ Rfclose(s)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (gssapi_isencrypted(d))
-      socks_flushbuffer(d, -1);
+      (void)socks_flushbuffer(d, -1, NULL);
 
    return fclose(s);
 }
@@ -473,7 +485,7 @@ int Rfgetc(stream)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (!gssapi_isencrypted(d))
       return fgetc(stream);
@@ -494,7 +506,7 @@ Rgets(buf)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (!gssapi_isencrypted(d))
       return gets(buf);
@@ -502,9 +514,7 @@ Rgets(buf)
    i = 0;
    while (Rread(d, buf + i, 1) == 1 && buf[i] != '\n')
       ++i;
-
-   if (sizeof(buf) >= 1)
-      buf[i] = NUL;
+   buf[i] = NUL;
 
    return buf;
 }
@@ -521,7 +531,7 @@ Rfgets(buf, size, stream)
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (!gssapi_isencrypted(d))
       return fgets(buf, size, stream);
@@ -544,7 +554,7 @@ Rfread(void *ptr, size_t size, size_t nmb, FILE *stream)
    size_t i;
    const int d = fileno(stream);
 
-   slog(LOG_DEBUG, "%s, socket %d", function, d);
+   slog(LOG_DEBUG, "%s: fd %d", function, d);
 
    if (!gssapi_isencrypted(d))
       return fread(ptr, size, nmb, stream);

@@ -1,10 +1,10 @@
-/* $Id: inet_pton.c,v 1.8 2009/07/07 12:54:47 karls Exp $ */
+/* $Id: inet_pton.c,v 1.10 2012/10/22 15:15:58 karls Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "autoconf.h"
 #endif /* HAVE_CONFIG_H */
 
-#include "common.h"
+#include "osdep.h"
 
 /*   $OpenBSD: inet_pton.c,v 1.2 1997/04/13 05:08:24 deraadt Exp $   */
 
@@ -31,18 +31,6 @@ static char rcsid[] = "$From: inet_pton.c,v 8.7 1996/08/05 08:31:35 vixie Exp $"
 static char rcsid[] = "$OpenBSD: inet_pton.c,v 1.2 1997/04/13 05:08:24 deraadt Exp $";
 #endif
 #endif /* LIBC_SCCS and not lint */
-
-#if 0
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <arpa/nameser.h>
-#include <string.h>
-#include <errno.h>
-#endif
-
 
 #ifndef AF_INET6
 #define     AF_INET6  24     /* IPv6 */

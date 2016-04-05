@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, 2005, 2008, 2009
+ * Copyright (c) 2001, 2003, 2005, 2008, 2009, 2010, 2011, 2012
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,50 +45,62 @@
 
 #include <math.h> /* XXX */
 
-static const char rcsid[] = 
-"$Id: bandwidth.c,v 1.20 2009/10/22 17:36:12 karls Exp $";
+static const char rcsid[] =
+"$Id: bandwidth.c,v 1.32 2013/01/02 13:22:40 karls Exp $";
 
 const char module_bandwidth_version[] =
-"$Id: bandwidth.c,v 1.20 2009/10/22 17:36:12 karls Exp $";
+"$Id: bandwidth.c,v 1.32 2013/01/02 13:22:40 karls Exp $";
 
 
 void
-bw_use(bw)
-   bw_t *bw;
+bw_use(bw, cinfo, lock)
+   shmem_object_t *bw;
+   const clientinfo_t *cinfo;
+   const int lock;
 {
 
+   (void)bw;
 }
 
 void
-bw_unuse(bw)
-   bw_t *bw;
+bw_unuse(bw, cinfo, lock)
+   shmem_object_t *bw;
+   const clientinfo_t *cinfo;
+   const int lock;
 {
 
+   (void)bw;
 }
 
 ssize_t
-bw_left(bw)
-   const bw_t *bw;
+bw_left(bw, lock)
+   const shmem_object_t *bw;
+   const int lock;
 {
 
+   (void)bw;
    return SOCKD_BUFSIZE;
 }
 
 void
-bw_update(bw, bwused, bwusedtime)
-   bw_t *bw;
+bw_update(bw, bwused, bwusedtime, lock)
+   shmem_object_t *bw;
    size_t bwused;
    const struct timeval *bwusedtime;
+   const int lock;
 {
 
+   (void)bw;
+   (void)bwused;
+   (void)bwusedtime;
 }
 
-struct timeval *
-bw_isoverflow(bw, timenow, overflow)
-   bw_t *bw;
-   const struct timeval *timenow;
-   struct timeval *overflow;
+int
+bw_rulehasoverflown(rule, tnow, overflowok)
+   const struct rule_t *rule;
+   const struct timeval *tnow;
+   struct timeval *overflowok;
 {
 
-   return NULL;
+   return 0;
 }

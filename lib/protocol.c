@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009, 2010, 2011, 2012,
+ *               2013
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,11 +45,11 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: protocol.c,v 1.59 2009/07/09 14:04:22 karls Exp $";
+"$Id: protocol.c,v 1.88 2013/10/27 15:24:42 karls Exp $";
 
 unsigned char *
 sockshost2mem(host, mem, version)
-   const struct sockshost_t *host;
+   const sockshost_t *host;
    unsigned char *mem;
    int version;
 {
@@ -81,13 +82,14 @@ sockshost2mem(host, mem, version)
                break;
 
             case SOCKS_ADDR_IPV6:
-               memcpy(mem, &host->addr.ipv6, sizeof(host->addr.ipv6));
-               mem += sizeof(host->addr.ipv6);
+               memcpy(mem, &host->addr.ipv6.ip, sizeof(host->addr.ipv6.ip));
+               mem += sizeof(host->addr.ipv6.ip);
                break;
 
             case SOCKS_ADDR_DOMAIN:
                /* first byte gives length of rest. */
                *mem = (unsigned char)strlen(host->addr.domain);
+
                memcpy(mem + 1, host->addr.domain, (size_t)*mem);
                mem += *mem + 1;
                break;
@@ -111,7 +113,7 @@ sockshost2mem(host, mem, version)
 
 const unsigned char *
 mem2sockshost(host, mem, len, version)
-   struct sockshost_t *host;
+   sockshost_t *host;
    const unsigned char *mem;
    size_t len;
    int version;
@@ -120,8 +122,12 @@ mem2sockshost(host, mem, len, version)
 
    switch (version) {
       case PROXY_SOCKS_V5:
+         if (len < MINSOCKSHOSTLEN)
+            return NULL;
+
          if (len < sizeof(host->atype))
             return NULL;
+
          memcpy(&host->atype, mem, sizeof(host->atype));
          mem += sizeof(host->atype);
          len -= sizeof(host->atype);
@@ -130,6 +136,7 @@ mem2sockshost(host, mem, len, version)
             case SOCKS_ADDR_IPV4:
                if (len < sizeof(host->addr.ipv4))
                   return NULL;
+
                memcpy(&host->addr.ipv4, mem, sizeof(host->addr.ipv4));
                mem += sizeof(host->addr.ipv4);
                len -= sizeof(host->addr.ipv4);
@@ -155,17 +162,26 @@ mem2sockshost(host, mem, len, version)
             }
 
             case SOCKS_ADDR_IPV6:
-               slog(LOG_INFO, "%s: IPv6 not supported", function);
-               return NULL;
+               if (len < sizeof(host->addr.ipv6.ip))
+                  return NULL;
+
+               memcpy(&host->addr.ipv6.ip, mem, sizeof(host->addr.ipv6.ip));
+               mem += sizeof(host->addr.ipv6.ip);
+               len -= sizeof(host->addr.ipv6.ip);
+
+               host->addr.ipv6.scopeid = 0;
+
+               break;
 
             default:
-               slog(LOG_INFO, "%s: unknown atype field: %d",
-               function, host->atype);
+               slog(LOG_NEGOTIATE, "%s: unknown atype value: %d",
+                    function, host->atype);
                return NULL;
          }
 
          if (len < sizeof(host->port))
             return NULL;
+
          memcpy(&host->port, mem, sizeof(host->port));
          mem += sizeof(host->port);
          len -= sizeof(host->port);
@@ -177,4 +193,110 @@ mem2sockshost(host, mem, len, version)
    }
 
    return mem;
+}
+
+void
+socks_set_responsevalue(response, value)
+    response_t *response;
+    unsigned int value;
+{
+
+    switch (response->version) {
+      case PROXY_SOCKS_V4REPLY_VERSION:
+      case PROXY_SOCKS_V5:
+         response->reply.socks = (unsigned char)value;
+         break;
+
+      case PROXY_UPNP:
+         response->reply.upnp = (unsigned char)value;
+         break;
+
+      case PROXY_HTTP_10:
+      case PROXY_HTTP_11:
+         response->reply.http = (unsigned short)value;
+         break;
+
+      default:
+         SERRX(response->version);
+   }
+}
+
+unsigned int
+socks_get_responsevalue(response)
+    const response_t *response;
+{
+
+    switch (response->version) {
+      case PROXY_SOCKS_V4REPLY_VERSION:
+      case PROXY_SOCKS_V5:
+         return response->reply.socks;
+
+      case PROXY_UPNP:
+         return response->reply.upnp;
+
+      case PROXY_HTTP_10:
+      case PROXY_HTTP_11:
+         return response->reply.http;
+
+      default:
+         SERRX(response->version);
+   }
+
+   /* NOTREACHED */
+}
+
+int
+proxyprotocolisknown(version)
+   const int version;
+{
+
+   switch (version) {
+      /* don't include PROXY_SOCKS_V4REPLY_VERSION.  Stupid thing set to 0. */
+      case PROXY_SOCKS_V4:
+      case PROXY_SOCKS_V5:
+      case PROXY_UPNP:
+      case PROXY_HTTP_10:
+      case PROXY_HTTP_11:
+         return 1;
+
+      default:
+         return 0;
+   }
+}
+
+int
+authmethodisknown(method)
+   const int method;
+{
+
+   switch (method) {
+      case AUTHMETHOD_NOTSET:
+      case AUTHMETHOD_NONE:
+      case AUTHMETHOD_GSSAPI:
+      case AUTHMETHOD_UNAME:
+      case AUTHMETHOD_NOACCEPT:
+      case AUTHMETHOD_RFC931:
+      case AUTHMETHOD_PAM_ANY:
+      case AUTHMETHOD_PAM_ADDRESS:
+      case AUTHMETHOD_PAM_USERNAME:
+      case AUTHMETHOD_BSDAUTH:
+         return 1;
+
+      default:
+         return 0;
+   }
+}
+
+int *
+charmethod2intmethod(methodc, charmethodv, intmethodv)
+   const size_t methodc;
+   const unsigned char charmethodv[];
+   int intmethodv[];
+{
+   size_t i;
+
+   for (i = 0; i < methodc; ++i)
+      intmethodv[i] = (int)charmethodv[i];
+
+   return intmethodv;
 }

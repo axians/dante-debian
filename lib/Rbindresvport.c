@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2001, 2008, 2009
+ * Copyright (c) 1997, 1998, 1999, 2001, 2008, 2009, 2012, 2013
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: Rbindresvport.c,v 1.36 2009/10/23 11:43:34 karls Exp $";
+"$Id: Rbindresvport.c,v 1.47 2013/10/27 15:24:42 karls Exp $";
 
 /*
  * Note that for this function to work correctly the remote socks server
@@ -52,38 +52,54 @@ static const char rcsid[] =
  */
 
 int
-Rbindresvport(s, sin)
+Rbindresvport(s, _sin)
    int s;
-   struct sockaddr_in *sin;
-
+   struct sockaddr_in *_sin;
 {
    const char *function = "Rbindresvport()";
-   struct sockaddr name;
-   socklen_t namelen;
+   struct sockaddr_storage sin;
+   socklen_t sinlen;
+   int rc;
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, s);
+   slog(LOG_DEBUG, "%s, fd %d", function, s);
 
    /*
     * Nothing can be called before Rbindresvport(), delete any old cruft.
     */
    socks_rmaddr(s, 1);
 
-   if (bindresvport(s, sin) != 0) {
-      slog(LOG_DEBUG, "%s: bindresvport(%d) failed: %s",
-      function, s, strerror(errno));
+   if (_sin == NULL) {
+      slog(LOG_DEBUG, "%s: fd %d, _sin = %p", function, s, _sin);
+      return bindresvport(s, _sin);
+   }
+
+   usrsockaddrcpy(&sin, TOSS(_sin), sizeof(*_sin));
+   if (bindresvport(s, TOIN(&sin)) != 0) {
+      slog(LOG_DEBUG, "%s: bindresvport(%d, %s) failed: %s",
+           function,
+           s,
+           sockaddr2string(&sin, NULL, 0),
+           strerror(errno));
 
       return -1;
    }
 
-   namelen = sizeof(name);
-   if (getsockname(s, &name, &namelen) != 0)
+
+   sinlen = salen(sin.ss_family);
+   if (getsockname(s, TOSA(&sin), &sinlen) != 0)
       return -1;
 
    /*
     * Rbind() will accept failure at binding socket that is already bound
-    * and will try a remote server binding too if appropriate.
+    * (assuming it has been bound already in some way) and will continue to
+    * try a remote server binding too if appropriate.
     */
-   return Rbind(s, &name, namelen);
+   if ((rc = Rbind(s, TOSA(&sin), sinlen)) == -1)
+      return -1;
+
+   sockaddrcpy(TOSS(_sin), &sin, salen(sin.ss_family));
+
+   return rc;
 }

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2004, 2008, 2009
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2004, 2008, 2009, 2010, 2011,
+ *               2012, 2013
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +45,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: Rgetpeername.c,v 1.45 2009/10/23 11:43:34 karls Exp $";
+"$Id: Rgetpeername.c,v 1.58 2013/10/27 15:24:42 karls Exp $";
 
 int
 Rgetpeername(s, name, namelen)
@@ -53,49 +54,47 @@ Rgetpeername(s, name, namelen)
    socklen_t *namelen;
 {
    const char *function = "Rgetpeername()";
-   const struct socksfd_t *socksfd;
-   const struct sockaddr *addr;
+   socksfd_t socksfd;
+   struct sockaddr_storage addr;
 
    clientinit();
 
-   slog(LOG_DEBUG, "%s, socket %d", function, s);
+   slog(LOG_DEBUG, "%s, fd %d", function, s);
 
-   if (!socks_addrisours(s, 1)) {
+   if (!socks_addrisours(s, &socksfd, 1)) {
       socks_rmaddr(s, 1);
       return getpeername(s, name, namelen);
    }
 
-   socksfd = socks_getaddr(s, 1);
-   SASSERTX(socksfd != NULL);
-
-   switch (socksfd->state.command) {
+   switch (socksfd.state.command) {
       case SOCKS_BIND:
-         addr = &socksfd->forus.accepted;
+         fakesockshost2sockaddr(&socksfd.forus.accepted, &addr);
          break;
 
       case SOCKS_CONNECT:
-         if (socksfd->state.err != 0) {
+         if (socksfd.state.err != 0) {
             errno = ENOTCONN;
             return -1;
          }
-         addr = &socksfd->forus.connected;
+
+         fakesockshost2sockaddr(&socksfd.forus.connected, &addr);
          break;
 
       case SOCKS_UDPASSOCIATE:
-         if (!socksfd->state.udpconnect) {
+         if (!socksfd.state.udpconnect) {
             errno = ENOTCONN;
             return -1;
          }
-         addr = &socksfd->forus.connected;
+
+         fakesockshost2sockaddr(&socksfd.forus.connected, &addr);
          break;
 
       default:
-         SERRX(socksfd->state.command);
+         SERRX(socksfd.state.command);
    }
 
-
-   *namelen = MIN(*namelen, (socklen_t)sizeof(*addr));
-   memcpy(name, addr, (size_t)*namelen);
+   *namelen = MIN(*namelen, salen(addr.ss_family));
+   sockaddrcpy(TOSS(name), &addr, (size_t)*namelen);
 
    return 0;
 }
