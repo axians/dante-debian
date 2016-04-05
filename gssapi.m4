@@ -17,7 +17,7 @@ case $host in
     #openbsd libthread is buggy; disable gssapi by default (needs pthreads)
     *-*-openbsd*)
 	gssapi_default=no
-        AC_DEFINE(HAVE_THREADS_EINTR_PROBLEMS, 1, [threads unstable platform])
+	AC_DEFINE(HAVE_THREADS_EINTR_PROBLEMS, 1, [threads unstable platform])
 	;;
 esac
 
@@ -54,7 +54,14 @@ if test x"$GSSAPI" != xno; then
       fi
    else
       #set /usr as default gssdir
-      gssdir=/usr
+      case $host in
+          *-*-aix*)
+	      gssdir=/usr/krb5
+	      ;;
+	  *)
+	      gssdir=/usr
+	      ;;
+      esac
    fi
 
    unset krb5fail
@@ -74,7 +81,7 @@ if test x"$GSSAPI" != xno; then
            fi
        else
            AC_CHECK_PROG(ac_krb5_config, krb5-config, yes, no)
-           if test x"$ac_krb5_config" = xyes; then
+           if test x"${ac_krb5_config}" = xyes; then
 	       ac_gssapi_cflags=`krb5-config --cflags gssapi 2>/dev/null`
 	       if test $? != 0; then
 		   krb5fail=t
@@ -95,22 +102,30 @@ if test x"$GSSAPI" != xno; then
    dnl nothing from krb5-config, but gssdir specified?
    if test x"${ac_gssapi_cflags}" = x -a x"${ac_gssapi_libs}" = x -a \
            x"$gssdir" != x; then
-       dnl attempt to construct environment manuelly
-       CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-I$gssdir/include"
+       dnl attempt to construct environment manually
+       case $host in
+           *-*-aix*)
+	       CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-I/usr/include"
+	       ;;
+	   *)
+	       CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-I$gssdir/include"
+	       ;;
+       esac
+
        LDFLAGS="${LDFLAGS}${LDFLAGS:+ }-L$gssdir/lib"
        #includes under kerberosV dir on OpenBSD
        if test -d "$gssdir/include/kerberosV"; then
-       	  CPPFLAGS="${CPPFLAGS} -I${gssdir}/include/kerberosV"
+		  CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-I${gssdir}/include/kerberosV"
        fi
    fi
 
    dnl any cflags values obtained from krb5-config?
-   if test x"$ac_gssapi_cflags" != x; then
-       CPPFLAGS="${CPPFLAGS} $ac_gssapi_cflags"
+   if test x"${ac_gssapi_cflags}" != x; then
+       CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }$ac_gssapi_cflags"
    fi
 
    dnl any libs obtained from krb5-config?
-   if test x"$ac_gssapi_libs" != x; then
+   if test x"${ac_gssapi_libs}" != x; then
        dnl add as dependency for sockd
        SOCKDDEPS="${SOCKDDEPS}${SOCKDDEPS:+ }$ac_gssapi_libs"
 
@@ -125,16 +140,41 @@ if test x"$GSSAPI" != xno; then
 
    dnl look for gssapi headers
    AC_CHECK_HEADERS(gssapi.h gssapi/gssapi.h gssapi/gssapi_ext.h)
-   AC_CHECK_HEADERS(gssapi/gssapi_krb5.h gssapi/gssapi_generic.h)
+   dnl gssapi_krb5.h might depend on gssapi.h
+   AC_CHECK_HEADERS([gssapi/gssapi_krb5.h], [], [], [
+#if HAVE_GSSAPI_H
+#include <gssapi.h>
+#elif HAVE_GSSAPI_GSSAPI_H
+#include <gssapi/gssapi.h>
+#endif /* HAVE_GSSAPI_H */
+])
+   AC_CHECK_HEADERS(gssapi/gssapi_generic.h)
 
    dnl look for libs
-   if test x"$ac_gssapi_libs" != x; then
-       LDFLAGS="${LDFLAGS} $ac_gssapi_libs"
+   if test x"${ac_gssapi_libs}" != x; then
+       _libsonly=`echo $ac_gssapi_libs | xargs -n1 | egrep '^-l' | xargs echo`
+       _optsonly=`echo $ac_gssapi_libs | xargs -n1 | egrep -v '^-l' | xargs echo`
+       LIBS="${LIBS}${LIBS:+ }${_libsonly}"
+       LDFLAGS="${LDFLAGS}${LDFLAGS:+ }${_optsonly}"
+
+       case $host in
+	   *-*-freebsd7*)
+	          #skip check, causes problems
+	       ;;
+	   *)
+	       #wanted in case of Heimdal on FreeBSD, if the function
+	       #is missing in libgssapi. not wanted if not needed for
+	       #heimdal (potentially causes linking problems if
+	       #multiple kerberos implementations are installed on a
+	       #machine).
+	       AC_SEARCH_LIBS([gsskrb5_register_acceptor_identity], [gssapi gssapi_krb5])
+	       ;;
+       esac
    else
        oLIBS=$LIBS
        LIBS=""
 
-       AC_CHECK_LIB(crypto, main)
+       #AC_CHECK_LIB(crypto, main) #XXX only very old mit kerberos
        AC_CHECK_LIB(des, main)
        AC_CHECK_LIB(crypt, main)
        AC_CHECK_LIB(roken, main)
@@ -163,26 +203,34 @@ if test x"$GSSAPI" != xno; then
        LIBS="${oLIBS}${oLIBS:+ }$LIBS"
    fi
 
+   unset have_heimdal
+   AC_MSG_CHECKING([for heimdal])
+   AC_TRY_LINK([#include "krb5.h"], [printf("%s\n", heimdal_version);],
+   [AC_DEFINE(HAVE_HEIMDAL_KERBEROS, 1, [Heimdal kerberos implementation])
+    AC_MSG_RESULT(yes)
+    have_heimdal=t],
+   [AC_MSG_RESULT(no)])
+
    dnl do compile check
    AC_MSG_CHECKING([for working gssapi])
    AC_TRY_RUN([
-#if HAVE_GSSAPI_GSSAPI_H
-#include <gssapi/gssapi.h>
-#elif HAVE_GSSAPI_H
+#if HAVE_GSSAPI_H
 #include <gssapi.h>
-#endif
+#elif HAVE_GSSAPI_GSSAPI_H
+#include <gssapi/gssapi.h>
+#endif /* HAVE_GSSAPI_H */
 
+#if !HAVE_HEIMDAL_KERBEROS
 #if HAVE_GSSAPI_GSSAPI_EXT_H
 #include <gssapi/gssapi_ext.h>
-#endif
-
+#endif /* HAVE_GSSAPI_GSSAPI_EXT_H */
 #if HAVE_GSSAPI_GSSAPI_KRB5_H
 #include <gssapi/gssapi_krb5.h>
-#endif
-
+#endif /* HAVE_GSSAPI_GSSAPI_KRB5_H */
 #if HAVE_GSSAPI_GSSAPI_GENERIC_H
 #include <gssapi/gssapi_generic.h>
-#endif
+#endif /* HAVE_GSSAPI_GSSAPI_GENERIC_H */
+#endif /* HAVE_HEIMDAL_KERBEROS */
 
 int
 main(void)
@@ -196,15 +244,9 @@ main(void)
 }
 ], [unset no_gssapi
     AC_MSG_RESULT(yes)],
-   [AC_MSG_RESULT(no)])
-
-   unset have_heimdal
-   AC_MSG_CHECKING([for heimdal])
-   AC_TRY_LINK([#include "krb5.h"], [printf("%s\n", heimdal_version);],
-   [AC_DEFINE(HAVE_HEIMDAL_KERBEROS, 1, [Heimdal kerberos implementation])
-    AC_MSG_RESULT(yes)
-    have_heimdal=t],
-   [AC_MSG_RESULT(no)])
+   [AC_MSG_RESULT(no)],
+   [dnl assume no when cross-compiling
+    AC_MSG_RESULT(assuming no)])
 
    for file in gssapi.h gssapi/gssapi.h gssapi/gssapi_generic.h; do
        AC_EGREP_HEADER(gss_nt_service_name, [$file],
@@ -219,7 +261,7 @@ main(void)
 fi
 
 #restore build environment if not using gssapi
-if test x"$no_gssapi" = xt; then
+if test x"${no_gssapi}" = xt; then
     DLIBDEPS=$nogssDLIBDEPS
     SOCKDDEPS=$nogssSOCKDDEPS
     CPPFLAGS=$nogssCPPFLAGS
@@ -228,7 +270,7 @@ if test x"$no_gssapi" = xt; then
     LIBS=$nogssLIBS
 else
     #include libs as dependencies as needed in subdirs
-    LIBS=$nogssLIBS
+    LIBS="${LIBS}${LIBS:+ }$nogssLIBS"
 
     AC_DEFINE(HAVE_GSSAPI, 1, [GSSAPI support])
 fi

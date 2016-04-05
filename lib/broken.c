@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009, 2013
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,50 +39,10 @@
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
  * the rights to redistribute these changes.
  *
- * $Id: broken.c,v 1.27 2009/10/23 11:43:35 karls Exp $
+ * $Id: broken.c,v 1.31 2013/10/27 15:24:42 karls Exp $
  */
 
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: broken.c,v 1.27 2009/10/23 11:43:35 karls Exp $";
-
-#if HAVE_SHADOW_H && HAVE_GETSPNAM
-#include <shadow.h>
-#endif /* HAVE_SHADOW_H && HAVE_GETSPNAM */
-
-struct passwd *
-socks_getpwnam(login)
-   const char *login;
-{
-   const int errno_s = errno;
-   struct passwd *pwd;
-
-   if ((pwd = getpwnam(login)) == NULL)
-      return NULL;
-
-#if HAVE_GETSPNAM /* broken sysv stuff. */
-   {
-      struct spwd *spwd;
-
-      if ((spwd = getspnam(login)) != NULL)
-         pwd->pw_passwd = spwd->sp_pwdp;
-   }
-#elif HAVE_GETPRPWNAM /* some other broken stuff. */
-   /*
-    * XXX, don't know how this looks yet.
-   */
-#error "getprpwnam() not supported"
-   pwd = NULL;
-#endif /* HAVE_GETSPNAM */
-
-   /*
-    * some systems can set errno even on success. :-/
-    * E.g. OpenBSD 4.4. seems to do this.  Looks like it tries
-    * /etc/spwd.db first, and if that fails, /etc/pwd.db, but it
-    * forgets to reset errno.
-    */
-   errno = errno_s;
-
-   return pwd;
-}
+"$Id: broken.c,v 1.31 2013/10/27 15:24:42 karls Exp $";

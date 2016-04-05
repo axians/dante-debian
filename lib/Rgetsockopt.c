@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010
+ * Copyright (c) 2009, 2010, 2011, 2012
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: Rgetsockopt.c,v 1.2.2.1 2010/08/01 15:28:22 karls Exp $";
+"$Id: Rgetsockopt.c,v 1.9 2013/01/02 13:22:39 karls Exp $";
 
 int
 Rgetsockopt(s, level, optname, optval, optlen)
@@ -55,22 +55,24 @@ Rgetsockopt(s, level, optname, optval, optlen)
    socklen_t *optlen;
 {
    const char *function = "Rgetsockopt()";
-   struct socksfd_t socksfd;
+   socksfd_t socksfd;
 
    if (optname != SO_ERROR)
       return getsockopt(s, level, optname, optval, optlen);
 
    clientinit();
-   slog(LOG_DEBUG, "%s, socket %d", function, s);
 
-   if (!socks_addrisours(s, 1))
+   slog(LOG_DEBUG, "%s, fd %d", function, s);
+
+   if (!socks_addrisours(s, &socksfd, 1))
       return getsockopt(s, level, optname, optval, optlen);
 
-   socksfd = *socks_getaddr(s, 1);
-
-   slog(LOG_DEBUG, "%s, socket %d, err = %d", function, s, socksfd.state.err);
-
+   slog(LOG_DEBUG, "%s, fd %d, err = %d", function, s, socksfd.state.err);
    memcpy(optval, &socksfd.state.err, *optlen);
 
+   /*
+    * XXX should clear SO_ERROR, meaning we need to add a separate so_error
+    * variable.
+    */
    return 0;
 }

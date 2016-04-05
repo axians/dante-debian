@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009
+ * Copyright (c) 2009, 2011, 2012, 2013
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 
 #if HAVE_GSSAPI
 
-struct gssapi_state_t *
+gssapi_state_t *
 socks_get_gssapi_state(const unsigned int fd, const int havelock);
 /*
  * If "havelock" is true, it means the function has already taken
@@ -61,9 +61,11 @@ socks_get_gssapi_state(const unsigned int fd, const int havelock);
 
 ssize_t
 gssapi_decode_read(int s, void *buf, size_t len, int flags,
-      struct sockaddr *from, socklen_t *fromlen, struct gssapi_state_t *gs);
+                   struct sockaddr_storage *from, socklen_t *fromlen,
+                   recvfrom_info_t *recvflags, gssapi_state_t *gs);
 /*
  * Read data from socket s, assuming it is socks gssapi conforming.
+ * Arguments are similar to socks_recvfrom().
  * Returns:
  *      On success:  The number of decoded bytes read.
  *      On failure:  -1
@@ -71,9 +73,10 @@ gssapi_decode_read(int s, void *buf, size_t len, int flags,
 
 ssize_t
 gssapi_encode_write(int s, const void *msg, size_t len, int flags,
-      const struct sockaddr *to, socklen_t tolen, struct gssapi_state_t *gs);
+                    const struct sockaddr_storage *to, socklen_t tolen,
+                    sendto_info_t *sendtoflags, gssapi_state_t *gs);
 /*
- * Write data to socket s assuming it is socks gssapi conforming.
+ * Write data of len "len" to socket s, after gssapi-encapsulating it.
  * Returns:
  *      On success:  The number of unencoded bytes written.
  *      On failure:  -1
@@ -106,52 +109,50 @@ gssapi_import_state(gss_ctx_id_t *id, gss_buffer_desc *state);
  * Returns 0 on success, -1 on failure.
  */
 
-#if SOCKS_CLIENT && SOCKSLIBRARY_DYNAMIC
-
-void socks_mark_gssapi_io_as_native(void);
-void socks_mark_gssapi_io_as_normal(void);
-/*
- * Marks calls that can be made by the gssapi library as native or normal,
- * using the socks_markas{native,normal}() functions.
- */
-
-#endif /* SOCKS_CLIENT && SOCKSLIBRARY_DYNAMIC */
-
 #define CLEAN_GSS_TOKEN(token) do {                                            \
    OM_uint32 major_status, minor_status;                                       \
+   SIGSET_ALLOCATE(oldset);                                                    \
    char buf[1024];                                                             \
+                                                                               \
+   SOCKS_SIGBLOCK_IF_CLIENT(SIGIO, &oldset);                                   \
                                                                                \
    major_status = gss_release_buffer(&minor_status, &(token));                 \
    if (gss_err_isset(major_status, minor_status, buf, sizeof(buf)))            \
       swarnx("%s: gss_release_buffer() at %s:%d failed: %s",                   \
-      function, __FILE__, __LINE__, buf);                                      \
+             function, __FILE__, __LINE__, buf);                               \
+                                                                               \
+   SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);                                        \
 } while (/* CONSTCOND */ 0)
 
 #define CLEAN_GSS_AUTH(client_name, server_name, server_creds) do {            \
    OM_uint32 major_status, minor_status;                                       \
+   SIGSET_ALLOCATE(oldset);                                                    \
    char buf[1024];                                                             \
                                                                                \
+   SOCKS_SIGBLOCK_IF_CLIENT(SIGIO, &oldset);                                   \
                                                                                \
    if ((client_name) != GSS_C_NO_NAME) {                                       \
       major_status = gss_release_name(&minor_status, &(client_name));          \
       if (gss_err_isset(major_status, minor_status, buf, sizeof(buf)))         \
          swarnx("%s: gss_release_name() at %s:%d failed: %s",                  \
-         function, __FILE__, __LINE__, buf);                                   \
+                function, __FILE__, __LINE__, buf);                            \
    }                                                                           \
                                                                                \
    if ((server_name) != GSS_C_NO_NAME) {                                       \
       major_status = gss_release_name(&minor_status, &(server_name));          \
       if (gss_err_isset(major_status, minor_status, buf, sizeof(buf)))         \
          swarnx("%s: gss_release_name() at %s:%d failed: %s",                  \
-         function, __FILE__, __LINE__, buf);                                   \
+                function, __FILE__, __LINE__, buf);                            \
    }                                                                           \
                                                                                \
    if ((server_creds) != GSS_C_NO_CREDENTIAL) {                                \
       major_status = gss_release_cred(&minor_status, &(server_creds));         \
       if (gss_err_isset(major_status, minor_status, buf, sizeof(buf)))         \
          swarnx("%s: gss_release_name() at %s:%d failed: %s",                  \
-         function, __FILE__, __LINE__, buf);                                   \
+                function, __FILE__, __LINE__, buf);                            \
    }                                                                           \
+                                                                               \
+   SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);                                        \
 } while (/* CONSTCOND */ 0)
 
 #endif /* SOCKS_CLIENT && SOCKSLIBRARY_DYNAMIC */

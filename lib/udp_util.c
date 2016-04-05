@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009, 2011, 2012
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,46 +44,44 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: udp_util.c,v 1.57 2009/10/23 11:43:37 karls Exp $";
-
-struct udpheader_t *
-sockaddr2udpheader(to, header)
-   const struct sockaddr *to;
-   struct udpheader_t *header;
-{
-
-   SASSERTX(to->sa_family == AF_INET);
-
-   bzero(header, sizeof(*header));
-
-   fakesockaddr2sockshost(to, &header->host);
-
-   return header;
-}
+"$Id: udp_util.c,v 1.68 2013/01/02 13:22:39 karls Exp $";
 
 void *
 udpheader_add(host, msg, len, msgsize)
-   const struct sockshost_t *host;
-   const void *msg;
+   const sockshost_t *host;
+   void *msg;
    size_t *len;
    const size_t msgsize;
 {
-/*   const char *function = "udpheader_add()"; */
-   struct udpheader_t header;
-   unsigned char *newmsg, *offset;
+   const char *function = "udpheader_add()";
+   udpheader_t header;
+   unsigned char *offset;
 
    bzero(&header, sizeof(header));
    header.host = *host;
 
-   if (msgsize >= *len + PACKETSIZE_UDP(&header))
-      newmsg = (unsigned char *)msg;
-   else
-      if ((newmsg = malloc(*len + PACKETSIZE_UDP(&header))) == NULL)
-         return NULL;
+   if (msgsize < (size_t)(*len + HEADERSIZE_UDP(&header))) {
+      swarnx("%s: could not prefix socks udp header of size %lu to udp "
+             "payload of length %lu: msgsize (%lu) is too short",
+             function,
+             (unsigned long)HEADERSIZE_UDP(&header),
+             (unsigned long)*len,
+             (unsigned long)msgsize);
+
+      errno = EMSGSIZE;
+      return NULL;
+   }
+
+   slog(LOG_DEBUG,
+        "%s: prefixing udp header with addr %s to buffer of len %lu, size %lu",
+        function,
+        sockshost2string(&header.host, NULL, 0),
+        (unsigned long)*len,
+        (unsigned long)msgsize);
 
    /* offset old contents by size of header we are about to prefix. */
-   memmove(newmsg + PACKETSIZE_UDP(&header), msg, *len);
-   offset = newmsg;
+   memmove((char *)msg + HEADERSIZE_UDP(&header), msg, *len);
+   offset = msg;
 
    memcpy(offset, &header.flag, sizeof(header.flag));
    offset += sizeof(header.flag);
@@ -94,7 +92,7 @@ udpheader_add(host, msg, len, msgsize)
    offset = sockshost2mem(&header.host, offset, PROXY_SOCKS_V5);
    offset += *len; /* len bytes copied above. */
 
-   *len = offset - newmsg;
+   *len = (char *)offset - (char *)msg;
 
-   return newmsg;
+   return msg;
 }

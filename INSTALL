@@ -1,4 +1,4 @@
-# $Id: INSTALL,v 1.34 2009/09/07 17:22:25 karls Exp $
+# $Id: INSTALL,v 1.46 2013/10/27 15:24:41 karls Exp $
 
 This file describes how to install Dante.  Dante is a Socks client
 and server firewall implementation.  It can be installed on a machine
@@ -37,6 +37,10 @@ called `autoconf'.  You only need `configure.in' if you want to change
 it or regenerate `configure' using a newer version of `autoconf'.
 
 The simplest way to compile this package is:
+
+  0. If compiling for use with a commercial module, first extract the
+     `INSTALL' file from the module archive and follow the
+     instructions there.
 
   1. `cd' to the directory containing the package's source code and type
      `./configure' to configure the package for your system.  If you're
@@ -206,6 +210,11 @@ These `configure' options are also supported (run `configure' with
 `--enable-debug'
      Compile with extra debugging information.
 
+`--enable-livedebug'
+     For debugging of problems in production environments; provides
+     information that allows serious errors to be analyzed without
+     aborting the application or having to enable debug log output.
+
 `--enable-warnings'
      Compiles the package with '-Wall'; shows more compiler warnings.
 
@@ -215,8 +224,18 @@ These `configure' options are also supported (run `configure' with
 `--enable-profiling'
      Build the libraries and the server with profiling.
 
+`--enable-coverage'
+     Build with code coverage. Recommended used with --enable-debug and
+     --enable-profiling.
+
 `--enable-linting'
-     Run (BSD) lint when compiling the source-code.
+     Run lint when compiling the source-code.
+
+`--disable-client'
+     Disable SOCKS client compilation (only SOCKS server will be built).
+
+`--disable-server'
+     Disable SOCKS server compilation (only SOCKS client will be built).
 
 `--disable-libwrap'
      Disable test for libwrap.  Makes no difference if libwrap does
@@ -230,7 +249,7 @@ These `configure' options are also supported (run `configure' with
      Disable support for large files.
 
 `--disable-preload'
-     Do not build libdsocks.  The dynamic sockslibrary might not work
+     Do not build libdsocks.  The dynamic socks library might not work
      properly on all architectures.  This option disables building of
      the library. Also disables it's use in the server.
 
@@ -264,6 +283,22 @@ These `configure' options are also supported (run `configure' with
 `--with-libc=NAME'
      Manually set the name of libc. Should never be needed, but can be
      use if configure is unable to correctly find the name.
+
+`--with-bufsize=NUMBER'
+     Override the default SOCKD_BUFSIZE value. This can be done to tune
+     the Dante server. See include/config.h for details.
+
+`--with-iomax=NUMBER'
+     Override the default SOCKD_IOMAX value. This can be done to tune
+     the Dante server, by changing the number of clients that each
+     io process will handle. A high value will reduce the number of
+     processes running on a machine with many clients.
+
+`--with-negmax=NUMBER'
+     Override the default SOCKD_NEGOTIATEMAX value. This can be done
+     to tune the Dante server, by changing the number of clients that
+     each negotiate process will handle. A high value will reduce the
+     number of processes running on a machine with many clients.
 
 `--without-upnp'
      Always disable support for the UPnP proxy protocol.
@@ -340,7 +375,7 @@ These `configure' options are also supported (run `configure' with
 FURTHER CONFIGURATION
 
 The file include/config.h contains defines you might wish to
-change, but usually they are ok as they come.
+change, but generally this should not be needed.
 
 RUNTIME CONFIGURATION FILES
 
@@ -350,7 +385,7 @@ The Dante server expects it's configuration file to be in /etc/sockd.conf.
 The client library uses the file /etc/socks.conf.
 
 The file bin/socksify.sh contains a shell script that allows one
-to dynamically socksify a dynamicly linked application at runtime.
+to dynamically socksify a dynamically linked application at runtime.
 The program can be installed as /usr/local/bin/socksify on platforms
 where it works, but is not installed by default.
 
@@ -360,4 +395,5 @@ Please report any bugs, problems or enhancements to dante-bugs@inet.no
 
 The WWW home page for Dante is located at: http://www.inet.no/dante/
 
-Copyright (c) 1998, 1999, 2000, 2009 Inferno Nettverk A/S, Norway.
+Copyright (c) 1998, 1999, 2000, 2009, 2011, 2012, 2013
+ Inferno Nettverk A/S, Norway.

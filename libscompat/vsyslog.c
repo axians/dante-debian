@@ -1,10 +1,12 @@
-/* $Id: vsyslog.c,v 1.11 2009/07/07 12:54:47 karls Exp $ */
+/* $Id: vsyslog.c,v 1.14 2013/02/24 20:01:26 karls Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "autoconf.h"
 #endif /* HAVE_CONFIG_H */
 
-#include "common.h"
+#include "osdep.h"
+
+#undef vsyslog /* avoid any changes for applications done by headers */
 
 /* attempt to be clever; construct string and call syslog */
 
@@ -20,11 +22,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *   This product includes software developed by the University of
- *   California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *

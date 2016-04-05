@@ -1,12 +1,11 @@
-# $Id: CREDITS,v 1.37 2009/10/27 11:44:35 karls Exp $
+# $Id: CREDITS,v 1.45 2012/11/08 21:01:29 michaels Exp $
 
-Dante was developed for Inferno Nettverk A/S, Norway, by
+This software was developed for Inferno Nettverk A/S, Norway, by
    - Michael Shuldman
    - Karl-André Skevik
 
 
-At least the following additional people should be credited
-(remove example.com to get the real mail-addresses):
+At least the following additional people should be credited:
 
 - David Koblas (koblas@netcom.com.example.com) authored the original
   Socks protocol and implementation.
@@ -16,7 +15,7 @@ At least the following additional people should be credited
   v4 protocol, "SOCKS4.protocol".
 
 - The people at NEC (http://www.socks.nec.com) have done much for Socks,
-  including extension of the orignal protocol.  The idea for "socksify"
+  including extension of the original protocol.  The idea for "socksify"
   also came from them.
 
 - Most of the compatibility functions were taken from OpenBSD and
@@ -42,8 +41,6 @@ At least the following additional people should be credited
 - Thanks to Oren Tiorsh (oren@hishome.net.example.com) who contributed the
   rpm spec files.
 
-- Thanks to Lars Brede Grøndahl from INN (inn.no) for the logo.
-
 - Thanks to Jay Weber (jweb@accessus.net.example.com) for help with the
   digital unix port and an account to test it on.
 
@@ -54,15 +51,15 @@ At least the following additional people should be credited
   ported Dante to AIX.
 
 - Thanks to Per Hedeland (per@erix.ericsson.se.example.com) for much
-  appreciated help with some tricky stuff in addressmatching code aswell
-  as several useful codepatches over the years.
+  appreciated help with some tricky stuff in address matching code as well
+  as several useful code patches over the years.
 
 - Patrick Bihan-Faou, MindStep Corporation, patrick@mindstep.com.example.com
   contributed support for PAM.
 
 - Tom Chan <tchan@austin.rr.com.example.com> contributed code to find out what
   local address the system would select to use for connecting to a
-  particular ipaddress.
+  particular ipaddress, used for "external.rotation: route".
 
 - Lennart Dahlström <lennart@appgate.com.example.com> contributed an
   implementation of getipnodebyname().
@@ -74,8 +71,12 @@ At least the following additional people should be credited
   to limit the range of udp-ports used between the socks-client and the
   Dante server.
 
-- Markus Moeller (markus_moeller at compuserve.com) contributed
-  support for the GSSAPI (RFC 1961) to both the server and the client.
+- Markus Moeller (markus_moeller at compuserve.com) contributed the
+  SOCKS GSSAPI (RFC 1961) implementation in Dante, server and client.
   Many thanks to Markus for this.
 
-- Also thanks to everyone who reported bugs and other problems.
+- Lysenko Konstantin <gshaud@gmail.com.example.com> contributed support for
+  "external.rotation: same-same".
+
+- Also thanks to everyone who reported bugs, wrote articles about how to
+  use Dante, or provided other constructive feedback.

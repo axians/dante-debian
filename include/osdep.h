@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
- *               2008, 2009, 2010
+ *               2008, 2009, 2010, 2011, 2012, 2013
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,21 +42,31 @@
  *
  */
 
-/* $Id: osdep.h,v 1.51.2.2 2010/05/24 16:38:23 karls Exp $ */
+/* $Id: osdep.h,v 1.98 2013/10/27 15:24:41 karls Exp $ */
 
-#if HAVE_LINUX_ECCENTRICITIES
 /*
- * XXX This is a hack. Avoid transparent sockaddr union used in Linux
- *  to avoid the use of the union in the code. Mainly used in
- *  interposition.c (also for CMSG_)
+ * ensure pam/libwrap defines are only set when compiling server
  */
 
-#ifdef __GNUC__
-#undef __GNUC__
-#define __GNUC__ 0
-#endif /* __GNUC__ */
+#if HAVE_COND_PAM && !SOCKS_CLIENT
+#define HAVE_PAM (1)
+#else
+#define HAVE_PAM (0)
+#endif /* HAVE_COND_PAM && !SOCKS_CLIENT */
 
-#endif /* HAVE_LINUX_ECCENTRICITIES */
+#if HAVE_COND_LIBWRAP && !SOCKS_CLIENT
+#define HAVE_LIBWRAP (1)
+#else
+#define HAVE_LIBWRAP (0)
+#endif /* HAVE_COND_LIBWRAP && !SOCKS_CLIENT */
+
+
+#if HAVE_COND_LIVEDEBUG
+#define HAVE_LIVEDEBUG (1)
+#else
+#define HAVE_LIVEDEBUG (0)
+#endif /* HAVE_COND_LIVEDEBUG */
+
 
 #include <sys/types.h>
 #if HAVE_SYS_TIME_H
@@ -98,7 +108,11 @@
 #define __DECC
 #endif /* SOCKS_DLIB_OSF */
 #include <sys/wait.h>
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif /* HAVE_SYS_SELECT_H */
 #include <netinet/in.h>
+#include <netinet/in_systm.h>
 #if HAVE_NETINET_IP_H
 #include <netinet/ip.h>
 #endif /* HAVE_NETINET_IP_H */
@@ -112,19 +126,24 @@
 
 #include <netinet/tcp.h>
 
+#if HAVE_RPC_RPC_H
+#include <rpc/rpc.h>
+#endif /* HAVE_RPC_RPC_H */
+
 #if !HAVE_TIMER_MACROS
 #include "timers.h"
 #endif /* !HAVE_TIMER_MACROS */
 
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/udp.h>
+
+#include <inttypes.h>
 
 #include <assert.h>
 #if HAVE_CRYPT_H
 #include <crypt.h>
 #endif /* HAVE_CRYPT_H */
+
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -138,10 +157,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #if HAVE_STRINGS_H
 #include <strings.h>
 #endif /* HAVE_STRINGS_H */
 #include <string.h>
+
 #include <syslog.h>
 #if HAVE_LIBWRAP && HAVE_TCPD_H
 #include <tcpd.h>
@@ -172,7 +193,9 @@
 #include <gssapi/gssapi.h>
 #elif HAVE_GSSAPI_H
 #include <gssapi.h>
-#endif /* HAVE_GSSAPI_GSSAPI_H */
+#endif /* HAVE_GSSAPI_H */
+
+#if !HAVE_HEIMDAL_KERBEROS
 #if HAVE_GSSAPI_GSSAPI_EXT_H
 #include <gssapi/gssapi_ext.h>
 #endif /* HAVE_GSSAPI_GSSAPI_EXT_H */
@@ -182,24 +205,65 @@
 #if HAVE_GSSAPI_GSSAPI_GENERIC_H
 #include <gssapi/gssapi_generic.h>
 #endif /* HAVE_GSSAPI_GSSAPI_GENERIC_H */
-
+#endif /* !HAVE_HEIMDAL_KERBEROS */
 #endif /* HAVE_GSSAPI */
 
-#if HAVE_PTHREAD_H
-#if HAVE_LINUX_ECCENTRICITIES
-/*
- * XXX _XOPEN_SOURCE needed for PTHREAD_MUTEX_ERRORCHECK, define after
- *     all other include files to avoid interference
- */
-#ifdef _XOPEN_SOURCE
-#undef _XOPEN_SOURCE
-#endif /* _XOPEN_SOURCE */
-#define _XOPEN_SOURCE 500
-#undef _FEATURES_H
-#endif /* HAVE_LINUX_ECCENTRICITIES */
+#if HAVE_STDDEF_H
+#include <stddef.h>
+#endif /* HAVE_STDDEF_H */
 
+#if HAVE_PTHREAD_H
 #include <pthread.h>
 #endif /* HAVE_PTHREAD_H */
+
+#if HAVE_GETIFADDRS && HAVE_IFADDRS_H
+#include <ifaddrs.h>
+#else
+#include "ifaddrs.h"
+#endif /* HAVE_IFADDRS_H */
+
+#if HAVE_VALGRIND_VALGRIND_H
+#include <valgrind/valgrind.h>
+#endif /* HAVE_VALGRIND_VALGRIND_H */
+
+/*
+ *  End of system headers
+ */
+
+/* XXX should have way to control use on client/server */
+#if HAVE_LIBCFAIL && !SOCKS_CLIENT
+#include "cfail.h"
+#endif /* HAVE_LIBCFAIL && !SOCKS_CLIENT*/
+
+#if HAVE_PRAGMA_SUPPORT
+#define NOWARN_ADDRESS_PRAGMA() _Pragma("GCC diagnostic ignored \"-Waddress\"")
+#else
+#define NOWARN_ADDRESS_PRAGMA()
+#endif /* HAVE_PRAGMA_SUPPORT */
+
+#if HAVE_DECL_ATTRIBUTE && !defined lint
+#define __ATTRIBUTE__(x) __attribute__(x)
+#else
+#define __ATTRIBUTE__(x)
+#endif /* HAVE_DECL_ATTRIBUTE */
+
+#if HAVE_DECL_NONNULL
+#define __NONNULL__(x) __nonnull__(x)
+#else
+#define __NONNULL__(x)
+#endif /* HAVE_DECL_NONNULL */
+
+#if HAVE_DECL_FORMAT
+#define FORMAT(x, y, z) format(x, y, z)
+#else
+#define FORMAT(x, y, z)
+#endif /* HAVE_DECL_FORMAT */
+
+#if HAVE_DECL_BOUNDED
+#define __BOUNDED__(x, y, z) __bounded__(x, y, z)
+#else
+#define __BOUNDED__(x, y, z)
+#endif /* HAVE_DECL_BOUNDED */
 
 #if HAVE_LINUX_BUGS
 #if (defined __bswap_16) && (!defined __bswap_32)
@@ -218,26 +282,22 @@
 #define WAIT_ANY -1
 #endif /* !WAIT_ANY */
 
-#if (defined lint)
-#undef __attribute__
-#define __attribute__(a)
-#endif
-
 /* libscompat replacement function prototypes */
 
 #if !HAVE_SETPROCTITLE
 void setproctitle(const char *fmt, ...)
-   __attribute__((format(__printf__, 1, 2)));
-int initsetproctitle(int, char **, char **);
+   __ATTRIBUTE__((FORMAT(__printf__, 1, 2)));
+void initsetproctitle(int, char **);
 #endif /* !HAVE_SETPROCTITLE */
 
 #if !HAVE_SOCKATMARK
-#include "sockatmark.h"
+int sockatmark(int);
 #endif /* !HAVE_SOCKATMARK */
 
-#if !HAVE_INET_ATON
-int inet_aton(register const char *cp, struct in_addr *addr);
-#endif /* !HAVE_ATON */
+#if !HAVE_STRLCPY
+size_t strlcpy(char *dst, const char *src, size_t size);
+size_t strlcat(char *dst, const char *src, size_t size);
+#endif /* !HAVE_STRLCPY */
 
 #if !HAVE_HSTRERROR
 const char *hstrerror(int);
@@ -252,7 +312,12 @@ int inet_pton(int af, const char *src, void *dst);
 #endif /* !HAVE_INET_PTON */
 
 #if !HAVE_ISSETUGID
-#include "issetugid.h"
+int issetugid(void);
+#endif /* !HAVE_ISSETUGID */
+
+#if !HAVE_PSELECT
+inline int pselect(int nfds, fd_set *rset, fd_set *wset, fd_set *xset,
+    const struct timespec *ts, const sigset_t *sigmask);
 #endif /* !HAVE_ISSETUGID */
 
 #if !HAVE_VSYSLOG
@@ -268,41 +333,45 @@ void vsyslog(int, const char *, va_list);
 typedef int sig_atomic_t;
 #endif /* !HAVE_SIG_ATOMIC_T */
 
-#if SIZEOF_CHAR == 1
+#define BYTEWIDTH_8BITS 1
+#define BYTEWIDTH_16BITS 2
+#define BYTEWIDTH_32BITS 4
+
+#if SIZEOF_CHAR == BYTEWIDTH_8BITS
  typedef unsigned char ubits_8;
  typedef          char sbits_8;
 #else
-error "no known 8 bits wide data type"
-#endif
+#error "no known 8 bits wide data type"
+#endif /* SIZEOF_CHAR == BYTEWIDTH_8BITS */
 
-#if SIZEOF_SHORT == 2
+#if SIZEOF_SHORT == BYTEWIDTH_16BITS
  typedef unsigned short ubits_16;
  typedef          short sbits_16;
 #else
-# if SIZEOF_INT == 2
+# if SIZEOF_INT == BYTEWIDTH_16BITS
   typedef unsigned int ubits_16;
   typedef          int sbits_16;
 # else
-error "no known 16 bits wide data type"
-# endif
+#error "no known 16 bits wide data type"
+# endif /* SIZEOF_INT == BYTEWIDTH_16BITS */
 #endif
 
-#if SIZEOF_INT == 4
+#if SIZEOF_INT == BYTEWIDTH_32BITS
  typedef unsigned int ubits_32;
  typedef          int sbits_32;
 #else
-# if SIZEOF_SHORT == 4
+# if SIZEOF_SHORT == BYTEWIDTH_32BITS
    typedef unsigned short ubits_32;
    typedef          short sbits_32;
 # else
-#  if SIZEOF_LONG == 4
+#  if SIZEOF_LONG == BYTEWIDTH_32BITS
     typedef unsigned long ubits_32;
     typedef          long sbits_32;
 #  else
-error "no known 32 bits wide data type"
-#  endif /* SIZEOF_LONG == 4 */
-# endif /* SIZEOF_SHORT == 4 */
-#endif /* SIZEOF_INT == 4 */
+#error "no known 32 bits wide data type"
+#  endif /* SIZEOF_LONG == BYTEWIDTH_32BITS */
+# endif /* SIZEOF_SHORT == BYTEWIDTH_32BITS */
+#endif /* SIZEOF_INT == BYTEWIDTH_32BITS */
 
 #if !HAVE_INT8_T
 #define int8_t sbits_8
@@ -367,7 +436,11 @@ error "no known 32 bits wide data type"
 #endif /* HAVE_NOMALLOC_REALLOC */
 
 #if HAVE_NONULL_FREE
-#define free(p)   (((p) == NULL) ? ((void)(p)) : (free(p)))
+#define free(p)                                                                \
+do {                                                                           \
+   if ((p) != NULL)                                                            \
+      free((p));                                                               \
+} while (/* CONSTCOND */ 0)
 #endif /* HAVE_NONULL_FREE */
 
 #ifndef __CONCAT
@@ -377,6 +450,16 @@ error "no known 32 bits wide data type"
 #ifndef __CONCAT3
 #define __CONCAT3(x,y,z) x ## y ## z
 #endif /* !__CONCAT3 */
+
+#ifndef ROUNDDOWN
+#define ROUNDDOWN(x, size)  (((x) / (size) ) * (size))
+#endif
+
+#ifndef ROUNDUP
+#define ROUNDUP(x, size)    ((((x) + (size) - 1) / (size)) * (size))
+#endif
+
+#define ROUNDFLOAT(x) ((x) >= 0 ? (long)((x) + 0.5) : (long)((x) - 0.5))
 
 #ifndef EPROTO
 #define EPROTO EPROTOTYPE
@@ -394,6 +477,10 @@ struct ipoption {
 };
 #endif /* !HAVE_STRUCT_IPOPTS */
 
+#if !HAVE_FDMASK
+typedef unsigned long fd_mask;
+#endif /* !HAVE_FDMASK */
+
 #if !HAVE_IN6_ADDR
 /* from OpenBSD netinet6/in6.h */
 struct in6_addr {
@@ -406,22 +493,17 @@ struct in6_addr {
 #define s6_addr   __u6_addr.__u6_addr8
 #endif /* !HAVE_IN6_ADDR */
 
-#if !HAVE_H_ERRNO
-extern int h_errno;
-#endif /* !HAVE_H_ERRNO */
-
-#ifndef _NSIG
-#define _NSIG  (32)  /* number of signals. */
-#endif /* !_NSIG */
 
 /*
  * libscompat functions
  */
 
 #if !HAVE_DAEMON
-#include "daemon.h"
+int daemon(int, int);
 #endif /* !HAVE_DAEMON */
 
 #if !HAVE_DIFFTIME
-#include "difftime.h"
+double difftime(const time_t time1, const time_t time0);
 #endif /* !HAVE_DIFFTIME */
+
+#include "in_cksum.h"

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2005, 2008, 2009
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2005, 2008, 2009, 2010, 2011,
+ *               2012, 2013, 2014
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,144 +45,190 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: httpproxy.c,v 1.34 2009/10/23 11:43:36 karls Exp $";
+"$Id: httpproxy.c,v 1.73.4.2 2014/08/15 18:16:41 karls Exp $";
 
 int
-httpproxy_negotiate(s, packet)
+httpproxy_negotiate(s, packet, emsg, emsglen)
    int s;
-   struct socks_t *packet;
+   socks_t *packet;
+   char *emsg;
+   size_t emsglen;
 {
    const char *function = "httpproxy_negotiate()";
-   char buf[MAXHOSTNAMELEN + 512]; /* +512 for http babble. */
+   char buf[MAXHOSTNAMELEN + 512] /* The + 512 is for http babble. */,
+        visbuf[sizeof(buf) * 4 + 1], *p;
    char host[MAXSOCKSHOSTSTRING];
    int checked, eof;
-   ssize_t len, rc;
-   struct sockaddr addr;
+   ssize_t rc;
+   size_t len, readsofar;
+   struct sockaddr_storage addr;
    socklen_t addrlen;
 
-   slog(LOG_DEBUG, function);
+   slog(LOG_DEBUG, "%s", function);
 
    sockshost2string(&packet->req.host, host, sizeof(host));
 
    /*
     * replace the dot that sockshost2string uses to separate port from host
     * with http's ':'.
-   */
-   *strrchr(host, '.') = ':';
+    */
+   if ((p = strrchr(host, '.')) == NULL) {
+      snprintf(emsg, emsglen,
+               "did not find portnumber separator ('.') in string \"%s\"",
+               host);
 
-   len = (size_t)snprintfn(buf, sizeof(buf),
-                           "CONNECT %s HTTP/1.0\r\n"
-                           "User-agent: %s/client v%s\r\n"
-                           "\r\n",
-                           host, PACKAGE, VERSION);
+      swarnx("%s: %s", function, emsg);
+      return -1;
+   }
 
-   slog(LOG_DEBUG, "%s: sending: %s", function, buf);
-   if ((rc = socks_sendton(s, buf, (size_t)len, (size_t)len, 0, NULL, 0, NULL))
-   != len) {
-      swarn("%s: wrote %ld/%ld byte%s",
-      function, (long)rc, (long)len, len == 1 ? "" : "s");
+   *p = ':';
+
+   len = snprintf(buf, sizeof(buf),
+                  "CONNECT %s %s\r\n"
+                  "User-agent: %s/client v%s\r\n"
+                  "\r\n",
+                  host,
+                  proxyprotocol2string(packet->req.version),
+                  PRODUCT,
+                  VERSION);
+
+   slog(LOG_NEGOTIATE, "%s: sending to server: %s",
+        function, str2vis(buf, len, visbuf, sizeof(visbuf)));
+
+   if ((rc = socks_sendton(s, buf, len, len, 0, NULL, 0, NULL, NULL))
+   != (ssize_t)len) {
+      snprintf(emsg, emsglen,
+               "could not send request to proxy server.  Sent %ld/%lu: %s",
+               (long)rc, (unsigned long)len, strerror(errno));
 
       return -1;
    }
 
-   eof = checked = 0;
    /*
-    * read til eof so there's no junk left in buffer for client, then return
-    * reply.
+    * read til we get the eof response so there's no junk left in buffer
+    * for client, then return the response code.
     */
+   eof = checked = readsofar = 0;
    do {
-      const char *terminator = "\r\n";
-      char *eol;
+      const char *eofresponse_str = "\r\n\r\n"; /*
+                                                 * the CRLF terminating the
+                                                 * line, and the CRLF
+                                                 * terminating the entity body.
+                                                 */
+      const char *eol_str = "\r\n";
+      char *eol, *bufp;
+      size_t linelen;
 
-      /*
-       * -1 so we can NUL-terminate, and - <length of terminator> so we can
-       * read the missing bits if necessary.
-       */
-      switch (len = read(s, buf, sizeof(buf) - 1 - (strlen(terminator) + 1))) {
-         case -1:
-            swarn("%s: read()", function);
-            return -1;
-
-         case 0:
-            eof = 1;
-            break;
+      if ((rc = read(s, &buf[readsofar], sizeof(buf) - readsofar - 1)) <= 0) {
+         snprintf(emsg, emsglen,
+                  "could not read response from proxy server.  "
+                  "read(2) returned %ld after having read %lu bytes",
+                  (long)rc, (unsigned long)readsofar);
+         return -1;
       }
 
-      if (eof)
-         break; /* nothing to log. */
+      len = (size_t)rc;
 
-      /*
-       * if last char we read is start of terminator, read some more
-       * to make sure the terminator does not get split across buffers.
-       */
-      if (buf[len - 1] == *terminator)
-         switch (rc = read(s, &buf[len], strlen(terminator) - 1)) {
-            case -1:
-               swarn("%s: read()", function);
-               return -1;
+      buf[readsofar + len] = NUL;
 
-            case 0:
-               eof = 1;
-               break;
+      slog(LOG_NEGOTIATE, "%s: read from server: %s",
+           function, str2vis(&buf[readsofar], len, visbuf, sizeof(visbuf)));
 
-            default:
-               slog(LOG_DEBUG, "%s: read %ld bytes", function, (long)rc);
-               len += rc;
-         }
+      readsofar += len;
 
-      buf[len] = NUL;
-      while ((eol = strstr(buf, terminator)) != NULL) { /* new line. */
-         *eol = NUL;
-         slog(LOG_DEBUG, "%s: read: \"%s\"", function, buf);
+      if ((strstr(buf, eofresponse_str)) == NULL)
+         continue; /* don't bother to start parsing til we've got it all. */
+      else
+         eof = 1;
+
+      bufp = buf;
+      while ((eol = strstr(bufp, eol_str)) != NULL) {
+         /* check each line for the response we are looking for. */
+         *eol   = NUL;
+         linelen = eol - bufp;
+
+         slog(LOG_DEBUG, "%s: checking line \"%s\"",
+              function, str2vis(bufp, linelen, visbuf, sizeof(visbuf)));
 
          if (!checked) {
             int error = 0;
 
             switch (packet->req.version) {
-               case PROXY_HTTP_V1_0: {
-                  const char *offset = "HTTP/1.0 ";
+               case PROXY_HTTP_10:
+               case PROXY_HTTP_11: {
+                  const char *ver_str
+                  = proxyprotocol2string(packet->req.version);
+                  size_t offset = strlen(ver_str);
 
-                  if (strncmp(buf, offset, strlen(offset)) != 0) {
+                  if (linelen < offset + strlen(" 200")) {
+                     snprintf(emsg, emsglen,
+                              "response from proxy server is too short to"
+                              "indicate success: \"%s\"",
+                              visbuf);
+
                      error = 1;
                      break;
                   }
 
-                  slog(LOG_DEBUG, "%s: buf matches expected string, is \"%s\"",
-                  function, buf);
+                  if (strncmp(bufp, ver_str, offset) != 0) {
+                     snprintf(emsg, emsglen,
+                              "HTTP version (\"%s\") in response from proxy "
+                              "server does not match expected (\"%s\").  "
+                              "Continuing anyway and hoping for the best ...",
+                              visbuf, ver_str);
+                  }
 
-                  if (!isdigit(buf[strlen(offset)])) {
+                  while (isspace((unsigned char)bufp[offset]))
+                        ++offset;
+
+                  if (!isdigit((unsigned char)bufp[offset])) {
+                     char tmp[sizeof(visbuf)];
+
+                     snprintf(emsg, emsglen,
+                              "response from proxy server does not match.  "
+                              "Expected a number at offset %lu, but got \"%s\"",
+                              (unsigned long)offset,
+                              str2vis(&bufp[offset],
+                                      linelen - offset,
+                                      tmp,
+                                      sizeof(tmp)));
                      error = 1;
                      break;
                   }
 
                   packet->res.version = packet->req.version;
+                  if ((rc = string2portnumber(&bufp[offset], emsg, emsglen))
+                  == -1) {
+                     swarn("%s: could not find response code in http "
+                           "response (\"%s\"): %s",
+                           function, visbuf, emsg);
+
+                     rc = HTTP_SUCCESS; /* hope for the best. */
+                  }
+                  else {
+                     snprintf(emsg, emsglen,
+                              "response code %ld from http server indicates "
+                              "%s: \"%s\"",
+                              (long)rc,
+                              socks_get_responsevalue(&packet->res)
+                                    == HTTP_SUCCESS ? "success" : "failure",
+                              visbuf);
+
+                     slog(LOG_DEBUG, "%s: %s", function, emsg);
+                  }
+
+                  socks_set_responsevalue(&packet->res, (unsigned int)rc);
+
 
                   /*
-                   * XXX we've assumed that a reply is the size of a socks
-                   * reply, http replies can however be bigger. :-/
-                  */
-
-                  rc = atoi(&buf[strlen(offset)]);
-
-                  slog(LOG_DEBUG, "%s: reply code from http server is %ld",
-                  function, (long)rc);
-
-                  /*
-                   * http reply code is > 8 bits, socks is 8 bits.
-                   * Just make sure we don't end up truncating failure to
-                   * HTTP_SUCCESS.
+                   * we have no idea what address the server will use on
+                   * our behalf, so set it to what we use.  Better than
+                   * nothing, perhaps. :-/
                    */
-                  if (rc != HTTP_SUCCESS)
-                     rc = HTTP_FAILURE;
-                  packet->res.reply = (unsigned char)rc;
-
-                  /*
-                   * we don't know what address the server will use on
-                   * our behalf, set it to what we use, better than nothing.
-                  */
                   addrlen = sizeof(addr);
-                  if (getsockname(s, &addr, &addrlen) != 0)
+                  if (getsockname(s, TOSA(&addr), &addrlen) != 0)
                      SWARN(s);
+
                   sockaddr2sockshost(&addr, &packet->res.host);
 
                   checked = 1;
@@ -193,30 +240,21 @@ httpproxy_negotiate(s, packet)
             }
 
             if (error) {
-               swarnx("%s: unknown response: \"%s\"", function, buf);
-               errno = ECONNREFUSED;
+               snprintf(emsg, emsglen,
+                        "unknown response from proxy server: \"%s\"",
+                        str2vis(bufp, linelen, visbuf, sizeof(visbuf)));
                return -1;
             }
          }
 
-         /* shift out the line we just parsed. */
-         len -= (eol + strlen(terminator)) - buf;
-         SASSERTX(len >= 0);
-         SASSERTX((size_t)len < sizeof(buf));
-         memmove(buf, eol + strlen(terminator), (size_t)len);
-         buf[len] = NUL;
-
-         if (strcmp(buf, terminator) == 0)
-            eof = 1;   /* empty line, end of response. */
+         /* shift out the line we just parsed, nothing of interest there. */
+         bufp += linelen;
       }
-
-      if (*buf != NUL)
-         slog(LOG_DEBUG, "%s: read: %s", function, buf);
    } while (!eof);
 
    if (checked)
-      return packet->res.reply == HTTP_SUCCESS ? 0 : -1;
+      return socks_get_responsevalue(&packet->res) == HTTP_SUCCESS ? 0 : -1;
 
-   slog(LOG_DEBUG, "%s: didn't get status code from proxy", function);
-   return -1;   /* proxyserver doing something strange/unknown. */
+   slog(LOG_INFO, "%s: didn't get status code from proxy", function);
+   return -1;
 }

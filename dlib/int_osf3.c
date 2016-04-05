@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009, 2010, 2011
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@
 #define HAVE_OSF_OLDSTYLE 1
 
 /*
- * use of bzero in SYSCALL_START produces vast amounts of warnings
+ * use of bzero in socks_syscall_start produces vast amounts of warnings
  * when compiling int_osf3.c (on OSF)
  */
 #define bzero(a, b) (memset(a, 0, b))
@@ -66,7 +66,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: int_osf3.c,v 1.34 2009/08/08 14:57:07 karls Exp $";
+"$Id: int_osf3.c,v 1.39 2012/06/01 20:23:05 karls Exp $";
 
 #undef accept
 #undef bind
@@ -102,7 +102,7 @@ struct n_msghdr {
 };
 
 ssize_t Rsendto(int, const void *, size_t, int,
-      const struct n_sockaddr *, socklen_t);
+                const struct n_sockaddr *, socklen_t);
 int Rconnect(int, const struct n_sockaddr *, socklen_t);
 ssize_t Rsendmsg(int, const struct n_msghdr *, int);
 ssize_t Rrecvfrom(int, void *, int, int, struct n_sockaddr *, socklen_t *);
@@ -124,10 +124,10 @@ sys_accept(s, addr, addrlen)
    int rc;
    int (*function)(int s, struct sockaddr * addr, socklen_t *addrlen);
 
-   SYSCALL_START(s);
+   socks_syscall_start(s);
    function = symbolfunction(SYMBOL_ACCEPT);
    rc = function(s, addr, (socklen_t *) addrlen);
-   SYSCALL_END(s);
+   socks_syscall_end(s);
    return rc;
 }
 
@@ -138,12 +138,12 @@ sys_getpeername(s, name, namelen)
    int *namelen;
 {
    int rc;
-   int (*function)(int s, const struct sockaddr * name, socklen_t *namelen);
+   int (*function)(int s, const struct sockaddr *name, socklen_t *namelen);
 
-   SYSCALL_START(s);
+   socks_syscall_start(s);
    function = symbolfunction(SYMBOL_GETPEERNAME);
    rc = function(s, name, (socklen_t *) namelen);
-   SYSCALL_END(s);
+   socks_syscall_end(s);
    return rc;
 }
 
@@ -154,12 +154,12 @@ sys_getsockname(s, name, namelen)
    int *namelen;
 {
    int rc;
-   int (*function)(int s, const struct sockaddr * name, socklen_t *namelen);
+   int (*function)(int s, const struct sockaddr *name, socklen_t *namelen);
 
-   SYSCALL_START(s);
+   socks_syscall_start(s);
    function = symbolfunction(SYMBOL_GETSOCKNAME);
    rc = function(s, name, (socklen_t *) namelen);
-   SYSCALL_END(s);
+   socks_syscall_end(s);
    return rc;
 }
 
@@ -174,12 +174,12 @@ sys_recvfrom(s, buf, len, flags, from, fromlen)
 {
    int rc;
    int (*function)(int s, void *buf, size_t len, int flags,
-                   struct sockaddr * from, socklen_t *fromlen);
+                   struct sockaddr *from, socklen_t *fromlen);
 
-   SYSCALL_START(s);
+   socks_syscall_start(s);
    function = symbolfunction(SYMBOL_RECVFROM);
    rc = function(s, buf, len, flags, from, (socklen_t *) fromlen);
-   SYSCALL_END(s);
+   socks_syscall_end(s);
    return rc;
 }
 
@@ -192,10 +192,10 @@ sys_recvmsg(s, msg, flags)
    ssize_t rc;
    int (*function)(int s, struct msghdr *msg, int flags);
 
-   SYSCALL_START(s);
+   socks_syscall_start(s);
    function = symbolfunction(SYMBOL_RECVMSG);
    rc = function(s, msg, flags);
-   SYSCALL_END(s);
+   socks_syscall_end(s);
    return rc;
 }
 
@@ -208,10 +208,10 @@ sys_sendmsg(s, msg, flags)
    ssize_t rc;
    int (*function)(int s, const struct msghdr *msg, int flags);
 
-   SYSCALL_START(s);
+   socks_syscall_start(s);
    function = symbolfunction(SYMBOL_SENDMSG);
    rc = function(s, msg, flags);
-   SYSCALL_END(s);
+   socks_syscall_end(s);
    return rc;
 }
 
@@ -224,10 +224,10 @@ sys_readv(d, iov, iovcnt)
    ssize_t rc;
    int (*function)(int d, const struct iovec *iov, int iovcnt);
 
-   SYSCALL_START(d);
+   socks_syscall_start(d);
    function = symbolfunction(SYMBOL_READV);
    rc = function(d, iov, iovcnt);
-   SYSCALL_END(d);
+   socks_syscall_end(d);
    return rc;
 }
 
@@ -240,10 +240,10 @@ sys_writev(d, iov, iovcnt)
    ssize_t rc;
    int (*function)(int d, const struct iovec *buf, int iovcnt);
 
-   SYSCALL_START(d);
+   socks_syscall_start(d);
    function = symbolfunction(SYMBOL_WRITEV);
    rc = function(d, iov, iovcnt);
-   SYSCALL_END(d);
+   socks_syscall_end(d);
    return rc;
 }
 
@@ -254,12 +254,12 @@ sys_connect(s, name, namelen)
    int namelen;
 {
    int rc;
-   int (*function)(int s, const struct sockaddr * name, socklen_t namelen);
+   int (*function)(int s, const struct sockaddr *name, socklen_t namelen);
 
-   SYSCALL_START(s);
+   socks_syscall_start(s);
    function = symbolfunction(SYMBOL_CONNECT);
    rc = function(s, name, namelen);
-   SYSCALL_END(s);
+   socks_syscall_end(s);
    return rc;
 }
 
@@ -272,10 +272,10 @@ sys_bind(s, name, namelen)
    int rc;
    int (*function)(int s, const struct sockaddr *name, socklen_t namelen);
 
-   SYSCALL_START(s);
+   socks_syscall_start(s);
    function = symbolfunction(SYMBOL_BIND);
    rc = function(s, name, namelen);
-   SYSCALL_END(s);
+   socks_syscall_end(s);
    return rc;
 }
 
@@ -292,10 +292,10 @@ sys_sendto(s, msg, len, flags, to, tolen)
    int (*function)(int s, const void *msg, size_t len, int flags,
                    const struct sockaddr *to, socklen_t tolen);
 
-   SYSCALL_START(s);
+   socks_syscall_start(s);
    function = symbolfunction(SYMBOL_SENDTO);
    rc = function(s, msg, len, flags, to, tolen);
-   SYSCALL_END(s);
+   socks_syscall_end(s);
    return rc;
 }
 
@@ -351,7 +351,7 @@ accept(s, addr, addrlen)
    socklen_t n_addrlen;
    int rc;
 
-   if (ISSYSCALL(s, SYMBOL_ACCEPT))
+   if (socks_issyscall(s, SYMBOL_ACCEPT))
       return sys_accept(s, addr, addrlen);
 
    n_addrlen = ADDRLEN_SET(addr, sizeof(n_addr));
@@ -374,7 +374,7 @@ getpeername(s, name, namelen)
    socklen_t n_namelen;
    int rc;
 
-   if (ISSYSCALL(s, SYMBOL_GETPEERNAME))
+   if (socks_issyscall(s, SYMBOL_GETPEERNAME))
       return sys_getpeername(s, name, namelen);
 
    n_namelen = ADDRLEN_SET(name, sizeof(n_name));
@@ -397,7 +397,7 @@ getsockname(s, name, namelen)
    socklen_t n_namelen;
    int rc;
 
-   if (ISSYSCALL(s, SYMBOL_GETSOCKNAME))
+   if (socks_issyscall(s, SYMBOL_GETSOCKNAME))
       return sys_getsockname(s, name, namelen);
 
    n_namelen = ADDRLEN_SET(name, sizeof(n_name));
@@ -423,7 +423,7 @@ recvfrom(s, buf, len, flags, from, fromlen)
    socklen_t n_fromlen;
    ssize_t rc;
 
-   if (ISSYSCALL(s, SYMBOL_RECVFROM))
+   if (socks_issyscall(s, SYMBOL_RECVFROM))
       return sys_recvfrom(s, buf, len, flags, from, fromlen);
 
    n_fromlen = ADDRLEN_SET(from, sizeof(n_from));
@@ -445,7 +445,7 @@ recvmsg(s, msg, flags)
    struct n_msghdr n_msg;
    ssize_t rc;
 
-   if (ISSYSCALL(s, SYMBOL_RECVMSG))
+   if (socks_issyscall(s, SYMBOL_RECVMSG))
       return sys_recvmsg(s, msg, flags);
 
    bzero((char *)&n_msg, sizeof(struct n_msghdr));
@@ -464,7 +464,7 @@ recvmsg(s, msg, flags)
       msg->msg_iovlen = n_msg.msg_iovlen;
       /* XXX msg_control / msg_accrights */
       if (n_msg.msg_controllen != 0)
-         swarn("warning: msg_accrights/controllen conversion not supported");
+         swarn("msg_accrights/controllen conversion not supported");
    }
 
    return rc;
@@ -479,7 +479,7 @@ sendmsg(s, msg, flags)
    struct n_msghdr n_msg;
    ssize_t rc;
 
-   if (ISSYSCALL(s, SYMBOL_SENDMSG))
+   if (socks_issyscall(s, SYMBOL_SENDMSG))
       return sys_sendmsg(s, msg, flags);
 
    bzero((char *)&n_msg, sizeof(struct n_msghdr));
@@ -514,7 +514,7 @@ connect(s, name, namelen)
    struct n_sockaddr n_name;
    int n_namelen;
 
-   if (ISSYSCALL(s, SYMBOL_CONNECT))
+   if (socks_issyscall(s, SYMBOL_CONNECT))
       return sys_connect(s, name, namelen);
 
    SOCKADDR_COPYPARAM(name, &namelen, &n_name, &n_namelen);
@@ -531,7 +531,7 @@ bind(s, name, namelen)
    struct n_sockaddr n_name;
    int n_namelen;
 
-   if (ISSYSCALL(s, SYMBOL_BIND))
+   if (socks_issyscall(s, SYMBOL_BIND))
       return sys_bind(s, name, namelen);
 
    SOCKADDR_COPYPARAM(name, &namelen, &n_name, &n_namelen);
@@ -551,7 +551,7 @@ sendto(s, msg, len, flags, to, tolen)
    struct n_sockaddr n_to;
    int n_tolen;
 
-   if (ISSYSCALL(s, SYMBOL_SENDTO))
+   if (socks_issyscall(s, SYMBOL_SENDTO))
       return sys_sendto(s, msg, len, flags, to, tolen);
 
    SOCKADDR_COPYPARAM(to, &tolen, &n_to, &n_tolen);
@@ -565,7 +565,7 @@ writev(d, iov, iovcnt)
    const struct iovec *iov;
    int iovcnt;
 {
-   if (ISSYSCALL(d, SYMBOL_WRITEV))
+   if (socks_issyscall(d, SYMBOL_WRITEV))
       return sys_writev(d, iov, iovcnt);
 
    return Rwritev(d, iov, iovcnt);
@@ -577,7 +577,7 @@ readv(d, iov, iovcnt)
    const struct iovec *iov;
    int iovcnt;
 {
-   if (ISSYSCALL(d, SYMBOL_READV))
+   if (socks_issyscall(d, SYMBOL_READV))
       return sys_readv(d, iov, iovcnt);
 
    return Rreadv(d, iov, iovcnt);

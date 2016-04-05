@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009, 2010
+ * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2008, 2009, 2010, 2011, 2012,
+ *               2013, 2014
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,26 +46,47 @@
 
 #include "interposition.h"
 
+#include "upnp.h"
+
 #ifndef __USE_GNU
 #define __USE_GNU /* XXX for RTLD_NEXT on Linux */
 #endif /* !__USE_GNU */
 #include <dlfcn.h>
 
 static const char rcsid[] =
-"$Id: address.c,v 1.177.2.2 2010/05/24 16:38:36 karls Exp $";
+"$Id: address.c,v 1.288.4.4 2014/08/15 18:16:40 karls Exp $";
 
-/* fake "ip address", for clients without DNS access. */
+/*
+ * During init, we need to let all system calls resolve to the native
+ * version.  I.e., socks_shouldcallasnative() need to always return
+ * true as long as we are initing. Use this object for holding that
+ * knowledge.
+ */
+#ifdef HAVE_VOLATILE_SIG_ATOMIC_T
+sig_atomic_t doing_addrinit;
+#else
+volatile sig_atomic_t doing_addrinit;
+#endif /* HAVE_VOLATILE_SIG_ATOMIC_T */
+
+
+/*
+ * "fake" ip addresses for clients that want/need to use that.
+ * Note that this is process-specific, so it will not work with
+ * programs that fork of "dns-helper".  Shared memory might have worked,
+ * but even that would have depended on us being able to set up the
+ * shared memory early enough, so just say we don't support that.
+ */
 static char **ipv;
 static in_addr_t ipc;
 
-static struct socksfd_t socksfdinit;
+#define FDV_INITSIZE    64 /* on init allocate memory for first 64 fd indexes */
+static socksfd_t socksfdinit;
 static int *dv;
 static size_t dc;
-static struct socksfd_t *socksfdv;
+static socksfd_t *socksfdv;
 static size_t socksfdc;
 
 #if HAVE_PTHREAD_H
-static pthread_mutex_t addrmutex;
 
 static int socks_pthread_mutex_init(pthread_mutex_t *mutex,
                                     const pthread_mutexattr_t *attr);
@@ -91,7 +113,20 @@ static PT_LOCK_FUNC_T pt_unlock;
 
 typedef pthread_t (*PT_SELF_FUNC_T)(void);
 static PT_SELF_FUNC_T pt_self;
+
+static pthread_mutex_t addrmutex;
 #endif /* HAVE_PTHREAD_H */
+
+int
+socks_isaddr(const int fd, const int takelock);
+/*
+ * If "takelock" is true, it means the function should take the
+ * socksfdv/addrlock.
+ *
+ * Returns true if there is a address registered for the socket "fd", false
+ * otherwise.
+ */
+
 
 static int
 socks_addfd(const int d);
@@ -115,14 +150,19 @@ socks_rmfd(const int fd);
  * removes the file descriptor "fd" from our internal table.
  */
 
-struct socksfd_t *
+socksfd_t *
 socks_addaddr(clientfd, socksfd, takelock)
    const int clientfd;
-   const struct socksfd_t *socksfd;
+   const socksfd_t *socksfd;
    const int takelock;
 {
    const char *function = "socks_addaddr()";
-   addrlockopaque_t opaque;
+   addrlockopaque_t lock;
+
+   clientinit();
+
+   SASSERTX(clientfd >= 0);
+   SASSERTX(!(socksfd->state.protocol.tcp && socksfd->state.protocol.udp));
 
 #if 0 /* DEBUG */
    if (socksfd->state.command != -1 && !socksfd->state.system)
@@ -135,38 +175,66 @@ socks_addaddr(clientfd, socksfd, takelock)
    ||       socksfd->state.command == SOCKS_UDPASSOCIATE);
 
    if (takelock)
-      socks_addrlock(F_WRLCK, &opaque);
+      socks_addrlock(F_WRLCK, &lock);
 
    if (socks_addfd(clientfd) != 0)
-      serrx(EXIT_FAILURE, "%s: error adding descriptor %d", function, clientfd);
+      serrx("%s: error adding descriptor %d", function, clientfd);
 
    if (socksfdc < dc) { /* init/reallocate */
+#if HAVE_GSSAPI
+      size_t i;
+#endif /* HAVE_GSSAPI */
+
       if (socksfdinit.control == 0) { /* not initialized */
          socksfdinit.control = -1;
          /* other members have ok default value. */
       }
 
       if ((socksfdv = realloc(socksfdv, sizeof(*socksfdv) * dc)) == NULL)
-         serrx(EXIT_FAILURE, "%s: %s", function, NOMEM);
+         serr("%s: could not allocate %lu bytes",
+              function, (unsigned long)(sizeof(*socksfdv) * dc));
+
+#if HAVE_GSSAPI
+      /* update internal pointers in previously existing objects. */
+      for (i = 0; i < socksfdc; ++i) {
+         socksfd_t *sfd = &socksfdv[i];
+
+         if (!socks_isaddr(i, 0))
+            continue;
+
+         sfd->state.gssapistate.value = sfd->state.gssapistatemem;
+      }
+#endif /* HAVE_GSSAPI */
 
       /* init new objects */
       while (socksfdc < dc)
          socksfdv[socksfdc++] = socksfdinit;
    }
 
-   socksfdv[clientfd]           = *socksfd;
+   /*
+    * One one machine gcc 4.1.2 expands the below to a memcpy() call with
+    * overlapping destinations, according to valgrind:
+    *    socksfdv[clientfd]           = *socksfd;
+    *
+    * Obviously a gcc bug, but what can we do ... :-/
+    */
+   memmove(&socksfdv[clientfd], socksfd, sizeof(*socksfd));
+
+#if HAVE_GSSAPI
+   socksfdv[clientfd].state.gssapistate.value
+   = socksfdv[clientfd].state.gssapistatemem;
+#endif
    socksfdv[clientfd].allocated = 1;
 
    if (takelock)
-      socks_addrunlock(&opaque);
+      socks_addrunlock(&lock);
 
 #ifdef THREAD_DEBUG
    if (sockscf.log.fpv != NULL) {
       char buf[80];
 
-      snprintf(buf, sizeof(buf),
-      "%s: allocating fd %d for command %d\n",
-      function, clientfd, socksfdv[clientfd].state.command);
+      snprintf(buf, sizeof(buf), "%s: allocating fd %d for command %d\n",
+               function, clientfd, socksfdv[clientfd].state.command);
 
       syssys_write(fileno(sockscf.log.fpv[0]), buf, strlen(buf) + 1);
    }
@@ -178,40 +246,48 @@ socks_addaddr(clientfd, socksfd, takelock)
    return &socksfdv[clientfd];
 }
 
-struct socksfd_t *
-socks_getaddr(d, takelock)
+socksfd_t *
+socks_getaddr(d, socksfd, takelock)
    const int d;
+   socksfd_t *socksfd;
    const int takelock;
 {
+#if HAVE_GSSAPI
    const char *function = "socks_getaddr()";
-   addrlockopaque_t opaque;
-   struct socksfd_t *sfd;
+#endif /* HAVE_GSSAPI */
+   socksfd_t *sfd;
+   addrlockopaque_t lock;
+
+   if (socksfd == NULL) {
+      static socksfd_t ifnullsocksfd;
+
+      socksfd = &ifnullsocksfd;
+   }
 
    if (takelock)
-      socks_addrlock(F_RDLCK, &opaque);
+      socks_addrlock(F_RDLCK, &lock);
 
    if (socks_isaddr(d, 0)) {
       sfd = &socksfdv[d];
 
 #if HAVE_GSSAPI
       if (sfd->state.gssimportneeded && !sockscf.state.insignal) {
-         iobuffer_t *iobuf;
-
-         iobuf = socks_getbuffer(d);
-         SASSERTX(iobuf != NULL);
-
-         /* iobuf->buf can change due to realloc(3), so make sure to update. */
-         sfd->state.gssapistate.value = iobuf->buf;
-
-         slog(LOG_DEBUG, "%s: importing gssapistate for socket %d",
-         function, d);
+         slog(LOG_DEBUG, "%s: importing gssapistate for fd %d", function, d);
 
          if (gssapi_import_state(&sfd->state.auth.mdata.gssapi.state.id,
-         &sfd->state.gssapistate) != 0)
-            swarnx("%s: failed to import gssapi context of length %lu",
-            function, (unsigned long)sfd->state.gssapistate.length);
+                                 &sfd->state.gssapistate) != 0) {
+            swarnx("%s: failed to import gssapi context of length %lu, fd %d",
+                   function, (unsigned long)sfd->state.gssapistate.length, d);
 
-         sfd->state.gssimportneeded = 0;
+            socks_rmaddr(d, 0);
+            sfd = NULL;
+         }
+         else {
+            sfd->state.gssimportneeded = 0;
+            slog(LOG_DEBUG,
+                 "%s: imported gssapistate for fd %d using ctxid %ld",
+                 function, d, (long)sfd->state.auth.mdata.gssapi.state.id);
+         }
       }
 #endif /* HAVE_GSSAPI */
    }
@@ -219,10 +295,13 @@ socks_getaddr(d, takelock)
       sfd = NULL;
 
    if (takelock)
-      socks_addrunlock(&opaque);
+      socks_addrunlock(&lock);
 
+   if (sfd == NULL)
+      return NULL;
 
-   return sfd;
+   *socksfd = *sfd;
+   return socksfd;
 }
 
 void
@@ -230,62 +309,90 @@ socks_rmaddr(d, takelock)
    const int d;
    const int takelock;
 {
-/*   const char *function = "socks_rmaddr()";    */
-   addrlockopaque_t opaque;
+   const char *function = "socks_rmaddr()";
+   addrlockopaque_t lock;
 
    if (d < 0 || (size_t)d >= socksfdc)
       return; /* not a socket of ours. */
 
    if (takelock)
-      socks_addrlock(F_WRLCK, &opaque);
+      socks_addrlock(F_WRLCK, &lock);
 
    socks_rmfd(d);
+
    if (!socksfdv[d].state.issyscall) /* syscall adds/removes all the time. */
       socks_freebuffer(d);
 
    switch (socksfdv[d].state.version) {
-      case PROXY_MSPROXY_V2:
-         if (socksfdv[d].control != -1)
-            close(socksfdv[d].control);
-         break;
-
       case PROXY_SOCKS_V4:
       case PROXY_SOCKS_V5:
-         if (!socksfdv[d].state.issyscall)
-            switch (socksfdv[d].state.command) {
-               case SOCKS_BIND:
-                  if (socksfdv[d].control == -1
-                  ||  socksfdv[d].control == d)
-                     break;
+         if (socksfdv[d].state.issyscall)
+            break;
 
-                  /*
-                   * If we are using the bind extension it's possible
-                   * that this controlconnection is shared with other
-                   * (accept()'ed) addresses, if so we must leave it
-                   * open for the other connections.
-                  */
-                  if (socks_addrcontrol(&socksfdv[d].local,
-                  &socksfdv[d].remote, -1, -1, 0)
-                  == -1)
-                     break;
+#if HAVE_GSSAPI
+         if (socksfdv[d].state.auth.method == AUTHMETHOD_GSSAPI
+         &&  socksfdv[d].state.auth.mdata.gssapi.state.id != GSS_C_NO_CONTEXT) {
+            OM_uint32 major_status, minor_status;
+            char buf[512];
 
-                  close(socksfdv[d].control);
-                  break;
+            if ((major_status
+            = gss_delete_sec_context(&minor_status,
+                                  &socksfdv[d].state.auth.mdata.gssapi.state.id,
+                                     GSS_C_NO_BUFFER)) != GSS_S_COMPLETE) {
+               if (!gss_err_isset(major_status, minor_status, buf, sizeof(buf)))
+                  *buf = NUL;
 
-               case SOCKS_CONNECT:
-                  break; /* no separate controlconnection. */
-
-               case SOCKS_UDPASSOCIATE:
-                  if (socksfdv[d].control != -1)
-                     close(socksfdv[d].control);
-                  break;
-
-               default:
-                  SERRX(socksfdv[d].state.command);
+               swarnx("%s: gss_delete_sec_context() for fd %d failed%s%s",
+                      function,
+                      d,
+                      *buf == NUL ? "" : ": ",
+                      *buf == NUL ? "" : buf);
             }
+            else {
+               slog(LOG_DEBUG, "%s: deleted GSSAPI context for fd %d",
+                    function, d);
+
+               SASSERTX(socksfdv[d].state.auth.mdata.gssapi.state.id
+               == GSS_C_NO_CONTEXT);
+            }
+         }
+#endif /* HAVE_GSSAPI */
+
+         switch (socksfdv[d].state.command) {
+            case SOCKS_BIND:
+               if (socksfdv[d].control == -1
+               ||  socksfdv[d].control == d)
+                  break;
+
+               /*
+                * If we are using the bind extension it's possible
+                * that this control connection is shared with other
+                * (accept()'ed) addresses, if so we must leave it
+                * open for the other connections.
+               */
+               if (socks_addrcontrol(-1, d, 0) != -1)
+                  break;
+
+               close(socksfdv[d].control);
+               break;
+
+            case SOCKS_CONNECT:
+               break; /* no separate control connection. */
+
+            case SOCKS_UDPASSOCIATE:
+               if (socksfdv[d].control != -1)
+                  close(socksfdv[d].control);
+               break;
+
+            default:
+               SERRX(socksfdv[d].state.command);
+         }
          break;
 
       case PROXY_UPNP:
+         if (socksfdv[d].state.issyscall)
+            break;
+
          upnpcleanup(d);
          break;
    }
@@ -295,8 +402,8 @@ socks_rmaddr(d, takelock)
       char buf[80];
 
       snprintf(buf, sizeof(buf),
-      "%s: deallocating fd %d, was allocated for command %d\n",
-      function, d, socksfdv[d].state.command);
+               "%s: deallocating fd %d, was allocated for command %d\n",
+               function, d, socksfdv[d].state.command);
 
       syssys_write(fileno(sockscf.log.fpv[0]), buf, strlen(buf) + 1);
    }
@@ -304,8 +411,13 @@ socks_rmaddr(d, takelock)
 
    socksfdv[d] = socksfdinit;
 
+#if DIAGNOSTIC
+   SASSERTX(socks_isaddr(d, 0) == 0);
+   SASSERTX(socks_getaddr(d, NULL, 0) == NULL);
+#endif /* DIAGNOSTIC */
+
    if (takelock)
-      socks_addrunlock(&opaque);
+      socks_addrunlock(&lock);
 }
 
 int
@@ -321,60 +433,121 @@ socks_isaddr(d, takelock)
 }
 
 int
-socks_addrisours(s, takelock)
+socks_addrisours(s, socksfdmatch, takelock)
    const int s;
+   socksfd_t *socksfdmatch;
    const int takelock;
 {
    const char *function = "socks_addrisours()";
+   const char *breakreason = NULL;
    const int errno_s = errno;
-   addrlockopaque_t opaque;
-   int matched;
+   addrlockopaque_t lock;
+   struct sockaddr_storage local, remote;
+   socklen_t locallen, remotelen;
+   int matched, type;
 
-   errno = 0;
+   slog(LOG_DEBUG, "%s: fd %d", function, s);
 
    if (takelock)
-      socks_addrlock(F_RDLCK, &opaque);
+      socks_addrlock(F_RDLCK, &lock);
 
-   matched = 0;
-   do {
-      const struct socksfd_t *socksfd;
-      struct sockaddr local, remote;
-      socklen_t locallen, remotelen;
+   locallen = sizeof(local);
+   if (getsockname(s, TOSA(&local), &locallen) != 0) {
+      slog(LOG_DEBUG,
+           "%s: no match due to fd %d not having a local addr (errno = %d, %s)",
+           function, s, errno, strerror(errno));
 
-      locallen = sizeof(local);
-      if (getsockname(s, &local, &locallen) != 0)
-         break;
+      if (takelock)
+         socks_addrunlock(&lock);
 
-      /* only network-sockets can be proxied. */
-      if (local.sa_family != AF_INET
+      errno = errno_s;
+      return 0;
+   }
+   else
+      slog(LOG_DEBUG, "%s: local address of fd %d is %s",
+           function, s, sockaddr2string(&local, NULL, 0));
+
+   /* only network-sockets can be proxied. */
+   if (local.ss_family != AF_INET
 #ifdef AF_INET6
-      &&  local.sa_family != AF_INET6)
+   &&  local.ss_family != AF_INET6
 #endif /* AF_INET6 */
-         break;
+   ) {
+      slog(LOG_DEBUG,
+           "%s: no match due to fd %d not being an AF_INET/AF_INET6 socket",
+           function, s);
 
-      if ((socksfd = socks_getaddr(s, 0)) != NULL) {
-         if (TOCIN(&socksfd->local)->sin_addr.s_addr == htonl(0)) {
+      if (takelock)
+         socks_addrunlock(&lock);
+
+      errno = errno_s;
+      return 0;
+   }
+
+   locallen = sizeof(type);
+   if (getsockopt(s, SOL_SOCKET, SO_TYPE, &type, &locallen) != 0) {
+      slog(LOG_DEBUG,
+           "%s: no match due to getsockopt(SO_TYPE) failing on fd %d "
+           "(errno = %d, %s)",
+           function, s, errno, strerror(errno));
+
+      if (takelock)
+         socks_addrunlock(&lock);
+
+      errno = errno_s;
+      return 0;
+   }
+
+   if (type != SOCK_DGRAM && type != SOCK_STREAM) {
+      slog(LOG_DEBUG,
+           "%s: no match due to fd %d being neither SOCK_DGRAM nor SOCK_STREAM",
+           function, s);
+
+      if (takelock)
+         socks_addrunlock(&lock);
+
+      errno = errno_s;
+      return 0;
+   }
+
+   errno   = 0;
+   matched = 0;
+
+   do {
+      socksfd_t socksfd;
+
+      if (socks_getaddr(s, &socksfd, 0) != NULL) {
+         if ((socksfd.state.protocol.udp && type != SOCK_DGRAM)
+         ||  (socksfd.state.protocol.tcp && type != SOCK_STREAM)) {
+            breakreason = "protocol mismatch between registered and current";
+            break;
+         }
+
+         if (TOCIN(&socksfd.local)->sin_addr.s_addr == htonl(0)) {
             /*
              * if address was not bound before, it might have become
              * later, after client did a send(2) or similar.
              * It's also possible accept(2) was called, so check
              * for that first.
              */
-            struct socksfd_t nsocksfd;
+            socksfd_t nsocksfd, *socksfdptr;
             int duped;
 
             remotelen = sizeof(remote);
-            if (getpeername(s, &remote, &remotelen) == 0
+            if (getpeername(s, TOSA(&remote), &remotelen) == 0
             && (duped = socks_addrmatch(&local, &remote, NULL, 0)) != -1) {
-               if ((socksfd = socks_addrdup(socks_getaddr(duped, 0), &nsocksfd))
-               == NULL) {
+               if ((socksfdptr = socks_addrdup(socks_getaddr(duped, NULL, 0),
+                                               &nsocksfd)) == NULL) {
                   swarn("%s: socks_addrdup()", function);
 
                   if (errno == EBADF)
                      socks_rmaddr(duped, 0);
+
+                  breakreason = "known fd, but unbound; socks_addrdup() failed";
                   break;
                }
 
+               socksfd = *socksfdptr;
                socks_addaddr(s, &nsocksfd, 0);
                matched = 1;
 
@@ -382,32 +555,48 @@ socks_addrisours(s, takelock)
                   socks_rmaddr(duped, 0);
             }
             else {
-               nsocksfd = *socksfd;
+               nsocksfd = socksfd;
                TOIN(&nsocksfd.local)->sin_addr = TOIN(&local)->sin_addr;
-               socksfd = socks_addaddr(s, &nsocksfd, 0);
+               socksfd = *socks_addaddr(s, &nsocksfd, 0);
             }
          }
 
-         if (!sockaddrareeq(&local, &socksfd->local))
+         if (!sockaddrareeq(&local, &socksfd.local, 0)) {
+            breakreason = "local neq socksfd.local";
             break;
+         }
 
          /* check remote endpoint too? */
-
          matched = 1;
       }
       else { /* unknown descriptor.  Try to check whether it's a dup. */
          int duped;
 
-         if ((duped = socks_addrmatch(&local, NULL, NULL, 0)) != -1) {
-            struct socksfd_t nsocksfd;
+         if (!PORTISBOUND(&local)) {
+            breakreason = "unknown fd and no local IP-address bound for it";
+            break;
+         }
 
-            socksfd = socks_addrdup(socks_getaddr(duped, 0), &nsocksfd);
+         /* XXX check remote endpoint also. */
+         if ((duped = socks_addrmatch(&local, NULL, NULL, 0)) != -1
+         && ((socksfdv[duped].state.protocol.udp && type == SOCK_DGRAM)
+          || (socksfdv[duped].state.protocol.tcp && type == SOCK_STREAM))) {
+            socksfd_t nsocksfd;
 
-            if (socksfd == NULL) {
+            slog(LOG_DEBUG, "%s: fd %d appears to be a dup of fd %d (%s)",
+                 function,
+                 s,
+                 duped,
+                 socket2string(duped, NULL, 0));
+
+            if (socks_addrdup(socks_getaddr(duped, NULL, 0), &nsocksfd)
+            == NULL) {
                swarn("%s: socks_addrdup()", function);
 
                if (errno == EBADF)
                   socks_rmaddr(duped, 0);
+
+               breakreason = "unknown fd and socks_addrdup() failed";
                break;
             }
 
@@ -418,214 +607,119 @@ socks_addrisours(s, takelock)
 
             matched = 1;
          }
+
+         breakreason = "unknown fd and no socks_addrmatch()";
          break;
       }
-   /* CONSTCOND */
-   } while (0);
+   } while (/* CONSTCOND */ 0);
+
+   if (matched) {
+      socksfd_t socksfd;
+
+      socks_getaddr(s, &socksfd, 0);
+      SASSERTX(!(socksfd.state.protocol.tcp && socksfd.state.protocol.udp));
+
+      if ((socksfd.state.protocol.udp && type != SOCK_DGRAM)
+      ||  (socksfd.state.protocol.tcp && type != SOCK_STREAM)) {
+         breakreason = "protocol mismatch between registered and current";
+         matched = 0;
+      }
+      else {
+         if (socksfdmatch != NULL)
+            *socksfdmatch = socksfd;
+      }
+   }
 
    if (takelock)
-      socks_addrunlock(&opaque);
+      socks_addrunlock(&lock);
+
+   if (!matched && breakreason != NULL)
+      slog(LOG_DEBUG, "%s: no match due to %s", function, breakreason);
 
    errno = errno_s;
    return matched;
 }
 
 int
-socks_addrcontrol(local, remote, s, childsocket, takelock)
-   const struct sockaddr *local;
-   const struct sockaddr *remote;
-   const int s;
-   const int childsocket;
+socks_addrcontrol(controlsent, controlinuse, takelock)
+   const int controlsent;
+   const int controlinuse;
    const int takelock;
 {
    const char *function = "socks_addrcontrol()";
-   addrlockopaque_t opaque;
-   size_t i;
-#if DIAGNOSTIC
-   int matched = -1;
-#endif /* DIAGNOSTIC */
+   addrlockopaque_t lock;
+   char fdsentstr[1024], fdinusestr[sizeof(fdsentstr)];
+   int i;
+
+   slog(LOG_DEBUG, "%s: sent fd %d (%s), in use fd %d (%s)",
+        function,
+        controlsent,
+        controlsent == -1 ?
+            "<none>" : socket2string(controlsent, fdsentstr, sizeof(fdsentstr)),
+        controlinuse,
+        socket2string(controlinuse, fdinusestr, sizeof(fdinusestr)));
+
+   SASSERTX(controlinuse >= 0);
 
    if (takelock)
-      socks_addrlock(F_RDLCK, &opaque);
+      socks_addrlock(F_RDLCK, &lock);
 
-   if (socks_isaddr(s, 0)) {
+   if (socks_isaddr(controlsent, 0)) {
       /*
        * First check the index corresponding to what the descriptor should
-       * be if nothing tricky (dup(2) or similar) happened between the time
-       * we sent the descriptor to the connect-process, or now.
+       * be, if nothing tricky (dup(2) or similar) happened between the time
+       * we sent the descriptor to the connect-process, and now.
        * If it doesn't match, we will have to go through all of the indexes.
        */
+      if (fdisdup(controlsent, socksfdv[controlsent].control)) {
+         if (takelock)
+            socks_addrunlock(&lock);
 
-      if (fdisdup(childsocket, socksfdv[s].control))
-#if !DIAGNOSTIC
-         return s;
-#else /* DIAGNOSTIC */
-         slog(LOG_DEBUG, "%s: descriptor %d is a dup of %d, but going through "
-                         "the whole array anyway for diagnostic reasons",
-                         function, s, socksfdv[s].control);
-#endif /* DIAGNOSTIC */
+         return controlsent;
+      }
    }
 
-   for (i = 0; i < socksfdc; ++i) {
-      struct sockaddr addr;
-      socklen_t len;
-
+   for (i = 0; i < (int)socksfdc; ++i) {
       if (!socks_isaddr(i, 0))
          continue;
 
       if (socksfdv[i].state.command == -1)
          continue;
 
-#if !HAVE_OPENBSD_BUGS
-      if (childsocket != -1) {
-         if (fdisdup(childsocket, socksfdv[i].control)) {
-#if !DIAGNOSTIC
-            break;
-#else /* DIAGNOSTIC */
-         if (matched == -1)
-            matched = i;
-         else
-            SASSERTX(i);
-#endif /* DIAGNOSTIC */
-         }
-
-         continue;
-      }
-#endif /* !HAVE_OPENBSD_BUGS */
-
-      /* else; no descriptor to check against, need to check addresses. */
-
-      /*
-       * If local or remote is NULL, it means the socket we are looking for
-       * is not connected, either because the connect(2) failed,
-       * or because it's a datagram socket.
-       * If it is NULL, the socket we are looking for is not connected,
-       * and vice versa.
-       *
-       * So what do we do if both local and remote is NULL, but we got a
-       * descriptor to try to match?  E.g. on * OpenBSD 4.5 this can happen
-       * if an i/o error occurs, while on Solaris 5.11, the local name can
-       * become 0 in this case.  That means the connection using the socket
-       * has failed for some reason, and since we've gotten this far, it also
-       * means we have not been able to figure out in any other way which
-       * socket client_s is a dup of.  All we know is, the socket has
-       * failed.  Now, in our case, one failed socket is _probably_
-       * as good as any other failed socket, so if we find another failed
-       * socket (no local name, no remote name) we can try to return that.
-       *
-       * This should only happen on systems where fdisdup() does not work
-       * reliably, at present, this is only known to be the case on
-       * OpenBSD 4.5.
-       */
-
-      len = sizeof(addr);
-      if (local == NULL) {
-         if (getsockname(socksfdv[i].control, &addr, &len) == 0)
-            continue; /* can't be this one, our socket has no local name.  */
-      }
-      else  {
-         if (getsockname(socksfdv[i].control, &addr, &len) != 0)
-            continue;
-
-         if (!sockaddrareeq(local, &addr))
-            continue;
-      }
-
-      if (remote == NULL) {
-         len = 0;
-         if (getpeername(socksfdv[i].control, NULL, &len) == 0)
-            continue;  /* can't be this one, our socket has no peer. */
-      }
-      else {
-         len = sizeof(addr);
-         if (getpeername(socksfdv[i].control, &addr, &len) == -1)
-            continue;
-
-         if (!sockaddrareeq(remote, &addr))
-            continue;
-      }
-
-      if (local == NULL && remote == NULL) {
-         int type_s, type_childsocket;
-
-         /*
-          * This is pretty bad, but only happens on OpenBSD as far as
-          * we know at the moment, as a side-effect of a kernel bug
-          * involving file status flags.  See BUGS.
-          */
-         slog(LOG_DEBUG, "%s: hmm, this is pretty bad, no addressinfo "
-                         "and nothing else to use to match descriptors",
-                         function);
-
-         if (fdisopen(s) != fdisopen(childsocket))
-            continue;
-
-         len = sizeof(type_s);
-         if (getsockopt(s, SOL_SOCKET, SO_TYPE, &type_s, &len) != 0) {
-            slog(LOG_DEBUG, "%s: getsockopt(SO_TYPE) on socket %d failed: %s",
-            function, s, strerror(errno));
-            continue;
-         }
-
-         len = sizeof(type_s);
-         if (getsockopt(childsocket, SOL_SOCKET, SO_TYPE, &type_childsocket,
-         &len) != 0) {
-            slog(LOG_DEBUG, "%s: getsockopt(SO_TYPE) on socket %d failed: %s",
-            function, childsocket, strerror(errno));
-            continue;
-         }
-
-         if (type_s == type_childsocket) {
-            slog(LOG_DEBUG, "%s: no addressinfo to match socket by, but found "
-                            "another socket (addrindex %lu) of the same "
-                            "type (%d) without any addressinfo either.  "
-                            "Lets hope that's good enough",
-                            function, (unsigned long)i, type_s);
-
-#if DIAGNOSTIC
-            matched = i;
-#endif /* DIAGNOSTIC */
-            break; /* no diagnostic of interest in this case. */
-         }
-         else
-            continue;
-      }
-
-#if !DIAGNOSTIC
-      break;
-#else /* DIAGNOSTIC */
-      if (matched == -1)
-         matched = i;
-      else
-         SASSERTX(i);
-#endif /* DIAGNOSTIC */
+      if (fdisdup(controlinuse, socksfdv[i].control))
+         break;
    }
 
    if (takelock)
-      socks_addrunlock(&opaque);
+      socks_addrunlock(&lock);
 
-#if DIAGNOSTIC
-   i = matched;
-#endif /* DIAGNOSTIC */
-
-   if (i < socksfdc)
-      return (int)i;
+   if (i < (int)socksfdc)
+      return i;
 
    return -1;
 }
 
 int
 socks_addrmatch(local, remote, state, takelock)
-   const struct sockaddr *local;
-   const struct sockaddr *remote;
-   const struct socksstate_t *state;
+   const struct sockaddr_storage *local;
+   const struct sockaddr_storage *remote;
+   const socksstate_t *state;
    const int takelock;
 {
-   addrlockopaque_t opaque;
+   const char *function = "socks_addrmatch()";
+   addrlockopaque_t lock;
+   char lstr[MAXSOCKADDRSTRING], rstr[MAXSOCKADDRSTRING];
    int i;
 
+   slog(LOG_DEBUG, "%s: local = %s, remote = %s",
+        function,
+        local  == NULL ?
+           "NULL" : sockaddr2string(local, lstr, sizeof(lstr)),
+        remote == NULL ?
+           "NULL" : sockaddr2string(remote, rstr, sizeof(rstr)));
+
    if (takelock)
-      socks_addrlock(F_RDLCK, &opaque);
+      socks_addrlock(F_RDLCK, &lock);
 
    for (i = 0; i < (int)socksfdc; ++i) {
       if (!socks_isaddr(i, 0))
@@ -636,13 +730,27 @@ socks_addrmatch(local, remote, state, takelock)
        * against.
        */
 
-      if (local != NULL)
-         if (!sockaddrareeq(local, &socksfdv[i].local))
+      if (local != NULL) {
+         if (sockaddrareeq(local, &socksfdv[i].local, 0))
+            slog(LOG_DEBUG, "%s: local address %s matches %s for socksfdv[%d]",
+                 function,
+                 sockaddr2string(local, lstr, sizeof(lstr)),
+                 sockaddr2string(&socksfdv[i].local, NULL, 0),
+                 i);
+         else
             continue;
+      }
 
-      if (remote != NULL)
-         if (!sockaddrareeq(remote, &socksfdv[i].remote))
+      if (remote != NULL) {
+         if (sockaddrareeq(remote, &socksfdv[i].remote, 0))
+            slog(LOG_DEBUG, "%s: remote address %s matches %s for socksfdv[%d]",
+                 function,
+                 sockaddr2string(remote, rstr, sizeof(rstr)),
+                 sockaddr2string(&socksfdv[i].remote, NULL, 0),
+                 i);
+         else
             continue;
+      }
 
       if (state != NULL) {
          if (state->version != -1)
@@ -666,7 +774,7 @@ socks_addrmatch(local, remote, state, takelock)
    }
 
    if (takelock)
-      socks_addrunlock(&opaque);
+      socks_addrunlock(&lock);
 
    if (i < (int)socksfdc)
       return i;
@@ -674,10 +782,10 @@ socks_addrmatch(local, remote, state, takelock)
    return -1;
 }
 
-struct socksfd_t *
+socksfd_t *
 socks_addrdup(old, new)
-   const struct socksfd_t *old;
-   struct socksfd_t *new;
+   const socksfd_t *old;
+   socksfd_t *new;
 {
 /*   const char *function = "socks_addrdup()"; */
 
@@ -686,7 +794,7 @@ socks_addrdup(old, new)
    switch (old->state.command) {
       case SOCKS_BIND:
       case SOCKS_UDPASSOCIATE:
-         if ((new->control = socketoptdup(old->control)) == -1)
+         if ((new->control = socketoptdup(old->control, -1)) == -1)
             return NULL;
          break;
 
@@ -702,23 +810,21 @@ socks_addrdup(old, new)
 }
 
 void
-socks_addrlock(locktype, opaque)
+socks_addrlock(locktype, lock)
    const int locktype;
-   addrlockopaque_t *opaque;
+   addrlockopaque_t *lock;
 {
 
-   socks_sigblock(-1, (sigset_t *)opaque);
+   socks_sigblock(-1, (sigset_t *)lock);
 
 #if HAVE_PTHREAD_H
    /*
-    * With the OpenBSD thread implementation, and presumably FreeBSD
-    * also, if a thread is interrupted, calling pthread_mutex_lock()
-    * seems to clear the interrupt flag, so that e.g. select(2) will
-    * restart rather than returning EINTR.  We don't wont that to
-    * happen since we depend on select(2)/etc. being interrupted by
-    * the process used to handle non-blocking connects.
-    * We therefor instead take the risk of not taking the thread-lock
-    * in that case.
+    * With the OpenBSD thread implementation, if a thread is interrupted,
+    * calling pthread_mutex_lock() seems to clear the interrupt flag, so
+    * that e.g. select(2) will restart rather than returning EINTR.
+    * We don't wont that to happen since we depend on select(2)/etc.
+    * being interrupted by the process used to handle non-blocking connects.
+    * We instead take the risk of not taking the thread-lock in this case.
     */
    if (!sockscf.state.insignal)
       /* XXX set based on locktype. */
@@ -727,8 +833,8 @@ socks_addrlock(locktype, opaque)
 }
 
 void
-socks_addrunlock(opaque)
-   const addrlockopaque_t *opaque;
+socks_addrunlock(lock)
+   const addrlockopaque_t *lock;
 {
 
 #if HAVE_PTHREAD_H
@@ -736,7 +842,7 @@ socks_addrunlock(opaque)
       socks_pthread_mutex_unlock(&addrmutex);
 #endif /* HAVE_PTHREAD_H */
 
-   socks_sigunblock((const sigset_t *)opaque);
+   socks_sigunblock((const sigset_t *)lock);
 }
 
 in_addr_t
@@ -744,63 +850,78 @@ socks_addfakeip(host)
    const char *host;
 {
    const char *function = "socks_addfakeip()";
-   addrlockopaque_t opaque;
+   addrlockopaque_t lock;
    struct in_addr addr;
    char **tmpmem;
+   int ipc_added;
 
-   socks_addrlock(F_WRLCK, &opaque);
+   socks_addrlock(F_WRLCK, &lock);
 
    if (socks_getfakeip(host, &addr)) {
-      socks_addrunlock(&opaque);
+      socks_addrunlock(&lock);
       return addr.s_addr;
    }
 
 #if FAKEIP_END < FAKEIP_START
-error "\"FAKEIP_END\" can't be smaller than \"FAKEIP_START\""
+error "\"FAKEIP_END\" cannot be smaller than \"FAKEIP_START\""
 #endif
 
    if (ipc >= FAKEIP_END - FAKEIP_START) {
       swarnx("%s: fakeip range (%d - %d) exhausted",
       function, FAKEIP_START, FAKEIP_END);
 
-      socks_addrunlock(&opaque);
+      socks_addrunlock(&lock);
       return INADDR_NONE;
    }
 
-   if ((tmpmem = realloc(ipv, sizeof(*ipv) * (ipc + 1))) == NULL
-   || (tmpmem[ipc] = malloc(sizeof(*tmpmem) * (strlen(host) + 1)))
-   == NULL) {
+   if ((tmpmem      = realloc(ipv, sizeof(*ipv) * (ipc + 1)))        == NULL
+   ||  (tmpmem[ipc] = malloc(sizeof(**tmpmem) * (strlen(host) + 1))) == NULL) {
+      swarn("%s: could not allocate %lu bytes",
+           function,
+           (unsigned long)((sizeof(*ipv) * (ipc + 1))
+                         + (sizeof(**tmpmem) * (strlen(host) + 1))));
+
       if (tmpmem != NULL)
          free(tmpmem);
 
-      swarnx("%s: %s", function, NOMEM);
-
-      socks_addrunlock(&opaque);
+      socks_addrunlock(&lock);
       return INADDR_NONE;
    }
    ipv = tmpmem;
 
-   strcpy(ipv[ipc], host);
+   ipc_added = ipc;
+   strcpy(ipv[ipc++], host);
 
-   socks_addrunlock(&opaque);
-   return htonl(ipc++ + FAKEIP_START);
+   socks_addrunlock(&lock);
+
+   return htonl(ipc_added + FAKEIP_START);
 }
 
 const char *
 socks_getfakehost(addr)
    in_addr_t addr;
 {
-   addrlockopaque_t opaque;
+   const char *function = "socks_getfakehost()";
+   addrlockopaque_t lock;
    const char *host;
 
-   socks_addrlock(F_RDLCK, &opaque);
-
-   if (ntohl(addr) - FAKEIP_START < ipc)
+   if (ntohl(addr) - FAKEIP_START < ipc) {
+      socks_addrlock(F_RDLCK, &lock);
       host = ipv[ntohl(addr) - FAKEIP_START];
-   else
-      host = NULL;
+      socks_addrunlock(&lock);
+   }
+   else {
+      if (ntohl(addr) >= FAKEIP_START &&  ntohl(addr) <= FAKEIP_END)
+         swarnx("%s: looks like ip address %s might be a \"fake\" ip address, "
+                "but we have no knowledge of that address in this process.  "
+                "Possibly this client is forking a \"dns-helper\"-style "
+                "program for resolving hostnames.  We unfortunately do not "
+                "support using fake ip addresses in that case.",
+                function, inet_ntoa(*(struct in_addr *)&addr));
 
-   socks_addrunlock(&opaque);
+      host = NULL;
+   }
+
    return host;
 }
 
@@ -809,10 +930,10 @@ socks_getfakeip(host, addr)
    const char *host;
    struct in_addr *addr;
 {
-   addrlockopaque_t opaque;
+   addrlockopaque_t lock;
    unsigned int i;
 
-   socks_addrlock(F_RDLCK, &opaque);
+   socks_addrlock(F_RDLCK, &lock);
 
    for (i = 0; i < ipc; ++i)
       if (strcasecmp(host, ipv[i]) == 0) {
@@ -820,86 +941,84 @@ socks_getfakeip(host, addr)
          break;
       }
 
-   socks_addrunlock(&opaque);
+   socks_addrunlock(&lock);
 
    if (i < ipc)
       return 1;
+
    return 0;
 }
 
-struct sockshost_t *
-fakesockaddr2sockshost(addr, host)
-   const struct sockaddr *addr;
-   struct sockshost_t *host;
+sockshost_t *
+fakesockaddr2sockshost(_addr, host)
+   const struct sockaddr_storage *_addr;
+   sockshost_t *host;
 {
    const char *function = "fakesockaddr2sockshost()";
+   struct sockaddr_storage addr;
    char string[MAXSOCKADDRSTRING];
 
    clientinit(); /* may be called before normal init, log to right place. */
 
-   /* LINTED pointer casts may be troublesome */
-   slog(LOG_DEBUG, "%s: %s -> %s",
-   function, sockaddr2string(addr, string, sizeof(string)),
-   socks_getfakehost(TOCIN(addr)->sin_addr.s_addr) == NULL ?
-   string : socks_getfakehost(TOCIN(addr)->sin_addr.s_addr));
+   sockaddrcpy(&addr, _addr, salen(_addr->ss_family));
 
-   /* LINTED pointer casts may be troublesome */
-   if (socks_getfakehost(TOCIN(addr)->sin_addr.s_addr) != NULL) {
-      /* LINTED pointer casts may be troublesome */
-      const char *ipname = socks_getfakehost(TOCIN(addr)->sin_addr.s_addr);
+   slog(LOG_DEBUG, "%s: %s -> %s",
+        function,
+        sockaddr2string(&addr, string, sizeof(string)),
+        socks_getfakehost(TOIN(&addr)->sin_addr.s_addr) == NULL ?
+            string : socks_getfakehost(TOIN(&addr)->sin_addr.s_addr));
+
+   if (socks_getfakehost(TOIN(&addr)->sin_addr.s_addr) != NULL) {
+      const char *ipname = socks_getfakehost(TOIN(&addr)->sin_addr.s_addr);
 
       SASSERTX(ipname != NULL);
 
       host->atype = SOCKS_ADDR_DOMAIN;
-      SASSERTX(strlen(ipname) < sizeof(host->addr.domain));
-      strcpy(host->addr.domain, ipname);
-      /* LINTED pointer casts may be troublesome */
-      host->port   = TOCIN(addr)->sin_port;
+
+      STRCPY_ASSERTLEN(host->addr.domain, ipname);
+
+      host->port = TOIN(&addr)->sin_port;
    }
    else
-      sockaddr2sockshost(addr, host);
+      sockaddr2sockshost(&addr, host);
 
    return host;
 }
 
-struct sockaddr *
-fakesockshost2sockaddr(host, addr)
-   const struct sockshost_t *host;
-   struct sockaddr *addr;
+struct sockaddr_storage *
+int_fakesockshost2sockaddr(host, _addr, _addrlen)
+   const sockshost_t *host;
+   struct sockaddr_storage *_addr;
+   size_t _addrlen;
 {
-   const char *function = "fakesockshost2sockaddr()";
+   const char *function = "int_fakesockshost2sockaddr()";
+   struct sockaddr_storage addr;
    char string[MAXSOCKSHOSTSTRING];
-   uint8_t sa_length;
 
    clientinit(); /* may be called before normal init, log to right place. */
 
    slog(LOG_DEBUG, "%s: %s",
-   function, sockshost2string(host, string, sizeof(string)));
+        function, sockshost2string(host, string, sizeof(string)));
 
-   bzero(addr, sizeof(*addr));
+   bzero(&addr, sizeof(addr));
 
    switch (host->atype) {
       case SOCKS_ADDR_DOMAIN:
-         addr->sa_family = AF_INET;
-         sa_length = sizeof(struct sockaddr_in);
-
-         /* LINTED pointer casts may be troublesome */
-         if (socks_getfakeip(host->addr.domain, &TOIN(addr)->sin_addr))
+         SET_SOCKADDR(&addr, AF_INET);
+         if (socks_getfakeip(host->addr.domain, &(TOIN(&addr)->sin_addr)))
             break;
          /* else; */ /* FALLTHROUGH */
 
       default:
-         return sockshost2sockaddr(host, addr);
+         sockshost2sockaddr(host, &addr);
    }
 
-#if HAVE_SOCKADDR_SA_LEN
-   addr->sa_len = sa_length;
-#endif /* HAVE_SOCKADDR_SA_LEN */
+   TOIN(&addr)->sin_port = host->port;
 
-   /* LINTED pointer casts may be troublesome */
-   TOIN(addr)->sin_port = host->port;
+   bzero(_addr, _addrlen);
+   sockaddrcpy(_addr, &addr, MIN(salen(addr.ss_family), _addrlen));
 
-   return addr;
+   return _addr;
 }
 
 static int
@@ -908,16 +1027,19 @@ socks_addfd(d)
 {
    const char *function = "socks_addfd()";
 
-   if (d + 1 < d) /* integer overflow. */
-      return -1;
+   clientinit();
+
+   SASSERTX(d >= 0);
 
    if ((unsigned int)d >= dc) { /* init/reallocate */
+      size_t newfdc;
       int *newfdv;
-      unsigned int newfdc;
 
-      newfdc = MIN((d + 1) * 4, d + 64);
+      newfdc = (d + 1) * 2; /* add some extra at the same time. */
       if ((newfdv = realloc(dv, sizeof(*dv) * newfdc)) == NULL)
-         serrx(EXIT_FAILURE, "%s: %s", function, NOMEM);
+         serr("%s: could not allocate %lu bytes",
+              function, (unsigned long)(sizeof(*dv) * newfdc));
+
       dv = newfdv;
 
       /* init all to -1, a illegal value for a descriptor. */
@@ -947,124 +1069,174 @@ socks_rmfd(d)
       dv[d] = -1;
 }
 
+
 void
-addrlockinit(void)
+socks_addrinit(void)
 {
-   const char *function = "addrlockinit()";
-   static int inited;
+   const char *function = "socks_addrinit()";
 #if HAVE_PTHREAD_H
    pthread_mutexattr_t attr;
    void *lpt;
 #endif /* HAVE_PTHREAD_H */
 
+#ifdef HAVE_VOLATILE_SIG_ATOMIC_T
+   static sig_atomic_t inited;
+#else
+   static volatile sig_atomic_t inited;
+#endif /* HAVE_VOLATILE_SIG_ATOMIC_T */
+
    if (inited)
       return;
 
-#if HAVE_PTHREAD_H
-   if (socks_getenv("SOCKS_DISABLE_THREADLOCK", istrue) != NULL) {
-      slog(LOG_DEBUG, "pthread locking off, manually disabled in environment");
-      inited = 1;
-
+   if (doing_addrinit)
+      /*
+       * XXX should really be sched_yield() or similar if initing, unless
+       * the thread initing is ours.  If the thread initing is ours,
+       * we can just return, to handle recursive problems during init.
+       */
       return;
-   }
 
-#if HAVE_RTLD_NEXT
-   /*
-    * XXX following test will always perceive the application as being
-    * threaded if lib(d)socks depend on libpthread, which might be the
-    * case if e.g., some gssapi libs require this library.
-    */
-   if (dlsym(RTLD_NEXT, SYMBOL_PT_ATTRINIT) != NULL) {
-      /* appears to be threaded application, obtain function pointers */
-      lpt = RTLD_NEXT;
-      slog(LOG_DEBUG, "pthread locking desired, threaded application (rtld)");
-   }
+   doing_addrinit = 1; /*
+                        * XXX should be pthread_self() or similar, but how can
+                        * we call that before we have finished initing? :-/
+                        */
+
+   SASSERTX(socksfdv == NULL && dv == NULL);
+
+   if ((socksfdv = malloc(sizeof(*socksfdv) * FDV_INITSIZE)) == NULL)
+      serr("%s: failed to alloc %lu bytes for socksify socksfd memory",
+           function, (unsigned long)(sizeof(*socksfdv) * 64));
+
+   if ((dv = malloc(sizeof(*dv) * FDV_INITSIZE)) == NULL)
+      serr("%s: failed to alloc %lu bytes for socksify dv memory",
+           function, (unsigned long)(sizeof(*dv) * 64));
+
+   /* init new objects */
+   while (socksfdc < FDV_INITSIZE)
+      socksfdv[socksfdc++] = socksfdinit;
+
+   /* init all to -1, a illegal value for a descriptor. */
+   while (dc < FDV_INITSIZE)
+      dv[dc++] = -1;
+
+
+#if HAVE_PTHREAD_H
+   if (socks_getenv(ENV_SOCKS_DISABLE_THREADLOCK, istrue) != NULL)
+      slog(LOG_DEBUG, "pthread locking off, manually disabled in environment");
    else {
-      slog(LOG_DEBUG, "pthread locking off, non-threaded application (rtld)");
-      lpt = NULL;
-   }
-#else
-   /* load libpthread */
-   if ((lpt = dlopen(LIBRARY_PTHREAD, RTLD_LAZY)) == NULL) {
-      swarn("%s: compile time configuration error?  "
-      "Failed to open \"%s\": %s", function, LIBRARY_PTHREAD, dlerror());
-   }
-#endif /* HAVE_RTLD_NEXT */
+#if HAVE_RTLD_NEXT
+      /*
+       * XXX following test will always perceive the application as being
+       * threaded if lib(d)socks depends on libpthread, which might be the
+       * case if e.g., some gssapi libs require this library.
+       */
+      if (dlsym(RTLD_NEXT, SYMBOL_PT_ATTRINIT) != NULL) {
+         /*
+          * appears to be a threaded application, obtain function pointers.
+          */
 
-   if (lpt != NULL) {
+         lpt = RTLD_NEXT;
+         slog(LOG_DEBUG,
+              "%s: pthread locking desired: threaded program (rtld)", function);
+      }
+      else {
+         slog(LOG_DEBUG,
+              "%s: pthread locking off: non-threaded program (rtld)", function);
+
+         lpt = NULL;
+      }
+
+#else
+      /* load libpthread */
+      if ((lpt = dlopen(LIBRARY_PTHREAD, RTLD_LAZY)) == NULL) {
+         swarn("%s: compile time configuration error?  Failed to open "
+               "\"%s\": %s",
+               function, LIBRARY_PTHREAD, dlerror());
+      }
+#endif /* !HAVE_RTLD_NEXT */
+
+      if (lpt != NULL) {
          /*
           * resolve pthread symbols.
           */
 
-      if ((pt_init = (PT_INIT_FUNC_T)dlsym(lpt, SYMBOL_PT_INIT)) == NULL)
-         swarn("%s: compile time configuration error?  "
-         "Failed to find \"%s\" in \"%s\": %s",
-         function, SYMBOL_PT_INIT, LIBRARY_PTHREAD, dlerror());
+         if ((pt_init = (PT_INIT_FUNC_T)dlsym(lpt, SYMBOL_PT_INIT)) == NULL)
+            swarn("%s: compile time configuration error?  "
+                  "Failed to find \"%s\" in \"%s\": %s",
+                  function, SYMBOL_PT_INIT, LIBRARY_PTHREAD, dlerror());
 
-      if ((pt_attrinit = (PT_ATTRINIT_FUNC_T)dlsym(lpt, SYMBOL_PT_ATTRINIT))
-      == NULL)
-         swarn("%s: compile time configuration error?  "
-         "Failed to find \"%s\" in \"%s\": %s",
-         function, SYMBOL_PT_ATTRINIT, LIBRARY_PTHREAD, dlerror());
+         if ((pt_attrinit = (PT_ATTRINIT_FUNC_T)dlsym(lpt, SYMBOL_PT_ATTRINIT))
+         == NULL)
+            swarn("%s: compile time configuration error?  "
+                  "Failed to find \"%s\" in \"%s\": %s",
+                  function, SYMBOL_PT_ATTRINIT, LIBRARY_PTHREAD, dlerror());
 
-      if ((pt_settype = (PT_SETTYPE_FUNC_T)dlsym(lpt, SYMBOL_PT_SETTYPE))
-      == NULL)
-         swarn("%s: compile time configuration error?  "
-         "Failed to find \"%s\" in \"%s\": %s",
-         function, SYMBOL_PT_SETTYPE, LIBRARY_PTHREAD, dlerror());
+         if ((pt_settype = (PT_SETTYPE_FUNC_T)dlsym(lpt, SYMBOL_PT_SETTYPE))
+         == NULL)
+            swarn("%s: compile time configuration error?  "
+                  "Failed to find \"%s\" in \"%s\": %s",
+                  function, SYMBOL_PT_SETTYPE, LIBRARY_PTHREAD, dlerror());
 
-      if ((pt_lock = (PT_LOCK_FUNC_T)dlsym(lpt, SYMBOL_PT_LOCK)) == NULL)
-         swarn("%s: compile time configuration error?  "
-         "Failed to find \"%s\" in \"%s\": %s",
-         function, SYMBOL_PT_LOCK, LIBRARY_PTHREAD, dlerror());
+         if ((pt_lock = (PT_LOCK_FUNC_T)dlsym(lpt, SYMBOL_PT_LOCK)) == NULL)
+            swarn("%s: compile time configuration error?  "
+                  "Failed to find \"%s\" in \"%s\": %s",
+                  function, SYMBOL_PT_LOCK, LIBRARY_PTHREAD, dlerror());
 
-      if ((pt_unlock = (PT_UNLOCK_FUNC_T)dlsym(lpt, SYMBOL_PT_UNLOCK)) == NULL)
-         swarn("%s: compile time configuration error?  "
-         "Failed to find \"%s\" in \"%s\": %s",
-         function, SYMBOL_PT_UNLOCK, LIBRARY_PTHREAD, dlerror());
+         if ((pt_unlock = (PT_UNLOCK_FUNC_T)dlsym(lpt, SYMBOL_PT_UNLOCK))
+         == NULL)
+            swarn("%s: compile time configuration error?  "
+                  "Failed to find \"%s\" in \"%s\": %s",
+                  function, SYMBOL_PT_UNLOCK, LIBRARY_PTHREAD, dlerror());
 
-      if ((pt_self = (PT_SELF_FUNC_T)dlsym(lpt, SYMBOL_PT_SELF)) == NULL)
-         swarn("%s: compile time configuration error?  "
-         "Failed to find \"%s\" in \"%s\": %s",
-         function, SYMBOL_PT_SELF, LIBRARY_PTHREAD, dlerror());
-   }
-
-   if (pt_init == NULL || pt_attrinit == NULL || pt_settype == NULL
-   ||  pt_lock == NULL || pt_unlock   == NULL || pt_self    == NULL) {
-      pt_init     = NULL;
-      pt_attrinit = NULL;
-      pt_settype  = NULL;
-      pt_lock     = NULL;
-      pt_unlock   = NULL;
-      pt_self     = NULL;
-   }
-
-   if (pt_init == NULL)
-      slog(LOG_DEBUG, "pthread locking disabled");
-   else {
-      slog(LOG_DEBUG, "pthread locking enabled");
-
-      if (socks_pthread_mutexattr_init(&attr) != 0)
-         serr(EXIT_FAILURE, "%s: mutexattr_init() failed", function);
-
-      if (socks_pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK) != 0)
-         swarn("%s: mutex_settype(PTHREAD_MUTEX_ERRORCHECK) failed", function);
-
-      if (socks_pthread_mutex_init(&addrmutex, &attr) != 0) {
-         swarn("%s: mutex_init() failed", function);
-
-         if (socks_pthread_mutex_init(&addrmutex, NULL) != 0)
-            serr(EXIT_FAILURE, "%s: mutex_init() failed", function);
+         if ((pt_self = (PT_SELF_FUNC_T)dlsym(lpt, SYMBOL_PT_SELF)) == NULL)
+            swarn("%s: compile time configuration error?  "
+                  "Failed to find \"%s\" in \"%s\": %s",
+                  function, SYMBOL_PT_SELF, LIBRARY_PTHREAD, dlerror());
       }
-   }
-#endif /* HAVE_PTHREAD_H */
 
-   inited = 1;
+      if (pt_init == NULL || pt_attrinit == NULL || pt_settype == NULL
+      ||  pt_lock == NULL || pt_unlock   == NULL || pt_self    == NULL) {
+         pt_init     = NULL;
+         pt_attrinit = NULL;
+         pt_settype  = NULL;
+         pt_lock     = NULL;
+         pt_unlock   = NULL;
+         pt_self     = NULL;
+      }
+
+      if (pt_init == NULL) {
+         slog(LOG_INFO, "%s: pthread locking disabled", function);
+         sockscf.state.threadlockenabled = 0;
+      }
+      else {
+         slog(LOG_INFO, "%s: pthread locking enabled", function);
+         sockscf.state.threadlockenabled = 1;
+
+         if (socks_pthread_mutexattr_init(&attr) != 0)
+            serr("%s: mutexattr_init() failed", function);
+
+         if (socks_pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK)
+         != 0)
+            swarn("%s: mutex_settype(PTHREAD_MUTEX_ERRORCHECK) failed",
+                  function);
+
+         if (socks_pthread_mutex_init(&addrmutex, &attr) != 0) {
+            swarn("%s: mutex_init() failed", function);
+
+            if (socks_pthread_mutex_init(&addrmutex, NULL) != 0)
+               serr("%s: mutex_init() failed", function);
+         }
+      }
+#endif /* HAVE_PTHREAD_H */
+   }
+
+   inited         = 1;
+   doing_addrinit = 0;
 }
 
-struct socks_id_t *
+socks_id_t *
 socks_whoami(id)
-   struct socks_id_t *id;
+   socks_id_t *id;
 {
 
 #if HAVE_PTHREAD_H
@@ -1077,11 +1249,7 @@ socks_whoami(id)
 #endif /* HAVE_PTHREAD_H */
 
    id->whichid = pid;
-
-   if (sockscf.state.pid == 0) /* not yet inited. */
-      id->id.pid = getpid();
-   else
-      id->id.pid = sockscf.state.pid;
+   id->id.pid = getpid();
 
    return id;
 }
