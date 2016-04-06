@@ -7,15 +7,15 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
   * Use the default dpkg-dev source package compression method.
   * Drop the versions from the autotools-dev and dpkg-dev dependencies.
   * Fix the broken .so symlink in libsocksd0-dev.  Closes: #715117
-  * Bump the debhelper compatibility level to 9:
+  * Bump the debhelper compatibility level to 10:
     - install into the multiarch library directory
     - get the compiler and linker flags directly from debhelper
+    - override the "experimental debhelper version" Lintian warning
   * New upstream version:
     - Closes: #740749 (new upstream version)
     - Closes: #731178 (tries to dlopen a linker script)
     - rework some of the patches to modify the *.am files instead of
       the *.in ones; Closes: #716681
-    - use dh-autoreconf
     - add a lot more filenames to debian/clean
     - put the preloaded libdsocksd back into a separate package, now named
       dante-client-lib, in preparation for socksify being able to select
