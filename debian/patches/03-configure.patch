@@ -4,7 +4,7 @@ Description: Adapt the configure script for the Debian environment.
 Forwarded: not-needed
 Author: Adrian Bridgett <bridgett@debian.org>,
 	Peter Pentchev <roam@ringlet.net>
-Last-Update: 2016-04-05
+Last-Update: 2016-04-06
 
 --- a/preload.m4
 +++ b/preload.m4
@@ -13,7 +13,7 @@ Last-Update: 2016-04-05
  
  	    *)
 -		LIBRARY_DLOPEN="${base_library_path}libdl.${SOLIB_POSTFIX}"
-+	    	# FIXME: this file does not even exist :)
++	    	# multiarch-find-lib only needs the filename anyway
 +		LIBRARY_DLOPEN="/lib/libdl.so.2"
  		;;
  	esac

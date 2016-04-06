@@ -12,6 +12,7 @@ Vcs-Browser: https://gitlab.com/dante/pkg-debian-full
 
 Package: libsocksd0
 Architecture: any
+Multi-Arch: same
 Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: SOCKS library for packages built using libsocksd-dev
@@ -25,6 +26,7 @@ Description: SOCKS library for packages built using libsocksd-dev
   
 Package: libsocksd0-dev
 Architecture: any
+Multi-Arch: same
 Section: libdevel
 Depends: libsocksd0 (= ${binary:Version}), ${misc:Depends}
 Description: Development files for compiling programs with SOCKS support
@@ -38,6 +40,7 @@ Description: Development files for compiling programs with SOCKS support
 
 Package: dante-client-lib
 Architecture: any
+Multi-Arch: same
 Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Breaks: dante-client (<< 1.4.1+dfsg), libdsocksd0 (<< 1.2.1+dfsg)
@@ -53,7 +56,9 @@ Description: SOCKS library preloaded in user applications
   
 Package: dante-client
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, dante-client-lib (= ${binary:Version})
+Multi-Arch: foreign
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends},
+ dante-client-lib (= ${binary:Version}), libfile-which-perl
 Description: SOCKS wrapper for users behind a firewall
  Dante is a circuit-level firewall/proxy that can be used to provide
  convenient and secure network connectivity to a wide range of hosts
@@ -66,6 +71,7 @@ Description: SOCKS wrapper for users behind a firewall
 
 Package: dante-server
 Architecture: any
+Multi-Arch: foreign
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: SOCKS (v4 and v5) proxy daemon (danted)
  Dante is a circuit-level firewall/proxy that can be used to provide

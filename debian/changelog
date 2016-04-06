@@ -31,6 +31,13 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     - drop the check for PTHREAD_MUTEX_ERRORCHECK, we really need it; if it
       turns out not to be available on some architectures, we'll figure out
       ways around that
+  * Add Multi-Arch headers to the binary packages.
+  * Add the multiarch-find-lib tool to the dante-client package and
+    preload exactly the libraries needed for the file being executed.
+    This tool was obtained from my multiarch-query repository at
+    https://gitlab.com/roam-multiarch-tools/multiarch-query and it will
+    most probably be released separately soon.
+    Closes: #656096
 
  -- Peter Pentchev <roam@ringlet.net>  Mon, 05 Oct 2015 12:24:45 +0300
 
