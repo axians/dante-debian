@@ -2,8 +2,7 @@ Description: Adapt the configure script for the Debian environment.
  Always use Debian's libtool and libdl.so.2.
  Do not add "-g -O2" to the Debian build's CFLAGS.
 Forwarded: not-needed
-Author: Adrian Bridgett <bridgett@debian.org>,
-	Peter Pentchev <roam@ringlet.net>
+Author: Adrian Bridgett <bridgett@debian.org>, Peter Pentchev <roam@ringlet.net>
 Last-Update: 2016-04-06
 
 --- a/preload.m4
