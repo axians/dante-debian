@@ -6,17 +6,9 @@ DEB=$(CURDIR)/debian/tmp
 DEV=debian/libsocksd0-dev
 CLIB=debian/dante-client-lib
 
-CFLAGS=		$(shell dpkg-buildflags --get CFLAGS)
-CPPFLAGS=	$(shell dpkg-buildflags --get CPPFLAGS)
-LDFLAGS=	$(shell dpkg-buildflags --get LDFLAGS)
-
-include /usr/share/hardening-includes/hardening.make
-ifeq (,$(filter nohardening,$(DEB_BUILD_OPTIONS)))
-CFLAGS+=	$(HARDENING_CFLAGS)
-LDFLAGS+=	$(HARDENING_LDFLAGS)
-endif
-
-export CFLAGS CPPFLAGS LDFLAGS
+# Aim for the top, adapt if anything should break on the buildds.
+DEB_BUILD_MAINT_OPTIONS=	hardening=+all
+export DEB_BUILD_MAINT_OPTIONS
 
 override_dh_auto_configure:
 	dh_auto_configure -- \

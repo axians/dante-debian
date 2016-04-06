@@ -7,8 +7,9 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
   * Use the default dpkg-dev source package compression method.
   * Drop the versions from the autotools-dev and dpkg-dev dependencies.
   * Fix the broken .so symlink in libsocksd0-dev.  Closes: #715117
-  * Bump the debhelper compatibility level to 9 and install into
-    the multiarch library directory.
+  * Bump the debhelper compatibility level to 9:
+    - install into the multiarch library directory
+    - get the compiler and linker flags directly from debhelper
   * New upstream version:
     - Closes: #740749 (new upstream version)
     - Closes: #731178 (tries to dlopen a linker script)
