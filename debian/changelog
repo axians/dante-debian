@@ -48,6 +48,7 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
   * Bring dante-server's danted.init script up to date:
     - add an LSB Description
     - source the LSB init-functions file
+    - add a 'status' command
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 11:02:25 +0300
 
