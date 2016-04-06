@@ -51,6 +51,8 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     - add a 'status' command
   * Fix the 03-configure patch's header: "Author" is a single-line field.
   * Add an upstream metadata file.
+  * Drop the dante-server and dante-client.preinst files, upgrades from
+    version 0.92 are... not expected to happen.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 11:02:25 +0300
 
