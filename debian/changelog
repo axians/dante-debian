@@ -50,6 +50,7 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     - source the LSB init-functions file
     - add a 'status' command
   * Fix the 03-configure patch's header: "Author" is a single-line field.
+  * Add an upstream metadata file.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 11:02:25 +0300
 
