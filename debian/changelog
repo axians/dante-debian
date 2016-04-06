@@ -53,6 +53,8 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
   * Add an upstream metadata file.
   * Drop the dante-server and dante-client.preinst files, upgrades from
     version 0.92 are... not expected to happen.
+  * Drop the leftover debian/socks.h file; we've been using the upstream
+    one for more than ten years now.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 11:02:25 +0300
 
