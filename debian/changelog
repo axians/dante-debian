@@ -38,6 +38,9 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     https://gitlab.com/roam-multiarch-tools/multiarch-query and it will
     most probably be released separately soon.
     Closes: #656096
+  * Add the 19-standards patch to add _DEFAULT_SOURCE to the _BSD_SOURCE
+    definition that is declared obsolete in recent libc versions; also,
+    add *-gnu to the triplets mask to include kFreeBSD and the Hurd.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 11:02:25 +0300
 

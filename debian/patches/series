@@ -8,3 +8,4 @@
 16-sa_siginfo.patch
 17-cppcheck.patch
 18-dante-client-multiarch.patch
+19-standards.patch
