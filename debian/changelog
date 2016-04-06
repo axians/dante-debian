@@ -55,6 +55,7 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     version 0.92 are... not expected to happen.
   * Drop the leftover debian/socks.h file; we've been using the upstream
     one for more than ten years now.
+  * Use the upstream version of the socksify.1 manual page.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 11:02:25 +0300
 
