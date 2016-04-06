@@ -6,6 +6,9 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: SOCKS (v4 and v5) proxy daemon (danted)
+# Description:       Starts or stops the Dante SOCKS proxy daemon.
+#                    Its configuration is stored in the /etc/danted.conf file;
+#                    see the danted.conf(5) manual page for details.
 ### END INIT INFO
 #
 # dante SOCKS server init.d file. Based on /etc/init.d/skeleton:

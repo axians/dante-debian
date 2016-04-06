@@ -45,6 +45,8 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
   * Declare compliance with Debian Policy 3.9.8:
     - update the copyright file to the 1.0 format
   * Add the 21-typos patch to fix some typographical and grammatical errors.
+  * Bring dante-server's danted.init script up to date:
+    - add an LSB Description
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 11:02:25 +0300
 
