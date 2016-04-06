@@ -1,4 +1,4 @@
-dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
+dante (1.4.1+dfsg-1) unstable; urgency=medium
 
   * Fix FTBFS by depending on libtool-bin instead of libtool.
     Closes: #776907
@@ -56,8 +56,10 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
   * Drop the leftover debian/socks.h file; we've been using the upstream
     one for more than ten years now.
   * Use the upstream version of the socksify.1 manual page.
+  * Upload to unstable; dante has been gone from testing long enough
+    that this will not disrupt anything.
 
- -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 11:02:25 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 15:18:02 +0300
 
 dante (1.2.2+dfsg-3) experimental; urgency=low
 
