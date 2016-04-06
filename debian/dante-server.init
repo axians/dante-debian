@@ -14,6 +14,8 @@
 # dante SOCKS server init.d file. Based on /etc/init.d/skeleton:
 # Version:	@(#)skeleton  1.8  03-Mar-1998  miquels@cistron.nl
 
+. /lib/lsb/init-functions
+
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/sbin/danted
 NAME=danted
