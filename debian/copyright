@@ -1,6 +1,6 @@
-Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=135
-Name: dante
-Maintainer: Inferno Nettverk A/S, Norway <dante-bugs@inet.no>
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: dante
+Upstream-Contact: Inferno Nettverk A/S, Norway <dante-bugs@inet.no>
 Source: http://www.inet.no/dante/
 
 Files: *
