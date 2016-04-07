@@ -1,4 +1,3 @@
-debian/multiarch-find-lib usr/lib/dante-client
 example/renamed/dante.conf etc
 usr/bin/socksify usr/bin
 usr/share/man/man1/socksify.1 usr/share/man/man1

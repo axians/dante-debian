@@ -17,8 +17,8 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     - rework some of the patches to modify the *.am files instead of
       the *.in ones; Closes: #716681
     - add a lot more filenames to debian/clean
-    - put the preloaded libdsocksd back into a separate package, now named
-      dante-client-lib, in preparation for socksify being able to select
+    - put the preloaded libdsocksd back into its own package, complete
+      with a SONAME, in preparation for socksify being able to select
       the one with the correct ABI/architecture; drop the 15-lib-dante-client
       patch that is no longer applicable
     - update the libsocksd0 symbols file - all the internal symbols were
@@ -34,12 +34,14 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
       ways around that
     - update the upstream copyright information
   * Add Multi-Arch headers to the binary packages.
-  * Add the multiarch-find-lib tool to the dante-client package and
-    preload exactly the libraries needed for the file being executed.
-    This tool was obtained from my multiarch-query repository at
-    https://gitlab.com/roam-multiarch-tools/multiarch-query and it will
-    most probably be released separately soon.
-    Closes: #656096
+  * Add the 18-dante-client-multiarch patch:
+    - build and install libdsocksd0 as a fully-versioned library
+    - teach socksify to only put the library names, no full paths, into
+      the LD_PRELOAD environment variable, and leave the runtime loader to
+      figure out which version (ABI, multiarch, etc) of the library to use
+    - make dante-client an architecture-independent package since all
+      the arch-dependent binaries are now in the libdsocksd0 one
+    - Closes: #656096
   * Add the 19-standards patch to add _DEFAULT_SOURCE to the _BSD_SOURCE
     definition that is declared obsolete in recent libc versions; also,
     add *-gnu to the triplets mask to include kFreeBSD and the Hurd.
