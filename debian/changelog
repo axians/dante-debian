@@ -1,4 +1,4 @@
-dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
+dante (1.4.1+dfsg-1) unstable; urgency=medium
 
   * Fix FTBFS by depending on libtool-bin instead of libtool.
     Closes: #776907
@@ -67,7 +67,7 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     thanks for taking care of the libtool transition!
   * Bump the year on my debian/* copyright notice.
 
- -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 15:18:02 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Thu, 07 Apr 2016 15:32:37 +0300
 
 dante (1.2.2+dfsg-3) experimental; urgency=low
 
