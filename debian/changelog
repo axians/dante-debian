@@ -65,6 +65,7 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     and break it into its own License section.
   * Acknowledge the 1.1.19.dfsg-3.1 NMU by Matthias Klose <doko@debian.org>;
     thanks for taking care of the libtool transition!
+  * Bump the year on my debian/* copyright notice.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 15:18:02 +0300
 

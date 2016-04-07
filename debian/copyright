@@ -46,7 +46,7 @@ Files: debian/*
 Copyright: Copyright (C) 1999-2005  Adrian Bridgett <bridgett@debian.org>
            Copyright (C) 2006  Thijs Kinkhorst <thijs@debian.org>
            Copyright (C) 2007  Julien Cristau <jcristau@debian.org>
-           Copyright (C) 2008, 2010  Peter Pentchev <roam@ringlet.net>
+           Copyright (C) 2008, 2010, 2016  Peter Pentchev <roam@ringlet.net>
 License: GPL-2+
 
 License: BSD-3-clause-Inferno
