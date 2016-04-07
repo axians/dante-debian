@@ -61,6 +61,8 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     that this will not disrupt anything.
   * Actually name the BSD-3-clause-alike license in the debian/copyright file
     and break it into its own License section.
+  * Acknowledge the 1.1.19.dfsg-3.1 NMU by Matthias Klose <doko@debian.org>;
+    thanks for taking care of the libtool transition!
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 15:18:02 +0300
 
@@ -160,6 +162,13 @@ dante (1.2.1+dfsg-1) experimental; urgency=low
   * Set DM-Upload-Allowed: yes
 
  -- Peter Pentchev <roam@ringlet.net>  Fri, 03 Sep 2010 13:05:44 +0300
+
+dante (1.1.19.dfsg-3.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Build-depend on libtool-bin. Closes: #761743.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 09 Oct 2014 10:21:39 +0000
 
 dante (1.1.19.dfsg-3) unstable; urgency=low
 
