@@ -58,6 +58,8 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
   * Use the upstream version of the socksify.1 manual page.
   * Upload to unstable; dante has been gone from testing long enough
     that this will not disrupt anything.
+  * Actually name the BSD-3-clause-alike license in the debian/copyright file
+    and break it into its own License section.
 
  -- Peter Pentchev <roam@ringlet.net>  Wed, 06 Apr 2016 15:18:02 +0300
 

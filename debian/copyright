@@ -2,11 +2,27 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: dante
 Upstream-Contact: Inferno Nettverk A/S, Norway <dante-bugs@inet.no>
 Source: http://www.inet.no/dante/
+License: BSD-3-clause-Inferno
 
 Files: *
 Copyright: Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
            Inferno Nettverk A/S, Norway.  All rights reserved.
-License: other
+License: BSD-3-clause-Inferno
+
+Files: debian/*
+Copyright: Copyright (C) 1999-2005  Adrian Bridgett <bridgett@debian.org>
+           Copyright (C) 2006  Thijs Kinkhorst <thijs@debian.org>
+           Copyright (C) 2007  Julien Cristau <jcristau@debian.org>
+           Copyright (C) 2008, 2010  Peter Pentchev <roam@ringlet.net>
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify it under
+ the terms of the GNU General Public License; either version 2 of the License,
+ or (at your option) any later version.
+ .
+ On Debian systems the full text of the GNU General Public License can be found
+ in the `/usr/share/common-licenses/GPL-2' file.
+
+License: BSD-3-clause-Inferno
  * $Id: LICENSE,v 1.17 2005/01/24 10:24:18 karls Exp $
  *
  * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
@@ -48,16 +64,3 @@ License: other
  *
  * any improvements or extensions that they make and grant Inferno Nettverk A/S
  * the rights to redistribute these changes.
-
-Files: debian/*
-Copyright: Copyright (C) 1999-2005  Adrian Bridgett <bridgett@debian.org>
-           Copyright (C) 2006  Thijs Kinkhorst <thijs@debian.org>
-           Copyright (C) 2007  Julien Cristau <jcristau@debian.org>
-           Copyright (C) 2008, 2010  Peter Pentchev <roam@ringlet.net>
-License: GPL-2+
- This program is free software; you can redistribute it and/or modify it under
- the terms of the GNU General Public License; either version 2 of the License,
- or (at your option) any later version.
- .
- On Debian systems the full text of the GNU General Public License can be found
- in the `/usr/share/common-licenses/GPL-2' file.
