@@ -32,6 +32,7 @@ dante (1.4.1+dfsg-1) UNRELEASED; urgency=medium
     - drop the check for PTHREAD_MUTEX_ERRORCHECK, we really need it; if it
       turns out not to be available on some architectures, we'll figure out
       ways around that
+    - update the upstream copyright information
   * Add Multi-Arch headers to the binary packages.
   * Add the multiarch-find-lib tool to the dante-client package and
     preload exactly the libraries needed for the file being executed.
