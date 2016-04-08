@@ -11,6 +11,9 @@ dante (1.4.1+dfsg-1) unstable; urgency=medium
     - install into the multiarch library directory
     - get the compiler and linker flags directly from debhelper
     - override the "experimental debhelper version" Lintian warning
+    - drop the autotools-dev dependency and invocation, debhelper uses
+      autoreconf automatically in level 10; do not override the Lintian
+      "outdated autotools file" warnings, since it's wrong - see #820441
   * New upstream version:
     - Closes: #740749 (new upstream version)
     - Closes: #731178 (tries to dlopen a linker script)
@@ -67,7 +70,7 @@ dante (1.4.1+dfsg-1) unstable; urgency=medium
     thanks for taking care of the libtool transition!
   * Bump the year on my debian/* copyright notice.
 
- -- Peter Pentchev <roam@ringlet.net>  Thu, 07 Apr 2016 15:32:37 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Fri, 08 Apr 2016 17:14:40 +0300
 
 dante (1.2.2+dfsg-3) experimental; urgency=low
 
