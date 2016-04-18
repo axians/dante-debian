@@ -10,3 +10,5 @@
 18-dante-client-multiarch.patch
 19-standards.patch
 20-typos.patch
+21-sendbuf-ioctl.patch
+22-sigpwr-siginfo.patch
