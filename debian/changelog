@@ -1,4 +1,4 @@
-dante (1.4.1+dfsg-2) UNRELEASED; urgency=medium
+dante (1.4.1+dfsg-2) unstable; urgency=medium
 
   * Add the 21-sendbuf-ioctl, 22-sigpwr-siginfo, and 23-sa-len-unused
     patches to fix some FTBFS's on the Debian buildd network.
@@ -8,7 +8,7 @@ dante (1.4.1+dfsg-2) UNRELEASED; urgency=medium
     - point it to a webpage with links instead of an FTP site
     - update to version 4 and explicitly add pgpmode=none
 
- -- Peter Pentchev <roam@ringlet.net>  Mon, 11 Apr 2016 13:41:40 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Mon, 18 Apr 2016 17:34:55 +0300
 
 dante (1.4.1+dfsg-1) unstable; urgency=medium
 
