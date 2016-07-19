@@ -1,3 +1,9 @@
+dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
+
+  * Add some more fixes to the 20-typos patch.
+
+ -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
+
 dante (1.4.1+dfsg-2) unstable; urgency=medium
 
   * Add the 21-sendbuf-ioctl, 22-sigpwr-siginfo, and 23-sa-len-unused
