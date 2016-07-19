@@ -1,5 +1,5 @@
 Description: Rename the libdsocks library to avoid a conflict with libsocks4.
-Bug-Debian: http://bugs.debian.org/52476
+Bug-Debian: http://bugs.debian.org/52475
 Forwarded: not-needed
 Author: Adrian Bridgett <bridgett@debian.org>
 Last-Update: 2016-04-05
