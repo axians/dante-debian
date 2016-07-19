@@ -2,6 +2,9 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
 
   * Add some more fixes to the 20-typos patch.
   * Fix the formatting of multiple DEP-3 Author headers in a patch.
+  * Add a systemd service file (originally obtained from Arch Linux,
+    almost completely overhauled) and bump the debhelper version
+    dependency for its systemd support by default.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
 
