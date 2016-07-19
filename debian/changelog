@@ -5,6 +5,9 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
   * Add a systemd service file (originally obtained from Arch Linux,
     almost completely overhauled) and bump the debhelper version
     dependency for its systemd support by default.
+  * Switch to the compat level 10 default debhelper behavior regarding
+    restarting services during an upgrade - only restarting the service
+    after the upgrade.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
 
