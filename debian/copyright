@@ -1,7 +1,7 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: dante
 Upstream-Contact: Inferno Nettverk A/S, Norway <dante-bugs@inet.no>
-Source: http://www.inet.no/dante/
+Source: https://www.inet.no/dante/
 License: BSD-3-clause-Inferno
 
 Files: *

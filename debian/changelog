@@ -10,6 +10,7 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
     after the upgrade.
   * Correct the number of the Debian bug in the 01-rename-library patch.
   * Point the watch file to the main upstream website.
+  * Use the HTTPS scheme for various upstream and Debian-related URLs.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
 
