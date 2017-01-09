@@ -10,6 +10,8 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
   * Correct the number of the Debian bug in the 01-rename-library patch.
   * Point the watch file to the main upstream website.
   * Use the HTTPS scheme for various upstream and Debian-related URLs.
+  * Build-depend on debhelper 10 now that it's even in jessie-backports
+    and drop the Lintian override.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
 
