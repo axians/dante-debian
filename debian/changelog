@@ -1,4 +1,4 @@
-dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
+dante (1.4.1+dfsg-3) unstable; urgency=medium
 
   * Add some more fixes to the 20-typos patch.
   * Fix the formatting of multiple DEP-3 Author headers in a patch.
@@ -22,7 +22,7 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
     a bit, and also check for SIGPWR == SIGLOST.
   * Bump the year on my debian/* copyright notice.
 
- -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Mon, 09 Jan 2017 17:28:22 +0200
 
 dante (1.4.1+dfsg-2) unstable; urgency=medium
 
