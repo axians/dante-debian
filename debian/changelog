@@ -20,6 +20,7 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
     Closes: #845404; thanks, Samuel Thibault!
   * Rename the 22-sigpwr-siginfo patch to 22-signal-names, simplify it
     a bit, and also check for SIGPWR == SIGLOST.
+  * Bump the year on my debian/* copyright notice.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
 
