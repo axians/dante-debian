@@ -15,6 +15,7 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
   * Let dante-server depend on lsb-base for the init script functions.
   * Use single quotes around a variable that is interpolated by make,
     not by the shell, in the rules file.
+  * Use the v4 substitution variables in the watch file.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
 
