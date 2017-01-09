@@ -16,6 +16,9 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
   * Use single quotes around a variable that is interpolated by make,
     not by the shell, in the rules file.
   * Use the v4 substitution variables in the watch file.
+  * Add the 24-uintptr_t patch to fix the build on !linux i386 hosts.
+    Closes: #845404; thanks, Samuel Thibault!
+  * Rename the 22-sigpwr-siginfo patch to 22-signal-names.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
 
