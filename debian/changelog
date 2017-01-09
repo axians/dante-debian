@@ -18,8 +18,8 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
   * Use the v4 substitution variables in the watch file.
   * Add the 24-uintptr_t patch to fix the build on !linux i386 hosts.
     Closes: #845404; thanks, Samuel Thibault!
-  * Rename the 22-sigpwr-siginfo patch to 22-signal-names and simplify
-    it a bit.
+  * Rename the 22-sigpwr-siginfo patch to 22-signal-names, simplify it
+    a bit, and also check for SIGPWR == SIGLOST.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
 
