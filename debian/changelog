@@ -12,6 +12,7 @@ dante (1.4.1+dfsg-3) UNRELEASED; urgency=medium
   * Use the HTTPS scheme for various upstream and Debian-related URLs.
   * Build-depend on debhelper 10 now that it's even in jessie-backports
     and drop the Lintian override.
+  * Let dante-server depend on lsb-base for the init script functions.
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 19 Jul 2016 11:52:46 +0300
 
