@@ -1,7 +1,7 @@
 Description: Fix some typographical and grammatical errors.
 Forwarded: not-yet
 Author: Peter Pentchev <roam@ringlet.net>
-Last-Update: 2016-07-19
+Last-Update: 2017-01-09
 
 --- a/INSTALL
 +++ b/INSTALL
@@ -109,6 +109,15 @@ Last-Update: 2016-07-19
  .\" which may end up leaking resources or create other problems when having
  .\" run to long.  The default value is \fB0\fP, meaning no limit.
  .\"
+@@ -120,7 +120,7 @@
+ \fBschedule\fP.<process type>: <scheduling policy>/<priority>.
+ 
+ Example: \fBcpu.schedule.mother: SCHED_FIFO/20\fP
+-The above requests that the kernel schedules the mother process(s)
++The above requests that the kernel schedules the mother process(es)
+ using a first-in, first-out policy, at priority 20.
+ 
+ The default is to not request any specific scheduling.
 @@ -302,7 +302,7 @@
  from non-socks clients, and thus only a limited set of authentication
  methods are possible.
@@ -662,6 +671,15 @@ Last-Update: 2016-07-19
            */
            char buf[1024];
            ssize_t p;
+@@ -2308,7 +2308,7 @@
+     * If no socksmethod is set in this rule, set all from the global methods.
+     * For the client-rule there isn't really many checks we can do on what
+     * methods to set (e.g., do they support what will be  required by the
+-    * matchin socks-rule?), as we won't know what is required until we know
++    * matching socks-rule?), as we won't know what is required until we know
+     * what the matching socks-rule will be for the clients request.
+     *
+     * For the socks-rule, we can check things however.
 @@ -2458,7 +2458,7 @@
      * Set default values for some authentication-methods, if none
      * set.  Note that this needs to be set regardless of what the
