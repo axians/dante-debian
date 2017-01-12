@@ -14,3 +14,4 @@
 22-signal-names.patch
 23-sa-len-unused.patch
 24-uintptr_t.patch
+25-path-max.patch
