@@ -1,9 +1,9 @@
-dante (1.4.1+dfsg-4) UNRELEASED; urgency=medium
+dante (1.4.1+dfsg-4) unstable; urgency=medium
 
   * Add the 25-path-max patch as a temporary band-aid for building Dante
     on GNU/Hurd.
 
- -- Peter Pentchev <roam@ringlet.net>  Thu, 12 Jan 2017 12:47:01 +0200
+ -- Peter Pentchev <roam@ringlet.net>  Thu, 12 Jan 2017 13:07:24 +0200
 
 dante (1.4.1+dfsg-3) unstable; urgency=medium
 
