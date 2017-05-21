@@ -1,3 +1,12 @@
+dante (1.4.1+dfsg-5) UNRELEASED; urgency=medium
+
+  * Add an error handler to the post-install startup of dante-server so
+    that it doesn't make the package installation fail if danted.conf
+    has not been customized yet (i.e. always on first installation).
+    Closes: #862988
+
+ -- Peter Pentchev <roam@ringlet.net>  Sun, 21 May 2017 12:11:03 +0300
+
 dante (1.4.1+dfsg-4) unstable; urgency=medium
 
   * Add the 25-path-max patch as a temporary band-aid for building Dante
