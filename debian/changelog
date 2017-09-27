@@ -8,6 +8,7 @@ dante (1.4.2+dfsg-1) UNRELEASED; urgency=medium
     - drop the 23-sa-len-unused and 24-uintptr_t patches, fixed upstream
     - refresh several patches
     - add Rgetnameinfo to the symbols file
+    - update the upstream copyright years
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 26 Sep 2017 14:53:35 +0300
 
