@@ -1,8 +1,13 @@
-dante (1.4.1+dfsg-6) UNRELEASED; urgency=medium
+dante (1.4.2+dfsg-1) UNRELEASED; urgency=medium
 
   * Declare compliance with Debian Policy 4.1.0:
     - implement the "try-restart" command in the init script; also fix
       the behavior of the "restart" command when the daemon was stopped
+  * New upstream version:
+    - update the 19-standards patch, half of it was integrated upstream
+    - drop the 23-sa-len-unused and 24-uintptr_t patches, fixed upstream
+    - refresh several patches
+    - add Rgetnameinfo to the symbols file
 
  -- Peter Pentchev <roam@ringlet.net>  Tue, 26 Sep 2017 14:53:35 +0300
 

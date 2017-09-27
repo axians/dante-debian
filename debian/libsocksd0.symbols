@@ -6,6 +6,7 @@ libsocksd.so.0 libsocksd0 #MINVER#
  Rgetaddrinfo@Base 1.1.19
  Rgethostbyname2@Base 1.1.19
  Rgethostbyname@Base 1.1.19
+ Rgetnameinfo@Base 1.4.2
  Rgetpeername@Base 1.1.19
  Rgetsockname@Base 1.1.19
  Rgetsockopt@Base 1.2.2

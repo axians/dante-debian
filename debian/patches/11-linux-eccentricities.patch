@@ -32,7 +32,7 @@ Last-Update: 2016-04-06
        if ((rc = Rrecvfrom(s,
 --- a/preload.m4
 +++ b/preload.m4
-@@ -437,7 +437,7 @@
+@@ -438,7 +438,7 @@
      AC_DEFINE(HAVE_PTHREAD_H, 1, [have pthread header])
      if test x"${ac_cv_search_pthread_mutexattr_init}" = x"-lpthread"; then
          case $host in
@@ -41,7 +41,7 @@ Last-Update: 2016-04-06
  	        #XXX attempt to find latest pthread library
  		PATH=$PATH:/sbin
  		export PATH
-@@ -615,7 +615,7 @@
+@@ -616,7 +616,7 @@
  	    fi
  	    ;;
  

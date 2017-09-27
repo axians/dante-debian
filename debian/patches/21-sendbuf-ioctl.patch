@@ -7,7 +7,7 @@ Last-Update: 2016-04-11
 
 --- a/libscompat.m4
 +++ b/libscompat.m4
-@@ -374,7 +374,7 @@
+@@ -377,7 +377,7 @@
  
  	return 0;
  }], [AC_MSG_RESULT(yes)

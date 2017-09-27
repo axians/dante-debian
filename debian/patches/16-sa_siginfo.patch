@@ -38,7 +38,7 @@ Last-Update: 2016-04-05
  
        slog(LOG_DEBUG, "%s: our signal handler is not installed, installing ...",
             function);
-@@ -1287,6 +1293,7 @@
+@@ -1288,6 +1294,7 @@
        return;
     }
  
@@ -46,7 +46,7 @@ Last-Update: 2016-04-05
     if (originalsig.sa_flags & SA_SIGINFO
     &&  originalsig.sa_sigaction != NULL) {
        const char *msgv[] =
-@@ -1301,6 +1308,7 @@
+@@ -1302,6 +1309,7 @@
        originalsig.sa_sigaction(sig, sip, scp);
     }
     else {
@@ -54,7 +54,7 @@ Last-Update: 2016-04-05
        if (originalsig.sa_handler != SIG_IGN
        &&  originalsig.sa_handler != SIG_DFL) {
           const char *msgv[] =
-@@ -1314,7 +1322,9 @@
+@@ -1315,7 +1323,9 @@
  
           originalsig.sa_handler(sig);
        }
@@ -66,7 +66,7 @@ Last-Update: 2016-04-05
        sockscf.state.insignal = 0;
 --- a/lib/upnp.c
 +++ b/lib/upnp.c
-@@ -796,7 +796,9 @@
+@@ -801,7 +801,9 @@
  
                 oursig = oldsig;
                 oursig.sa_handler = sighandler;

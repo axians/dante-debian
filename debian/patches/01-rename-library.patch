@@ -81,7 +81,7 @@ Last-Update: 2016-04-05
  /* sockaddr struct, with sa_len */
 --- a/include/socks.h
 +++ b/include/socks.h
-@@ -471,7 +471,7 @@
+@@ -479,7 +479,7 @@
  typedef sigset_t addrlockopaque_t;
  
  /*
@@ -89,7 +89,7 @@ Last-Update: 2016-04-05
 + * libsocksd function declarations
   */
  
- void
+ void __ATTRIBUTE__((ATTRIBUTE_CONSTRUCTOR))
 --- a/dlib/Makefile.am
 +++ b/dlib/Makefile.am
 @@ -1,8 +1,8 @@
@@ -209,7 +209,7 @@ Last-Update: 2016-04-05
  
 --- a/libscompat.m4
 +++ b/libscompat.m4
-@@ -224,7 +224,7 @@
+@@ -227,7 +227,7 @@
      fi
      if eval "test x\"\$${var}\" = xno"; then
  	LIBSCSRC="${LIBSCSRC}${LIBSCSRC:+ }${func}.lo"

@@ -12,6 +12,4 @@
 20-typos.patch
 21-sendbuf-ioctl.patch
 22-signal-names.patch
-23-sa-len-unused.patch
-24-uintptr_t.patch
 25-path-max.patch
