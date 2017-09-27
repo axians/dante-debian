@@ -1,3 +1,11 @@
+dante (1.4.1+dfsg-6) UNRELEASED; urgency=medium
+
+  * Declare compliance with Debian Policy 4.1.0:
+    - implement the "try-restart" command in the init script; also fix
+      the behavior of the "restart" command when the daemon was stopped
+
+ -- Peter Pentchev <roam@ringlet.net>  Tue, 26 Sep 2017 14:53:35 +0300
+
 dante (1.4.1+dfsg-5) unstable; urgency=medium
 
   * Add an error handler to the post-install startup of dante-server so

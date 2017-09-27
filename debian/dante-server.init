@@ -38,14 +38,39 @@ touch_pidfile ()
     fi
   fi
 }
-		
-case "$1" in
-  start)
+
+check_status() {
+	local configured status
+
 	if ! egrep -cve '^ *(#|$)' \
 	    -e '^(logoutput|user\.((not)?privileged|libwrap)):' \
 	    $CONFFILE > /dev/null
 	then
+		configured='0'
+	else
+		configured='1'
+	fi
+
+	if start-stop-daemon --status --quiet --pidfile $PIDFILE \
+	  --exec $DAEMON; then
+		status='running'
+	else
+		status='not running'
+	fi
+
+	echo "$configured:$status"
+}
+		
+case "$1" in
+  start)
+	confstatus="$(check_status)"
+	configured="${confstatus%%:*}"
+	status="${confstatus#*:}"
+	if [ "$configured" != 1 ]; then
 		echo "Not starting $DESC: not configured."
+		exit 0
+	elif [ "$status" = 'running' ]; then
+		echo "Not starting $DESC: already running."
 		exit 0
 	fi
 	echo -n "Starting $DESC: "
@@ -72,41 +97,47 @@ case "$1" in
 	 start-stop-daemon --stop --signal 1 --quiet --pidfile \
 		$PIDFILE --exec $DAEMON -- -D
   ;;
-  restart)
+  restart|try-restart)
 	#
 	#	If the "reload" option is implemented, move the "force-reload"
 	#	option to the "reload" entry above. If not, "force-reload" is
 	#	just the same as "restart".
 	#
+	confstatus="$(check_status)"
+	status="${confstatus#*:}"
+	if [ "$1" = 'try-restart' ] && [ "$status" != 'running' ]; then
+		echo "Not restarting $DESC: not running or not configured."
+		exit 0
+	fi
 	echo -n "Restarting $DESC: "
-	start-stop-daemon --stop --quiet --pidfile $PIDFILE --exec $DAEMON
-	sleep 1
+	if [ "$status" = 'running' ]; then
+		start-stop-daemon --stop --quiet --pidfile $PIDFILE --exec $DAEMON
+		sleep 1
+	fi
 	touch_pidfile
 	start-stop-daemon --start --quiet --pidfile $PIDFILE \
 	  --exec $DAEMON -- -D
 	echo "$NAME."
 	;;
   status)
-	if ! egrep -cve '^ *(#|$)' \
-	    -e '^(logoutput|user\.((not)?privileged|libwrap)):' \
-	    $CONFFILE > /dev/null
-	then
-		configured=''
+	confstatus="$(check_status)"
+	if [ -z "$confstatus" ]; then
+		echo "$DESC could not be queried"
 	else
-		configured='1'
-	fi
-	if start-stop-daemon --status --quiet --pidfile $PIDFILE \
-	  --exec $DAEMON; then
-		if [ -n "$configured" ]; then
-			echo "$DESC running"
+		configured="${confstatus%%:*}"
+		status="${confstatus#*:}"
+		if [ "$status" = 'running' ]; then
+			if [ "$configured" = 1 ]; then
+				echo "$DESC running"
+			else
+				echo "$DESC running, yet not configured?!"
+			fi
 		else
-			echo "$DESC running, yet not configured?!"
-		fi
-	else
-		if [ -n "$configured" ]; then
-			echo "$DESC not running"
-		else
-			echo "$DESC not configured"
+			if [ "$configured" = 1 ]; then
+				echo "$DESC not running"
+			else
+				echo "$DESC not configured"
+			fi
 		fi
 	fi
 	;;
