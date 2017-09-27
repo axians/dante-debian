@@ -1,4 +1,4 @@
-dante (1.4.2+dfsg-1) UNRELEASED; urgency=medium
+dante (1.4.2+dfsg-1) unstable; urgency=medium
 
   * Declare compliance with Debian Policy 4.1.0:
     - implement the "try-restart" command in the init script; also fix
@@ -10,7 +10,7 @@ dante (1.4.2+dfsg-1) UNRELEASED; urgency=medium
     - add Rgetnameinfo to the symbols file
     - update the upstream copyright years
 
- -- Peter Pentchev <roam@ringlet.net>  Tue, 26 Sep 2017 14:53:35 +0300
+ -- Peter Pentchev <roam@ringlet.net>  Wed, 27 Sep 2017 14:12:52 +0300
 
 dante (1.4.1+dfsg-5) unstable; urgency=medium
 
