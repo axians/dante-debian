@@ -438,7 +438,7 @@ if test x"$use_threads" = xt; then
     AC_DEFINE(HAVE_PTHREAD_H, 1, [have pthread header])
     if test x"${ac_cv_search_pthread_mutexattr_init}" = x"-lpthread"; then
         case $host in
-	    *-*-linux-*)
+	    *-*-linux-*|*-gnu)
 	        #XXX attempt to find latest pthread library
 		PATH=$PATH:/sbin
 		export PATH
@@ -616,7 +616,7 @@ if test x"${LIBC_NAME}" = x; then
 	    fi
 	    ;;
 
-	*-*-linux-*)
+	*-*-linux-*|*-gnu)
 	    #XXX
 	    #can't set it to libc.so directly, might be ld script
 	    unset LIBC_ALTS
