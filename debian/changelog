@@ -1,11 +1,11 @@
-dante (1.4.2+dfsg-2) UNRELEASED; urgency=medium
+dante (1.4.2+dfsg-2) unstable; urgency=medium
 
   * Remove trailing whitespace from the changelog and control files.
   * Declare compliance with Debian Policy 4.1.1 with no changes.
   * Add "Rules-Requires-Root: no" to the source control stanza.
   * Switch to git-dpm for patch management and rename the patches.
 
- -- Peter Pentchev <roam@ringlet.net>  Sun, 29 Oct 2017 22:36:32 +0200
+ -- Peter Pentchev <roam@ringlet.net>  Mon, 30 Oct 2017 01:08:23 +0200
 
 dante (1.4.2+dfsg-1) unstable; urgency=medium
 
