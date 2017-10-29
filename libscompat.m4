@@ -377,7 +377,7 @@ main(void)
 
 	return 0;
 }], [AC_MSG_RESULT(yes)
-     AC_DEFINE(HAVE_SENDBUF_IOCTL, TIOCOUTQ, [send buffer data])
+     AC_DEFINE(HAVE_SENDBUF_IOCTL, 1, [send buffer data])
      AC_DEFINE(SENDBUF_IOCTLVAL, TIOCOUTQ, [send buffer ioctl])],
     [AC_MSG_RESULT(no)])],
     [dnl assume no when cross-compiling
