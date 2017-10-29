@@ -1,6 +1,7 @@
 dante (1.4.2+dfsg-2) UNRELEASED; urgency=medium
 
   * Remove trailing whitespace from the changelog and control files.
+  * Declare compliance with Debian Policy 4.1.1 with no changes.
 
  -- Peter Pentchev <roam@ringlet.net>  Sun, 29 Oct 2017 22:36:32 +0200
 
