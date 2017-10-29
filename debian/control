@@ -8,6 +8,7 @@ Homepage: https://www.inet.no/dante/
 Standards-Version: 4.1.1
 Vcs-Git: https://gitlab.com/dante/pkg-debian-full.git
 Vcs-Browser: https://gitlab.com/dante/pkg-debian-full
+Rules-Requires-Root: no
 
 Package: libsocksd0
 Architecture: any
