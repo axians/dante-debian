@@ -22,7 +22,7 @@ Description: SOCKS library for packages built using libsocksd-dev
  .
  This package provides the Dante SOCKS support library and will generally
  be automatically selected by packages that require it.
-  
+
 Package: libsocksd0-dev
 Architecture: any
 Multi-Arch: same
@@ -52,7 +52,7 @@ Description: SOCKS library preloaded in user applications
  .
  This package provides the Dante library that will be preloaded by
  the socksify tool.
-  
+
 Package: dante-client
 Architecture: all
 Multi-Arch: foreign
@@ -66,7 +66,7 @@ Description: SOCKS wrapper for users behind a firewall
  .
  This package provides the "socksify" client program - a tool which
  forwards network requests from any program to a SOCKS server (v4 or v5)
- which then performs them on your behalf. 
+ which then performs them on your behalf.
 
 Package: dante-server
 Architecture: any
