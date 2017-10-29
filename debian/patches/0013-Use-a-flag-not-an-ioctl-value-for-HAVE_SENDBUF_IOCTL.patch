@@ -1,0 +1,26 @@
+From b983c307b9aae145a8cad7b8c927552b4182dcbc Mon Sep 17 00:00:00 2001
+From: Peter Pentchev <roam@ringlet.net>
+Date: Mon, 30 Oct 2017 00:42:46 +0200
+Subject: Use a flag, not an ioctl value, for HAVE_SENDBUF_IOCTL
+
+ The preprocessor throws a hissy fit if we try to check for
+ the truthiness of an ioctl definition itself, at least on PowerPC.
+Forwarded: not-yet
+Last-Update: 2016-04-11
+---
+ libscompat.m4 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libscompat.m4 b/libscompat.m4
+index 445d6c2..fd16537 100644
+--- a/libscompat.m4
++++ b/libscompat.m4
+@@ -377,7 +377,7 @@ main(void)
+ 
+ 	return 0;
+ }], [AC_MSG_RESULT(yes)
+-     AC_DEFINE(HAVE_SENDBUF_IOCTL, TIOCOUTQ, [send buffer data])
++     AC_DEFINE(HAVE_SENDBUF_IOCTL, 1, [send buffer data])
+      AC_DEFINE(SENDBUF_IOCTLVAL, TIOCOUTQ, [send buffer ioctl])],
+     [AC_MSG_RESULT(no)])],
+     [dnl assume no when cross-compiling

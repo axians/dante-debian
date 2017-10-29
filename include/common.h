@@ -115,7 +115,7 @@ extern char *__progname;
 #if PRERELEASE
 
 /*
- * Solaris 2.5.1 and it's stream stuff is broken and puts the processes
+ * Solaris 2.5.1 and its stream stuff is broken and puts the processes
  * into never-never land forever on half the sendmsg() calls if they
  * involve ancillary data.  (it seems to deadlock the processes.)
  * XXX need to retest what the current status of this is.
@@ -739,7 +739,7 @@ do {                                                                           \
  */
 #define DEBUG_NORMAL    (1)
 #define DEBUG_VERBOSE   (2)
-#define DEBUG_DEBUG     (9)   /* only for debuging problems. */
+#define DEBUG_DEBUG     (9)   /* only for debugging problems. */
 
 /*
  * If client, it might need to call malloc(3) to expand socksfdv
@@ -1088,7 +1088,8 @@ do {                                                                           \
  * cast is necessary on AIX, due to buggy headers there?
  * needs additional testing on AIX, disable for now.
  */
-#define CMSG_CONTROLDATA(msg)   ((msg).msg_control)
+#define CMSG_CONTROLDATA(msg)   ((struct cmsghdr *)((msg).msg_control))
+#define CMSG_CONTROLDATA_MUTABLE(msg)   ((msg).msg_control)
 #else /* !HAVE_CMSGHDR */
 #define CMSG_CONTROLDATA(msg)   ((msg).msg_accrights)
 #endif /* HAVE_CMSGHDR */
@@ -2188,7 +2189,7 @@ typedef struct {
  * to getr the ipv4-mapped addresses returned to is to set ai_family to
  * zero, but then we get the regular ipv6-addresses also.  Since there
  * are cases when we want the ipv4-mapped addresses returned also, we
- * need to make the size set here able to accomodate that too.
+ * need to make the size set here able to accommodate that too.
  */
 #define MAX_ADDRINFO_NEXT (10)
 
@@ -3076,7 +3077,7 @@ void slog(int priority, const char *fmt, ...)
 /*
  * Logs message "fmt" at priority "priority" to previously configured
  * output device.
- * Checks settings and ignores message if it's of to low a priority.
+ * Checks settings and ignores message if it's of too low a priority.
  */
 
 void vslog(int priority, const char *fmt, va_list ap, va_list apcopy)
@@ -3183,7 +3184,7 @@ socks_connectroute(const int s, socks_t *packet,
  *
  * The route used may take into account the contents of "packet->req",
  * which is assumed to be the packet that will be sent to a socks server,
- * so it is recommended that it's contents be as conservative as possible.
+ * so it is recommended that its contents be as conservative as possible.
  *
  * When it has successfully connected to a gateway it will set
  * the packet->method members to point to the methods the gateway
@@ -3286,7 +3287,7 @@ socks_getroute(const request_t *req, const sockshost_t *src,
  *
  * The route used may take into account the contents of "req", which is
  * assumed to be the packet that will be sent to a socks server, so it is
- * recommended that it's contents be as conservative as possible.
+ * recommended that its contents be as conservative as possible.
  *
  * Returns:
  *      On success: pointer to route that should be used.
@@ -4103,7 +4104,7 @@ makedummyfd(const sa_family_t safamily, const int socktype);
 
 
 /*
- * Makes a dummy filedescriptor and returns it's index, or -1 on failure.
+ * Makes a dummy filedescriptor and returns its index, or -1 on failure.
  */
 
 #if DEBUG

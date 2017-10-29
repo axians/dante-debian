@@ -1213,7 +1213,12 @@ clientmethod_gssapi(s, protocol, gw, version, auth, emsg, emsglen)
    SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);
 
    if (gss_err_isset(major_status, minor_status, tmpbuf, sizeof(tmpbuf))) {
-      snprintf(emsg, emsglen, "gss_import_name() failed: %s", emsg);
+      char *ebuf = malloc(emsglen);
+      if (ebuf != NULL) {
+        snprintf(ebuf, emsglen, "%s", emsg);
+        snprintf(emsg, emsglen, "gss_import_name() failed: %s", ebuf);
+        free(ebuf);
+      }
 
       SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);
       goto error;
@@ -1238,7 +1243,7 @@ clientmethod_gssapi(s, protocol, gw, version, auth, emsg, emsglen)
                                            * RFC 1961 says GSS_C_DELEG_FLAG
                                            * should also be set, but I can't
                                            * see any reason why the client
-                                           * should want to forward it's
+                                           * should want to forward its
                                            * tickets to a socks server ...
                                            *
                                            * Don't set unless until we find

@@ -227,7 +227,7 @@ for func in $CLIENTONLY $SHAREDFUNCS; do
     fi
     if eval "test x\"\$${var}\" = xno"; then
 	LIBSCSRC="${LIBSCSRC}${LIBSCSRC:+ }${func}.lo"
-	LIBDSCSRC="${LIBDSCSRC}${LIBDSCSRC:+ }libdsocks_la-${func}.lo"
+	LIBDSCSRC="${LIBDSCSRC}${LIBDSCSRC:+ }libdsocksd_la-${func}.lo"
 	COMPATFUNCS="$COMPATFUNCS${COMPATFUNCS:+ }$func"
     fi
 done
@@ -377,7 +377,7 @@ main(void)
 
 	return 0;
 }], [AC_MSG_RESULT(yes)
-     AC_DEFINE(HAVE_SENDBUF_IOCTL, TIOCOUTQ, [send buffer data])
+     AC_DEFINE(HAVE_SENDBUF_IOCTL, 1, [send buffer data])
      AC_DEFINE(SENDBUF_IOCTLVAL, TIOCOUTQ, [send buffer ioctl])],
     [AC_MSG_RESULT(no)])],
     [dnl assume no when cross-compiling

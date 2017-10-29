@@ -51,14 +51,14 @@ static const char rcsid[] =
  * This sets things up for performing a non-blocking connect for the client.
  * We do this by initiating a connect on a non-blocking socket.
  * If the initial response is positive, we then save the endpoint
- * addresses of the socket and send it our "connect-child", which then
+ * addresses of the socket and send it to our "connect-child", which then
  * handles the socks negotiation and returns the proxy server's response back
  * to us.
  *
- * To avoid the client stepping on our (or rather our connect-childs) toes
+ * To avoid the client stepping on our (or rather our connect-child's) toes
  * while it negotiates with the proxy server, we temporarily let the
- * fd-index the client is using point at at dummy socket, while we use
- * the real socket to negotiate.  Then we set the clients fd to point back
+ * fd-index the client is using point at a dummy socket, while we use
+ * the real socket to negotiate.  Then we set the client's fd to point back
  * at the real socket.
  *
  * When the connect-child is done, it will send us back the same socket
@@ -129,6 +129,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
       return NULL;
    }
 
+#ifdef SA_SIGINFO
    if (currentsig.sa_flags & SA_SIGINFO) { /* sa_sigaction. */
       isourhandler = (currentsig.sa_sigaction == sigio);
 
@@ -146,6 +147,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
       }
    }
    else { /* sa_handler. */
+#endif
       isourhandler = 0; /* we install with SA_SIGINFO. */
 
       if (currentsig.sa_handler != SIG_IGN
@@ -155,12 +157,16 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
       else
          slog(LOG_DEBUG,
               "%s: no SIGIO handler previously installed", function);
+#ifdef SA_SIGINFO
    }
+#endif
 
    if (!isourhandler) {
       newsig               = currentsig; /* keep same as much as possible. */
       newsig.sa_sigaction  = sigio;
+#ifdef SA_SIGINFO
       newsig.sa_flags     |= SA_SIGINFO;
+#endif
 
       slog(LOG_DEBUG, "%s: our signal handler is not installed, installing ...",
            function);
@@ -677,8 +683,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
 }
 
 /*
- * XXX should have more code so we could handle multiple requests at
- * a time.
+ * XXX should have more code so we could handle multiple simultaneous requests
  */
 static void
 run_connectchild(mother_data, mother_ack)
@@ -1288,6 +1293,7 @@ sigio(sig, sip, scp)
       return;
    }
 
+#ifdef SA_SIGINFO
    if (originalsig.sa_flags & SA_SIGINFO
    &&  originalsig.sa_sigaction != NULL) {
       const char *msgv[] =
@@ -1302,6 +1308,7 @@ sigio(sig, sip, scp)
       originalsig.sa_sigaction(sig, sip, scp);
    }
    else {
+#endif
       if (originalsig.sa_handler != SIG_IGN
       &&  originalsig.sa_handler != SIG_DFL) {
          const char *msgv[] =
@@ -1315,7 +1322,9 @@ sigio(sig, sip, scp)
 
          originalsig.sa_handler(sig);
       }
+#ifdef SA_SIGINFO
    }
+#endif
 
    if (sockscf.connectchild == 0) {
       sockscf.state.insignal = 0;

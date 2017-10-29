@@ -63,8 +63,8 @@ static void  sighup(int sig, siginfo_t *si, void *sc);
 static void unexpecteddeath(void);
 /*
  * Should be called after any unexpected child death / child removal.
- * May disable creation of further children for a while and log a warning
- * if appropriate, or the enable creation of further children.
+ * May disable the creation of further children for a while and log a warning
+ * if appropriate, or enable the creation of further children.
  */
 
 void
@@ -259,7 +259,11 @@ mother_envsetup(argc, argv)
     */
 
    bzero(&sigact, sizeof(sigact));
+#ifdef SA_SIGINFO
    sigact.sa_flags = SA_RESTART | SA_NOCLDSTOP | SA_SIGINFO;
+#else
+   sigact.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+#endif
 
    sigact.sa_sigaction = siginfo;
 #if HAVE_SIGNAL_SIGINFO
@@ -292,7 +296,9 @@ mother_envsetup(argc, argv)
       if (sigaction(ignoresignalv[i], &sigact, NULL) != 0)
          serr("sigaction(%d)", ignoresignalv[i]);
 
+#ifdef SA_SIGINFO
    sigact.sa_flags     = SA_SIGINFO;   /* want to be interrupted. */
+#endif
    sigact.sa_sigaction = sigalrm;
    if (sigaction(SIGALRM, &sigact, NULL) != 0)
       serr("sigaction(SIGALRM)");
@@ -721,7 +727,7 @@ siginfo(sig, si, sc)
     * The practical effect of this seems to be that if we use different
     * userids, we, when running with the euid of something other than root,
     * may not be able to send the SIGINFO signal to our own children. :-/
-    * Simlar problem exists for FreeBSD.
+    * A similar problem exists for FreeBSD.
     *
     * To workaround the problem, send SIGUSR1 to the children instead of
     * SIGINFO, as SIGUSR1 has always been treated the same way as SIGINFO
@@ -986,7 +992,7 @@ sighup(sig, si, sc)
     *
     * The only reason for locking shmemconfig is so we do not update it (due
     * to another SIGHUP) while the children try to read it (children lock it
-    * read-only, we lock it it read-write).
+    * read-only, we lock it read-write).
     */
 
    socks_lock(sockscf.shmemconfigfd, 0, 0, 1, 1);
@@ -1148,7 +1154,7 @@ sigchld(sig, si, sc)
              * Note that this might be a pid from our former self also
              * if we failed on an internal error, fork(2)-ed process to
              * get the coredump and continue.  When the fork(2)-ed process
-             * exits after generating the coredump, we will receive it's
+             * exits after generating the coredump, we will receive its
              * SIGCHLD, but no account of it.  To avoid that, hopefully
              * never happening, problem generating a recursive error, let
              * this be a swarnx(), and not a SWARNX().

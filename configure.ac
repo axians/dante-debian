@@ -79,6 +79,8 @@ AC_CONFIG_MACRO_DIR([m4])
 oCFLAGS="$CFLAGS"
 unset CFLAGS
 LT_INIT
+strippedCFLAGS=`echo "$CFLAGS" | sed -e 's/^[[:space:]]*//; s/[[:space:]]\+/ /g; s/[[:space:]]*$//'`
+if test "$strippedCFLAGS" = '-g -O2'; then CFLAGS=''; fi
 autoconf_compflags="$CFLAGS"
 CFLAGS=$oCFLAGS
 
@@ -341,9 +343,9 @@ else
     echo "UPNP:              Enabled"
 fi
 if test x"$COMPATFUNCS" = x; then
-    echo "Compatability:     none"
+    echo "Compatibility:     none"
 else
-    echo "Compatability:     $COMPATFUNCS"
+    echo "Compatibility:     $COMPATFUNCS"
 fi
 
 echo ""
