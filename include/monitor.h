@@ -74,7 +74,7 @@ typedef struct {
 
 
    /*
-    * Just for latency checking/debuging.
+    * Just for latency checking/debugging.
     */
    struct timeval         ts_sent;
    struct timeval         ts_received;
@@ -141,7 +141,7 @@ mtutest(const int s, const interfaceside_t side, const struct timeval *tnow,
  * possibly progressing to the next state.
  *
  * Upon return, "mtu" will be updated to indicate its current state,
- * possibly after reseting the socket "s" to it's initial state and
+ * possibly after resetting the socket "s" to its initial state and
  * disabling further testing on this socket.
  */
 

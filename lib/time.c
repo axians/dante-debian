@@ -107,7 +107,7 @@ gettimeofday_monotonic(tv)
 
    /*
     * for some reason Coverity produces a warning about
-    * tv_lasttime.tv_usec being unitialized if we do a struct
+    * tv_lasttime.tv_usec being uninitialized if we do a struct
     * assignment here. :-/
     */
    tv_lasttime.tv_sec  = tv->tv_sec;
