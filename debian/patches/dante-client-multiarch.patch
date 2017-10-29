@@ -1,15 +1,17 @@
-From 8841def12f47de0b88e0a56ec7f64147452a95ad Mon Sep 17 00:00:00 2001
+From b3ba873547c02901cc3b0fa57f71058733c48213 Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:42 +0200
 Subject: Leave it to the loader to preload the correct ABI libraries.
 
- Teach dante-client to put only the library names into LD_PRELOAD so that
- the actual runtime loader can figure out which libraries to load, taking
- into account the ABI of the executable files.
- .
- Install the dynamic preload library as a full-fledged library, SONAME and all.
+Teach dante-client to put only the library names into LD_PRELOAD so that
+the actual runtime loader can figure out which libraries to load, taking
+into account the ABI of the executable files.
+
+Install the dynamic preload library as a full-fledged library, SONAME and all.
+
 Forwarded: not-yet
 Last-Update: 2016-04-07
+Patch-Name: dante-client-multiarch.patch
 ---
  bin/socksify.in  | 21 +++++++++++++++++++--
  dlib/Makefile.am |  2 +-

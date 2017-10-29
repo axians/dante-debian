@@ -1,10 +1,11 @@
-From dbabb8ccf06bc76893efdbc25a9f84d09ab0bfb6 Mon Sep 17 00:00:00 2001
+From dde2d3cd94a7a5c9298523eef3708de18f2d316e Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:41 +0200
 Subject: Fix some cppcheck warnings.
 
 Forwarded: no
 Last-Update: 2016-04-05
+Patch-Name: cppcheck.patch
 ---
  lib/address.c        | 2 +-
  lib/clientprotocol.c | 7 ++++++-

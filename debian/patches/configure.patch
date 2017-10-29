@@ -1,13 +1,15 @@
-From 95bdc2d6bfed1995ddf66f5a63c9451ab8b8c204 Mon Sep 17 00:00:00 2001
+From 707ea6191d9a15a79fb9df8198924d1937c83384 Mon Sep 17 00:00:00 2001
 From: Adrian Bridgett <bridgett@debian.org>
 Date: Mon, 30 Oct 2017 00:42:34 +0200
 Subject: Adapt the configure script for the Debian environment.
 
- Always use Debian's libtool and libdl.so.2.
- Do not add "-g -O2" to the Debian build's CFLAGS.
+Always use Debian's libtool and libdl.so.2.
+Do not add "-g -O2" to the Debian build's CFLAGS.
+
 Forwarded: not-needed
 Author: Peter Pentchev <roam@ringlet.net>
 Last-Update: 2016-04-06
+Patch-Name: configure.patch
 ---
  configure.ac | 2 ++
  preload.m4   | 3 ++-

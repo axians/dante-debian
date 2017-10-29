@@ -1,4 +1,4 @@
-From 85207f64db3938c467000c144dc46828973f2003 Mon Sep 17 00:00:00 2001
+From f43419456d6b340cd26b47cf0c74bcb33498c5b8 Mon Sep 17 00:00:00 2001
 From: Adrian Bridgett <bridgett@debian.org>
 Date: Mon, 30 Oct 2017 00:40:58 +0200
 Subject: Rename the libdsocks library to avoid a conflict with libsocks4.
@@ -6,6 +6,7 @@ Subject: Rename the libdsocks library to avoid a conflict with libsocks4.
 Bug-Debian: https://bugs.debian.org/52475
 Forwarded: not-needed
 Last-Update: 2016-04-05
+Patch-Name: rename-library.patch
 ---
  bin/socksify.in     |  2 +-
  dlib/Makefile.am    | 20 ++++++++++----------

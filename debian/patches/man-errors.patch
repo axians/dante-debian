@@ -1,12 +1,14 @@
-From 2bf31bbd26b302fbb03d4fb8881063b7c40d1026 Mon Sep 17 00:00:00 2001
+From 24339060ab0f950295133e2f369fdbd2b9f776b7 Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:39 +0200
 Subject: Fix the manual page errors.
 
- - replace mdoc macros with man ones
- - use minus signs instead of hyphens where necessary
+- replace mdoc macros with man ones
+- use minus signs instead of hyphens where necessary
+
 Forwarded: no
 Last-Update: 2016-04-06
+Patch-Name: man-errors.patch
 ---
  doc/sockd.conf.5 | 20 ++++++++++----------
  doc/socksify.1   |  2 +-

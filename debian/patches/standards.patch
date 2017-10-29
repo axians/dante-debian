@@ -1,10 +1,11 @@
-From c6f7a549b334c241d5da3cd40090a192226e5b17 Mon Sep 17 00:00:00 2001
+From 97d6391f618fb505e653af93d29f1f3ecfa767da Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:43 +0200
 Subject: Support kFreeBSD and the Hurd.
 
 Forwarded: not-yet
 Last-Update: 2017-09-27
+Patch-Name: standards.patch
 ---
  compiler.m4 | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

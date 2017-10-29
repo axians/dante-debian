@@ -1,14 +1,16 @@
-From 3392ee5787a34550b7ecfb4d97e3d4bd2098a556 Mon Sep 17 00:00:00 2001
+From 9954e027c1cea7c55ed33c3636ab705c2e94bd4f Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:38 +0200
 Subject: Fix the build on non-Linux architectures.
 
- - never build with the "Linux eccentricities" on Debian
- - make the CMSG_CONTROLDATA() macro work and introduce
-   an lvalue equivalent
- - add two more kFreeBSD tests in the configure script
+- never build with the "Linux eccentricities" on Debian
+- make the CMSG_CONTROLDATA() macro work and introduce
+  an lvalue equivalent
+- add two more kFreeBSD tests in the configure script
+
 Forwarded: no
 Last-Update: 2016-04-06
+Patch-Name: linux-eccentricities.patch
 ---
  include/common.h | 3 ++-
  lib/Rcompat.c    | 2 +-

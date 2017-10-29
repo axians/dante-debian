@@ -1,15 +1,18 @@
-From 934ec3d8ea45708d8b7ddc848d1eeb1db4371520 Mon Sep 17 00:00:00 2001
+From 3106c2b2421a190dd3eff4a1e37294e5f9a963e5 Mon Sep 17 00:00:00 2001
 From: Adrian Bridgett <bridgett@debian.org>
 Date: Mon, 30 Oct 2017 00:41:40 +0200
 Subject: Rename some files - this is Dante, not the original SOCKS.
 
- - /etc/socks.conf => /etc/dante.conf
- - /etc/sockd.conf => /etc/danted.conf
- - /usr/sbin/sockd => /usr/sbin/danted
- The changelog entry references bug #35187, but bugs.debian.org disclaims any
- knowledge of it.
+- /etc/socks.conf => /etc/dante.conf
+- /etc/sockd.conf => /etc/danted.conf
+- /usr/sbin/sockd => /usr/sbin/danted
+
+The changelog entry references bug #35187, but bugs.debian.org disclaims any
+knowledge of it.
+
 Forwarded: not-needed
 Last-Update: 2010-07-01
+Patch-Name: rename-programs.patch
 ---
  INSTALL          |  4 ++--
  doc/sockd.8      | 14 +++++++-------

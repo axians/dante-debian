@@ -1,10 +1,11 @@
-From 639a44bcd1afa024dfdee11c586c695e4520d76f Mon Sep 17 00:00:00 2001
+From 85e3ce54ecacad9d106f976faa3dff4c879ce79a Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:40 +0200
 Subject: Only use SA_SIGINFO if available (e.g. not on GNU/Hurd)
 
 Forwarded: no
 Last-Update: 2016-04-05
+Patch-Name: sa_siginfo.patch
 ---
  lib/connectchild.c      | 10 ++++++++++
  lib/upnp.c              |  2 ++

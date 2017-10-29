@@ -1,10 +1,11 @@
-From 86fd25c61c5746d22967469ed45c8c0373642c82 Mon Sep 17 00:00:00 2001
+From b55f57cd566cf4865846b4ee96d81b26ade9b7b0 Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:45 +0200
 Subject: Fix some typographical and grammatical errors.
 
 Forwarded: not-yet
 Last-Update: 2017-01-09
+Patch-Name: typos.patch
 ---
  INSTALL                 |  4 ++--
  NEWS                    | 14 +++++++-------
