@@ -63,7 +63,7 @@ static int addexternaladdr(const struct ruleaddr_t *ra);
  * Returns 0 if the address "ra" was addedd to the list of external addresses.
  *
  * Returns -1 if the address "ra" was not added for a non-fatal reason,
- * after loging a message if apropriate.
+ * after logging a message if appropriate.
  */
 
 static int addinternaladdr(const char *ifname,
@@ -73,7 +73,7 @@ static int addinternaladdr(const char *ifname,
  * Returns 0 if the address "ra" was addedd to the list of internal addresses.
  *
  * Returns -1 if the address "ra" was not added for a non-fatal reason,
- * after loging a message if apropriate.
+ * after logging a message if appropriate.
  */
 
 
@@ -741,7 +741,7 @@ resetconfig(config, exiting)
    /* srchost, read from config file. */
    bzero(&config->srchost, sizeof(config->srchost));
 
-   /* stat: not touch.  Accumulated continously. */
+   /* stat: not touch.  Accumulated continuously. */
 
    /*
     * state; keep most of it, with the following exceptions:

@@ -595,7 +595,7 @@ addrmatch(rule, addr, addrmatched, protocol, alias)
        *      addr.ipaddr isin rule.hostname->ipaddr
        *
        * If still no match, and alias is set, resolve addr.ipv4 to hostname(s),
-       * those hostnames back to ip, and and match against
+       * those hostnames back to ip, and match against
        * rule.hostame->ipaddr:
        *    rule.hostname->ipaddr isin addr->ipaddr->hostname(s)->ipaddr
        *    .
