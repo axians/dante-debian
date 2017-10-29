@@ -116,7 +116,7 @@ doio_udp(io, rset, badfd)
     *               maxsessions: 1 }
     *
     * Correspondingly, in Dante, the below will not work as the
-    * socks udp client can change it's destination at any time.
+    * socks udp client can change its destination at any time.
     *
     * pass { from: 10/8 to: 10.1.1.1/32 port = echo
     *        maxsessions: 10 }
@@ -132,7 +132,7 @@ doio_udp(io, rset, badfd)
     * Do we move the client from the session belonging to rule #1 when it
     * sends a packet matching rule #2, and then move it back again from
     * rule #2 to rule #1?  Also obviously not.
-    * Instead we do the simple thing and and lock the resources when the
+    * Instead we do the simple thing and lock the resources when the
     * udp session is established, which will be in the request child.
     */
    const char *function   = "doio_udp()";
@@ -215,7 +215,7 @@ doio_udp(io, rset, badfd)
 
 #if BAREFOOTD
       /*
-       * initalize to crule, and if we get far enough, rulespermit() will
+       * initialize to crule, and if we get far enough, rulespermit() will
        * update it, possibly changing it to another crule based on the source
        * address of the client who sent the packet we will read.
        *

@@ -251,7 +251,7 @@ These `configure' options are also supported (run `configure' with
 `--disable-preload'
      Do not build libdsocks.  The dynamic socks library might not work
      properly on all architectures.  This option disables building of
-     the library. Also disables it's use in the server.
+     the library. Also disables its use in the server.
 
 `--disable-clientdl'
      Disable building of libdsocks, used by the socksify application.
@@ -381,7 +381,7 @@ RUNTIME CONFIGURATION FILES
 
 No configuration-files are installed, these must be installed
 manually.
-The Dante server expects it's configuration file to be in /etc/danted.conf.
+The Dante server expects its configuration file to be in /etc/danted.conf.
 The client library uses the file /etc/dante.conf.
 
 The file bin/socksify.sh contains a shell script that allows one

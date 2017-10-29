@@ -199,7 +199,7 @@ main(argc, argv)
    /*
     * The monitor-child is special, as there is only one and it
     * is shared/used by all processes, the mother processes
-    * included.  It therefor needs to be the first one created,
+    * included.  It therefore needs to be the first one created,
     * even before the mother processes.
     */
    if (childcheck(PROC_MONITOR) < 1) {
@@ -1610,9 +1610,9 @@ handlechildcommand(command, child, finished)
 
          if (child->type == PROC_IO) {
             /*
-             * don't receive anything back from i/o childs
-             * except the freeslot ack, as i/o childs are the
-             * last in the chain, so need to update this stat her.
+             * don't receive anything back from i/o children
+             * except the freeslot ack, as i/o children are the
+             * last in the chain, so need to update this stat here.
              */
             ++sockscf.stat.io.received;
 #if COVENANT

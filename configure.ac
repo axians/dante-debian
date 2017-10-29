@@ -343,9 +343,9 @@ else
     echo "UPNP:              Enabled"
 fi
 if test x"$COMPATFUNCS" = x; then
-    echo "Compatability:     none"
+    echo "Compatibility:     none"
 else
-    echo "Compatability:     $COMPATFUNCS"
+    echo "Compatibility:     $COMPATFUNCS"
 fi
 
 echo ""

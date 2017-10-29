@@ -65,7 +65,7 @@ The following keywords are available:
 .\" clients, the child process will exit.
 .\"
 .\" The only reason for the existence of this option is to work around buggy
-.\" behavior in external libraries used by the the \fBDante\fP server,
+.\" behavior in external libraries used by the \fBDante\fP server,
 .\" which may end up leaking resources or create other problems when having
 .\" run to long.  The default value is \fB0\fP, meaning no limit.
 .\"
@@ -120,7 +120,7 @@ The currently supported options are:
 \fBschedule\fP.<process type>: <scheduling policy>/<priority>.
 
 Example: \fBcpu.schedule.mother: SCHED_FIFO/20\fP
-The above requests that the kernel schedules the mother process(s)
+The above requests that the kernel schedules the mother process(es)
 using a first-in, first-out policy, at priority 20.
 
 The default is to not request any specific scheduling.
@@ -302,7 +302,7 @@ not desired on replies, as they are replies sent to the socks-clients
 from non-socks clients, and thus only a limited set of authentication
 methods are possible.
 
-The methods possible for TCP are the the methods not involving the socks
+The methods possible for TCP are the methods not involving the socks
 protocol in any way, and are listed in the \fBclientmethod\fP section
 previously mentioned.  For UDP-replies, no methods can be used.
 
@@ -646,7 +646,7 @@ The list of action keywords is: \fBbandwidth\fP, \fBlibwrap\fP,
 \fBtimeout.connect\fP, \fBtimeout.negotiate\fP, \fBtimeout.io\fP,
 \fBtimeout.tcp_fin_wait\fP, and \fBudp.portrange\fP.
 
-The format and content of the the keyword as used in client-rules or
+The format and content of the keyword as used in client-rules or
 socks-rules is identical, but client-rules can contain only a subset of
 the keyword that socks-rules may contain.
 
@@ -1068,7 +1068,7 @@ At present serverchaining is only supported for the \fBtcp connect\fP command.
 .IP
 If the route specifies that a username/password-method should be offered
 to the upstream proxy, \fBDante\fP will forward the username/password received
-from it's own client to the foreign upstream proxy, meaning the
+from its own client to the foreign upstream proxy, meaning the
 upstream proxy will receive the user's username and password in cleartext
 from \fBDante.
 .IP
