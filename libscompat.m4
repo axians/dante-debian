@@ -227,7 +227,7 @@ for func in $CLIENTONLY $SHAREDFUNCS; do
     fi
     if eval "test x\"\$${var}\" = xno"; then
 	LIBSCSRC="${LIBSCSRC}${LIBSCSRC:+ }${func}.lo"
-	LIBDSCSRC="${LIBDSCSRC}${LIBDSCSRC:+ }libdsocks_la-${func}.lo"
+	LIBDSCSRC="${LIBDSCSRC}${LIBDSCSRC:+ }libdsocksd_la-${func}.lo"
 	COMPATFUNCS="$COMPATFUNCS${COMPATFUNCS:+ }$func"
     fi
 done
