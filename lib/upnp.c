@@ -801,7 +801,9 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
 
                oursig = oldsig;
                oursig.sa_handler = sighandler;
+#ifdef SA_SIGINFO
                oursig.sa_flags  |= SA_SIGINFO;
+#endif
 
                if (sigaction(signalv[i], &oursig, NULL) != 0) {
                   swarn("%s: sigaction(%d)", function, signalv[i]);
