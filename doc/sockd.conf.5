@@ -41,9 +41,9 @@
 .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
 .\" the rights to redistribute these changes.
 .\"
-.TH SOCKD.CONF 5 "July 29 2013"
+.TH DANTED.CONF 5 "July 29 2013"
 .SH NAME
-sockd.conf \- \fBDante\fP server configuration file syntax
+danted.conf \- \fBDante\fP server configuration file syntax
 .SH DESCRIPTION
 The configuration file for the \fBDante\fP server controls both access
 controls and logging.  It is divided into three parts; server settings,
@@ -315,7 +315,7 @@ Setting it to 0 will use the systems default.
 .IP \fBtimeout.io\fP
 The number of seconds an established connection can be idle.
 The default is 0, meaning forever.
-See also the "-n" option in the sockd(8) manpage.
+See also the "-n" option in the danted(8) manpage.
 
 Individual timeouts can be set for TCP and UDP by suffixing io with
 ".<protocolname>", i.e. \fBtimeout.io.tcp\fP or \fBtimeout.io.udp\fP.
@@ -353,8 +353,8 @@ values.  The \fBDante\fP server can use two different userids, or three
 if compiled with libwrap support.  They are as follows:
 .IP \fBuser.privileged\fP
 Username which will be used for doing privileged operations.
-If you need special privileges to read the sockd.conf file or to write
-the sockd.pid file (you can create it manually before starting sockd),
+If you need special privileges to read the danted.conf file or to write
+the danted.pid file (you can create it manually before starting danted),
 have anything in your configuration that requires binding privileged
 TCP/UDP ports (ports below 1024), or use some sort of password-based
 authentication, this probably needs to be set to root.
@@ -676,7 +676,7 @@ Possible values are \fBclear\fP, \fBintegrity\fP, or \fBconfidentiality\fP.
 The default is to accept whatever the client offers
 except \fBclear\fP, as \fBclear\fP is not part of the SOCKS GSSAPI standard.
 .IP \fBgssapi.keytab\fP
-Value for keytab to use.  The default is "FILE:/etc/sockd.keytab".
+Value for keytab to use.  The default is "FILE:/etc/danted.keytab".
 .IP \fBgssapi.servicename\fP
 Which servicename to use when involving GSSAPI.  Default is "rcmd".
 
@@ -693,7 +693,7 @@ below for details.
 Require that the connection be "authenticated" using one of the
 given clientmethods.
 .IP \fBpam.servicename\fP
-Which servicename to use when involving pam.  Default is "sockd".
+Which servicename to use when involving pam.  Default is "danted".
 .IP \fBport\fP
 Parameter to \fBfrom\fP, \fBto\fP and \fBvia\fP.  Accepts the keywords
 \fBeq/=, neq/!=, ge/>=, le/<=, gt/>, lt/<\fP followed by a number.
@@ -772,7 +772,7 @@ the target destination (see \fBcheckreplyauth\fP for information about
 authentication the target destination).  Valid values are the same as in
 the global \fBsocksmethod\fP line.
 .IP \fBpam.servicename\fP
-What servicename to use when involving pam.  Default is "sockd".
+What servicename to use when involving pam.  Default is "danted".
 
 .IP \fBport\fP
 Parameter to \fBfrom\fP, \fBto\fP and \fBvia\fP.  Accepts the keywords
@@ -1054,12 +1054,12 @@ multiple alarms are specified in a monitor rule.
 .SH ROUTES
 The routes are specified with a \fBroute\fP keyword.  Inside a pair of
 curly braces ({}) a set of keywords control the behavior of the route.
-See socks.conf(5) for a description.  This is used to perform so-called
+See dante.conf(5) for a description.  This is used to perform so-called
 "server-chaining", where one socks-server connects to another socks-server
 further upstream.
 
 The syntax for these routes is the same as the routes used by the client.
-Please see socks.conf(5) for information about the route syntax.
+Please see dante.conf(5) for information about the route syntax.
 
 There are however some special things one need to be aware of
 regarding serverchaining and routes specified for the server:
@@ -1081,7 +1081,7 @@ See the example/ directory in the distribution.
 .SH FILES
 .nf
 .ta \w 1
-/etc/sockd.conf   \fBDante\fP server configuration file.
+/etc/danted.conf   \fBDante\fP server configuration file.
 /etc/passwd       systemfile used when doing standard username/password
                   authentication.
 .fi
@@ -1090,7 +1090,7 @@ For inferno Nettverk A/S:
    Michael Shuldman
    Karl-Andre' Skevik
 .SH SEE ALSO
-sockd(8), socks.conf(5), hosts_access(5)
+danted(8), dante.conf(5), hosts_access(5)
 
 .PP
 Information about new releases and other related issues can be found
