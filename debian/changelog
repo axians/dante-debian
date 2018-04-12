@@ -1,3 +1,9 @@
+dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
+
+  * Add two more fixes to the typos patch.
+
+ -- Peter Pentchev <roam@ringlet.net>  Thu, 12 Apr 2018 14:11:37 +0300
+
 dante (1.4.2+dfsg-2) unstable; urgency=medium
 
   * Remove trailing whitespace from the changelog and control files.
