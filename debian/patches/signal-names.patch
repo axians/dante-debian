@@ -1,4 +1,4 @@
-From 5e6880ee8582441b3194d0f9ab198120d164f11f Mon Sep 17 00:00:00 2001
+From d7c708f108b0d37a7da17e0fe4426794a566ae83 Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:47 +0200
 Subject: Make sure SIGPWR is not the same as SIGINFO or SIGLOST

@@ -1,10 +1,10 @@
-From b55f57cd566cf4865846b4ee96d81b26ade9b7b0 Mon Sep 17 00:00:00 2001
+From 9203c93041cb2e3b293888eb9efd39138302325b Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:45 +0200
 Subject: Fix some typographical and grammatical errors.
 
 Forwarded: not-yet
-Last-Update: 2017-01-09
+Last-Update: 2018-04-12
 Patch-Name: typos.patch
 ---
  INSTALL                 |  4 ++--
@@ -23,7 +23,7 @@ Patch-Name: typos.patch
  lib/Raccept.c           |  2 +-
  lib/Rconnect.c          |  8 ++++----
  lib/address.c           |  2 +-
- lib/addressmatch.c      |  2 +-
+ lib/addressmatch.c      |  6 +++---
  lib/authneg.c           |  4 ++--
  lib/clientprotocol.c    |  2 +-
  lib/config.c            |  2 +-
@@ -54,7 +54,7 @@ Patch-Name: typos.patch
  sockd/sockd_socket.c    |  2 +-
  sockd/sockd_tcp.c       |  6 +++---
  sockd/sockd_udp.c       |  6 +++---
- 47 files changed, 171 insertions(+), 172 deletions(-)
+ 47 files changed, 173 insertions(+), 174 deletions(-)
 
 diff --git a/INSTALL b/INSTALL
 index d5de432..fd90c52 100644
@@ -610,9 +610,20 @@ index 389c92e..ed92531 100644
      * We instead take the risk of not taking the thread-lock in this case.
      */
 diff --git a/lib/addressmatch.c b/lib/addressmatch.c
-index cfd94b4..a79926e 100644
+index cfd94b4..bd37eb2 100644
 --- a/lib/addressmatch.c
 +++ b/lib/addressmatch.c
+@@ -232,8 +232,8 @@ addrmatch(rule, addr, addrmatched, protocol, alias)
+ 
+ #if SOCKS_CLIENT
+    /*
+-    * Wrong, but maintains compatability with 1.4.1 regarding
+-    * 0.0.0.0/0 matching everything.  Keep that compatability with the
++    * Wrong, but maintains compatibility with 1.4.1 regarding
++    * 0.0.0.0/0 matching everything.  Keep that compatibility with the
+     * the 1.4.1 socks.conf-files for now.
+     */
+    if (rule->atype                 == SOCKS_ADDR_IPV4
 @@ -595,7 +595,7 @@ addrmatch(rule, addr, addrmatched, protocol, alias)
         *      addr.ipaddr isin rule.hostname->ipaddr
         *

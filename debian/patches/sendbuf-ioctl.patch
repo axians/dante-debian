@@ -1,4 +1,4 @@
-From d123bc9f3e33bb42bbdd863b25c08848cedc08d6 Mon Sep 17 00:00:00 2001
+From f7b8ff3c79f297694d74798dd7dcb9bee79bdcca Mon Sep 17 00:00:00 2001
 From: Peter Pentchev <roam@ringlet.net>
 Date: Mon, 30 Oct 2017 00:42:46 +0200
 Subject: Use a flag, not an ioctl value, for HAVE_SENDBUF_IOCTL

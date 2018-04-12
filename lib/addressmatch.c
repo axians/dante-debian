@@ -232,8 +232,8 @@ addrmatch(rule, addr, addrmatched, protocol, alias)
 
 #if SOCKS_CLIENT
    /*
-    * Wrong, but maintains compatability with 1.4.1 regarding
-    * 0.0.0.0/0 matching everything.  Keep that compatability with the
+    * Wrong, but maintains compatibility with 1.4.1 regarding
+    * 0.0.0.0/0 matching everything.  Keep that compatibility with the
     * the 1.4.1 socks.conf-files for now.
     */
    if (rule->atype                 == SOCKS_ADDR_IPV4
