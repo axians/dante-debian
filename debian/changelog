@@ -5,6 +5,7 @@ dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
   * Use my Debian e-mail address.
   * Bring up to compliance with Debian Policy 4.1.4: use uscan's "repack"
     mechanism along with Files-Excluded in the copyright file.
+  * Bump the debhelper compatibility level to 11 with no changes.
 
  -- Peter Pentchev <roam@debian.org>  Fri, 18 May 2018 17:02:08 +0300
 
