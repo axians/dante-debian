@@ -7,6 +7,8 @@ dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
     mechanism along with Files-Excluded in the copyright file.
   * Bump the debhelper compatibility level to 11 and override
     the dh_installsystemd invocation to rename the danted service file.
+  * Rename the SysV init script file in the source package to follow
+    suit with the systemd one.
 
  -- Peter Pentchev <roam@debian.org>  Fri, 18 May 2018 17:02:08 +0300
 
