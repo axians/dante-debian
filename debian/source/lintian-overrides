@@ -1,0 +1,7 @@
+# lintian does not understand the "debhelper-compat (= X)"
+# build-dependency
+dante source: debhelper-compat-file-is-missing
+dante source: package-uses-deprecated-debhelper-compat-version 1
+dante source: package-uses-debhelper-but-lacks-build-depends
+dante source: package-lacks-versioned-build-depends-on-debhelper 1
+dante source: missing-build-dependency debhelper

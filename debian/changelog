@@ -5,10 +5,12 @@ dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
   * Use my Debian e-mail address.
   * Bring up to compliance with Debian Policy 4.1.4: use uscan's "repack"
     mechanism along with Files-Excluded in the copyright file.
-  * Bump the debhelper compatibility level to 11 and override
-    the dh_installsystemd invocation to rename the danted service file.
+  * Bump the debhelper compatibility level to 11:
+    - override the dh_installsystemd invocation to rename the service file
+    - use the B-D: debheper-compat (= 11) mechanism
   * Rename the SysV init script file in the source package to follow
     suit with the systemd one.
+  * Add a trivial autopkgtest running adequate on the installed package.
 
  -- Peter Pentchev <roam@debian.org>  Fri, 18 May 2018 17:02:08 +0300
 
