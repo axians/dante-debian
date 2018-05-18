@@ -1,7 +1,7 @@
 Source: dante
 Section: net
 Priority: optional
-Maintainer: Peter Pentchev <roam@ringlet.net>
+Maintainer: Peter Pentchev <roam@debian.org>
 Build-Depends: debhelper (>> 10),
  flex, libtool-bin, libpam0g-dev, libwrap0-dev
 Homepage: https://www.inet.no/dante/

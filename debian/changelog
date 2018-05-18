@@ -2,8 +2,9 @@ dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
 
   * Add two more fixes to the typos patch.
   * Add the year 2018 to my debian/* copyright notice.
+  * Use my Debian e-mail address.
 
- -- Peter Pentchev <roam@ringlet.net>  Thu, 12 Apr 2018 14:11:37 +0300
+ -- Peter Pentchev <roam@debian.org>  Fri, 18 May 2018 17:02:08 +0300
 
 dante (1.4.2+dfsg-2) unstable; urgency=medium
 
