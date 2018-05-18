@@ -3,6 +3,7 @@ Upstream-Name: dante
 Upstream-Contact: Inferno Nettverk A/S, Norway <dante-bugs@inet.no>
 Source: https://www.inet.no/dante/
 License: BSD-3-clause-Inferno
+Files-Excluded: doc/rfc1928.txt doc/rfc1929.txt doc/rfc1961.txt
 
 Files: *
 Copyright: (c) 1997 - 2017

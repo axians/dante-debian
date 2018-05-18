@@ -3,6 +3,8 @@ dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
   * Add two more fixes to the typos patch.
   * Add the year 2018 to my debian/* copyright notice.
   * Use my Debian e-mail address.
+  * Bring up to compliance with Debian Policy 4.1.4: use uscan's "repack"
+    mechanism along with Files-Excluded in the copyright file.
 
  -- Peter Pentchev <roam@debian.org>  Fri, 18 May 2018 17:02:08 +0300
 
