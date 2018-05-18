@@ -55,5 +55,8 @@ override_dh_installchangelogs:
 override_dh_installinit:
 	dh_installinit -pdante-server --init-script=danted --error-handler=dante_service_error
 
+override_dh_installsystemd:
+	dh_installsystemd -pdante-server --name=danted
+
 %:
 	dh '$@' --without systemd

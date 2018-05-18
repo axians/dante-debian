@@ -5,7 +5,8 @@ dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
   * Use my Debian e-mail address.
   * Bring up to compliance with Debian Policy 4.1.4: use uscan's "repack"
     mechanism along with Files-Excluded in the copyright file.
-  * Bump the debhelper compatibility level to 11 with no changes.
+  * Bump the debhelper compatibility level to 11 and override
+    the dh_installsystemd invocation to rename the danted service file.
 
  -- Peter Pentchev <roam@debian.org>  Fri, 18 May 2018 17:02:08 +0300
 
