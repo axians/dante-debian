@@ -50,7 +50,10 @@ override_dh_installdocs:
 	dh_installdocs -pdante-server doc/SOCKS4.protocol
 
 override_dh_installchangelogs:
-	dh_installchangelogs NEWS
+	dh_installchangelogs
+	set -e; for p in $$(dh_listpackages); do \
+		install -m 644 NEWS "debian/$$p/usr/share/doc/$$p/"; \
+	done
 
 override_dh_installinit:
 	dh_installinit -pdante-server --name=danted --error-handler=dante_service_error

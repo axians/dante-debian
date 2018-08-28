@@ -3,8 +3,10 @@ dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
   * Add two more fixes to the typos patch.
   * Add the year 2018 to my debian/* copyright notice.
   * Use my Debian e-mail address.
-  * Bring up to compliance with Debian Policy 4.1.4: use uscan's "repack"
-    mechanism along with Files-Excluded in the copyright file.
+  * Bring up to compliance with Debian Policy 4.2.1:
+    - use uscan's "repack" mechanism along with Files-Excluded in
+      the copyright file
+    - install the upstream release notes (NEWS) as NEWS and not changelog
   * Bump the debhelper compatibility level to 11:
     - override the dh_installsystemd invocation to rename the service file
     - use the B-D: debheper-compat (= 11) mechanism
@@ -12,7 +14,7 @@ dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
     suit with the systemd one.
   * Add a trivial autopkgtest running adequate on the installed package.
 
- -- Peter Pentchev <roam@debian.org>  Fri, 18 May 2018 17:02:08 +0300
+ -- Peter Pentchev <roam@debian.org>  Tue, 28 Aug 2018 00:00:22 +0300
 
 dante (1.4.2+dfsg-2) unstable; urgency=medium
 
