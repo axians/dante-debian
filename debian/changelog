@@ -1,4 +1,4 @@
-dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
+dante (1.4.2+dfsg-3) unstable; urgency=medium
 
   * Add two more fixes to the typos patch.
   * Add the year 2018 to my debian/* copyright notice.
@@ -14,7 +14,7 @@ dante (1.4.2+dfsg-3) UNRELEASED; urgency=medium
     suit with the systemd one.
   * Add a trivial autopkgtest running adequate on the installed package.
 
- -- Peter Pentchev <roam@debian.org>  Tue, 28 Aug 2018 00:00:22 +0300
+ -- Peter Pentchev <roam@debian.org>  Thu, 30 Aug 2018 14:45:37 +0300
 
 dante (1.4.2+dfsg-2) unstable; urgency=medium
 
