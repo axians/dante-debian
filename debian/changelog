@@ -1,3 +1,10 @@
+dante (1.4.2+dfsg-4) UNRELEASED; urgency=medium
+
+  * Drop "--without systemd" from the dh invocation, missed in
+    the upgrade to debhelper compat level 11.  Closes: #907889
+
+ -- Peter Pentchev <roam@debian.org>  Sat, 15 Sep 2018 13:36:05 +0300
+
 dante (1.4.2+dfsg-3) unstable; urgency=medium
 
   * Add two more fixes to the typos patch.

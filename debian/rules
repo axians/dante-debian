@@ -62,4 +62,4 @@ override_dh_installsystemd:
 	dh_installsystemd -pdante-server --name=danted
 
 %:
-	dh '$@' --without systemd
+	dh '$@'
