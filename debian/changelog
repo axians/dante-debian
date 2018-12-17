@@ -1,4 +1,4 @@
-dante (1.4.2+dfsg-4) UNRELEASED; urgency=medium
+dante (1.4.2+dfsg-4) unstable; urgency=medium
 
   * Drop "--without systemd" from the dh invocation, missed in
     the upgrade to debhelper compat level 11.  Closes: #907889
@@ -9,7 +9,7 @@ dante (1.4.2+dfsg-4) UNRELEASED; urgency=medium
   * Move the systemd pid file from /var/run to /run.
   * Change the systemd service type to "simple" and do not pass "-D".
 
- -- Peter Pentchev <roam@debian.org>  Sat, 15 Sep 2018 13:36:05 +0300
+ -- Peter Pentchev <roam@debian.org>  Mon, 17 Dec 2018 18:01:57 +0200
 
 dante (1.4.2+dfsg-3) unstable; urgency=medium
 
