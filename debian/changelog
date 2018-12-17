@@ -2,6 +2,8 @@ dante (1.4.2+dfsg-4) UNRELEASED; urgency=medium
 
   * Drop "--without systemd" from the dh invocation, missed in
     the upgrade to debhelper compat level 11.  Closes: #907889
+  * Specify Build-Depends-Package in the libsocksd0 symbols file and
+    add a Lintian override for libdsocksd0.
 
  -- Peter Pentchev <roam@debian.org>  Sat, 15 Sep 2018 13:36:05 +0300
 

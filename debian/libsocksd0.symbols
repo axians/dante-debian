@@ -1,4 +1,5 @@
 libsocksd.so.0 libsocksd0 #MINVER#
+* Build-Depends-Package: libsocksd0-dev
  Raccept@Base 1.1.19
  Rbind@Base 1.1.19
  Rbindresvport@Base 1.1.19
