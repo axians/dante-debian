@@ -7,6 +7,7 @@ dante (1.4.2+dfsg-4) UNRELEASED; urgency=medium
   * Enable some systemd hardening options and add a news blurb on
     disabling/customizing them.
   * Move the systemd pid file from /var/run to /run.
+  * Change the systemd service type to "simple" and do not pass "-D".
 
  -- Peter Pentchev <roam@debian.org>  Sat, 15 Sep 2018 13:36:05 +0300
 
