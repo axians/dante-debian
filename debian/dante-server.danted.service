@@ -5,7 +5,7 @@ After=network.target
 
 [Service]
 Type=forking
-PIDFile=/var/run/danted.pid
+PIDFile=/run/danted.pid
 ExecStart=/usr/sbin/danted -D
 ExecStartPre=/bin/sh -c ' \
 	uid=`sed -n -e "s/[[:space:]]//g" -e "s/#.*//" -e "/^user\\.privileged/{s/[^:]*://p;q;}" /etc/danted.conf`; \
@@ -14,6 +14,10 @@ ExecStartPre=/bin/sh -c ' \
 		chown $uid /var/run/danted.pid; \
 	fi \
 	'
+PrivateTmp=yes
+InaccessibleDirectories=/boot /home /media /mnt /opt /root
+ReadOnlyDirectories=/bin /etc /lib /lib64 /sbin /usr /var
+DeviceAllow=/dev/null rw
 
 [Install]
 WantedBy=multi-user.target
