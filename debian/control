@@ -72,6 +72,7 @@ Description: SOCKS wrapper for users behind a firewall
 Package: dante-server
 Architecture: any
 Multi-Arch: foreign
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}, lsb-base
 Description: SOCKS (v4 and v5) proxy daemon (danted)
  Dante is a circuit-level firewall/proxy that can be used to provide

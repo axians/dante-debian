@@ -1,6 +1,7 @@
 dante (1.4.2+dfsg-5) UNRELEASED; urgency=medium
 
   * Bump the debhelper compatibility level to 12 with no changes.
+  * Add ${misc:Pre-Depends} to dante-server.
 
  -- Peter Pentchev <roam@debian.org>  Fri, 04 Jan 2019 01:45:12 +0200
 
