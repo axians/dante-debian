@@ -150,9 +150,9 @@ negotiate_method(s, packet, route, emsg, emsglen)
             case AUTHMETHOD_GSSAPI:
                break; /*
                        * ok?  Can't forward gssapi/kerberos credentials,
-                       * but operator should be able to set up
+                       * but operator should be able to set up a
                        * things so we can initiate our own gssapi
-                       * session to the upstream proxy.
+                       * session to the upsteam proxy.
                        */
 
             default:

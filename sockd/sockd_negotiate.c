@@ -151,7 +151,7 @@ proctitleupdate(void);
 static struct timeval *
 neg_gettimeout(struct timeval *timeout);
 /*
- * Fills in "timeout" with time till the first clients connection
+ * Fills in "timeout" with time til the first clients connection
  * expires.
  * Returns:
  *      If there is a timeout: pointer to filled in "timeout".
@@ -211,7 +211,7 @@ proctitleupdate(void);
 static struct timeval *
 neg_gettimeout(struct timeval *timeout);
 /*
- * Fills in "timeout" with time till the first clients connection expires.
+ * Fills in "timeout" with time til the first clients connection expires.
  * Returns:
  *      If there is a timeout: pointer to filled in "timeout".
  *      If there is no timeout: NULL.
@@ -227,11 +227,7 @@ run_negotiate()
    int sendfailed;
 
    bzero(&sigact, sizeof(sigact));
-#ifdef SA_SIGINFO
    sigact.sa_flags     = SA_RESTART | SA_NOCLDSTOP | SA_SIGINFO;
-#else
-   sigact.sa_flags     = SA_RESTART | SA_NOCLDSTOP;
-#endif
    sigact.sa_sigaction = siginfo;
 
 #if HAVE_SIGNAL_SIGINFO
@@ -1234,8 +1230,8 @@ recv_negotiate(void)
      * Normally there is no client data in Dante's case, but some clients
      * may piggy-back the payload together with the socks request, without
      * waiting for our response.  That is not legal to do, but some clients
-     * do it anyway, so we'd better support it.
-     * We therefore need to make sure we never read more of the payload than
+     * do it anyway, so we better support it.
+     * We therefor need to make sure we never read more of the payload than
      * we can send on to the i/o process, which will eventually need to
      * forward it to the destination.
      */
@@ -1316,7 +1312,7 @@ recv_negotiate(void)
             if (permit) {
                /*
                 * Let the hostid-rule inherit settings from the client-rule,
-                * or use its own.
+                * or use it's own.
                 */
                if (rule_inheritoruse(&neg->crule,
                                      &cinfo,
@@ -1436,7 +1432,7 @@ recv_negotiate(void)
       if (client.clientdatalen > 0) {
          slog(LOG_DEBUG,
               "%s: received client already has %lu bytes read from it.  "
-              "Must be a client that is changing its http server target "
+              "Must be a client that is changing it's http server target "
               "to %s, so request should already be parsed",
               function,
               (unsigned long)client.clientdatalen,

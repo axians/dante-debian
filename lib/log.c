@@ -105,7 +105,7 @@ static void
 dolog(const int priority, const char *buf,
       const size_t logprefixlen, const size_t messagelen);
 /*
- * Does the actual logging of the formatted logmessage for slog()/vslog().
+ * Does the actual logging of the formated logmessage for slog()/vslog().
  *
  * The last character in "buf", before the NUL, must be a newline.
  *

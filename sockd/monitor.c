@@ -408,11 +408,7 @@ run_monitor(void)
    fd_set *rset;
 
    bzero(&sigact, sizeof(sigact));
-#ifdef SA_SIGINFO
    sigact.sa_flags     = SA_RESTART | SA_SIGINFO;
-#else
-   sigact.sa_flags     = SA_RESTART;
-#endif
    sigact.sa_sigaction = siginfo;
 
 #if HAVE_SIGNAL_SIGINFO

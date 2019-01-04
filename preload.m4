@@ -438,7 +438,7 @@ if test x"$use_threads" = xt; then
     AC_DEFINE(HAVE_PTHREAD_H, 1, [have pthread header])
     if test x"${ac_cv_search_pthread_mutexattr_init}" = x"-lpthread"; then
         case $host in
-	    *-*-linux-*|*-gnu)
+	    *-*-linux-*)
 	        #XXX attempt to find latest pthread library
 		PATH=$PATH:/sbin
 		export PATH
@@ -564,8 +564,7 @@ if test x"${preload_enabled}" = xt; then
 		;;
 
 	    *)
-	    	# multiarch-find-lib only needs the filename anyway
-		LIBRARY_DLOPEN="/lib/libdl.so.2"
+		LIBRARY_DLOPEN="${base_library_path}libdl.${SOLIB_POSTFIX}"
 		;;
 	esac
 	SOCKSIFY_PRELOAD_LIBS="${SOCKSIFY_PRELOAD_LIBS}${LIBRARY_DLOPEN:+${PRELOAD_SEPERATOR}}${LIBRARY_DLOPEN}"
@@ -616,7 +615,7 @@ if test x"${LIBC_NAME}" = x; then
 	    fi
 	    ;;
 
-	*-*-linux-*|*-gnu)
+	*-*-linux-*)
 	    #XXX
 	    #can't set it to libc.so directly, might be ld script
 	    unset LIBC_ALTS

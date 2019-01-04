@@ -176,7 +176,7 @@ shmem_setup(void)
            function, SOCKD_SHMEMFILE);
 
    /*
-    * Hostcache also uses shmem, but has its own area.
+    * Hostcache also uses shmem, but has it's own area.
     */
    hostcachesetup();
 

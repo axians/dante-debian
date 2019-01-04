@@ -41,9 +41,9 @@
 .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
 .\" the rights to redistribute these changes.
 .\"
-.TH DANTED.CONF 5 "July 29 2013"
+.TH SOCKD.CONF 5 "July 29 2013"
 .SH NAME
-danted.conf \- \fBDante\fP server configuration file syntax
+sockd.conf \- \fBDante\fP server configuration file syntax
 .SH DESCRIPTION
 The configuration file for the \fBDante\fP server controls both access
 controls and logging.  It is divided into three parts; server settings,
@@ -65,7 +65,7 @@ The following keywords are available:
 .\" clients, the child process will exit.
 .\"
 .\" The only reason for the existence of this option is to work around buggy
-.\" behavior in external libraries used by the \fBDante\fP server,
+.\" behavior in external libraries used by the the \fBDante\fP server,
 .\" which may end up leaking resources or create other problems when having
 .\" run to long.  The default value is \fB0\fP, meaning no limit.
 .\"
@@ -120,7 +120,7 @@ The currently supported options are:
 \fBschedule\fP.<process type>: <scheduling policy>/<priority>.
 
 Example: \fBcpu.schedule.mother: SCHED_FIFO/20\fP
-The above requests that the kernel schedules the mother process(es)
+The above requests that the kernel schedules the mother process(s)
 using a first-in, first-out policy, at priority 20.
 
 The default is to not request any specific scheduling.
@@ -302,7 +302,7 @@ not desired on replies, as they are replies sent to the socks-clients
 from non-socks clients, and thus only a limited set of authentication
 methods are possible.
 
-The methods possible for TCP are the methods not involving the socks
+The methods possible for TCP are the the methods not involving the socks
 protocol in any way, and are listed in the \fBclientmethod\fP section
 previously mentioned.  For UDP-replies, no methods can be used.
 
@@ -315,7 +315,7 @@ Setting it to 0 will use the systems default.
 .IP \fBtimeout.io\fP
 The number of seconds an established connection can be idle.
 The default is 0, meaning forever.
-See also the "\-n" option in the danted(8) manpage.
+See also the "-n" option in the sockd(8) manpage.
 
 Individual timeouts can be set for TCP and UDP by suffixing io with
 ".<protocolname>", i.e. \fBtimeout.io.tcp\fP or \fBtimeout.io.udp\fP.
@@ -353,8 +353,8 @@ values.  The \fBDante\fP server can use two different userids, or three
 if compiled with libwrap support.  They are as follows:
 .IP \fBuser.privileged\fP
 Username which will be used for doing privileged operations.
-If you need special privileges to read the danted.conf file or to write
-the danted.pid file (you can create it manually before starting danted),
+If you need special privileges to read the sockd.conf file or to write
+the sockd.pid file (you can create it manually before starting sockd),
 have anything in your configuration that requires binding privileged
 TCP/UDP ports (ports below 1024), or use some sort of password-based
 authentication, this probably needs to be set to root.
@@ -646,7 +646,7 @@ The list of action keywords is: \fBbandwidth\fP, \fBlibwrap\fP,
 \fBtimeout.connect\fP, \fBtimeout.negotiate\fP, \fBtimeout.io\fP,
 \fBtimeout.tcp_fin_wait\fP, and \fBudp.portrange\fP.
 
-The format and content of the keyword as used in client-rules or
+The format and content of the the keyword as used in client-rules or
 socks-rules is identical, but client-rules can contain only a subset of
 the keyword that socks-rules may contain.
 
@@ -676,7 +676,7 @@ Possible values are \fBclear\fP, \fBintegrity\fP, or \fBconfidentiality\fP.
 The default is to accept whatever the client offers
 except \fBclear\fP, as \fBclear\fP is not part of the SOCKS GSSAPI standard.
 .IP \fBgssapi.keytab\fP
-Value for keytab to use.  The default is "FILE:/etc/danted.keytab".
+Value for keytab to use.  The default is "FILE:/etc/sockd.keytab".
 .IP \fBgssapi.servicename\fP
 Which servicename to use when involving GSSAPI.  Default is "rcmd".
 
@@ -693,11 +693,11 @@ below for details.
 Require that the connection be "authenticated" using one of the
 given clientmethods.
 .IP \fBpam.servicename\fP
-Which servicename to use when involving pam.  Default is "danted".
+Which servicename to use when involving pam.  Default is "sockd".
 .IP \fBport\fP
 Parameter to \fBfrom\fP, \fBto\fP and \fBvia\fP.  Accepts the keywords
 \fBeq/=, neq/!=, ge/>=, le/<=, gt/>, lt/<\fP followed by a number.
-A port range can also be given as "port <start #> \- <end #>", which
+A port range can also be given as "port <start #> - <end #>", which
 will match all port numbers within the range <start #> and <end #>.
 
 The default is to match all ports.
@@ -710,10 +710,10 @@ Requires the redirect module.
 The syntax of the redirect statement is
 as follows:
 
-.IP
+.D1
 \fBredirect\fP from: \fBADDRESS\fP
 
-\".IP
+\".D1
 \"\fBredirect\fP to: \fBADDRESS\fP
 
 See the redirect manual for detailed information.
@@ -772,12 +772,12 @@ the target destination (see \fBcheckreplyauth\fP for information about
 authentication the target destination).  Valid values are the same as in
 the global \fBsocksmethod\fP line.
 .IP \fBpam.servicename\fP
-What servicename to use when involving pam.  Default is "danted".
+What servicename to use when involving pam.  Default is "sockd".
 
 .IP \fBport\fP
 Parameter to \fBfrom\fP, \fBto\fP and \fBvia\fP.  Accepts the keywords
 \fBeq/=, neq/!=, ge/>=, le/<=, gt/>, lt/<\fP followed by a number.
-A portrange can also be given as "port <start #> \- <end #>", which
+A portrange can also be given as "port <start #> - <end #>", which
 will match all port numbers within the range <start #> and <end #>.
 
 The default is all ports.
@@ -798,10 +798,10 @@ Requires the redirect module.
 The syntax of the redirect statement is
 as follows:
 
-.IP
+.D1
 \fBredirect\fP from: \fBADDRESS\fP
 
-.IP
+.D1
 \fBredirect\fP to: \fBADDRESS\fP
 
 The semantics of \fBfrom\fP and \fBto\fP vary according to
@@ -820,7 +820,7 @@ Note that the meaning of this address is affected by \fBcommand\fP.
 
 .IP \fBudp.portrange\fP
 The argument to this keyword is two port numbers, separated by
-a dash ('\-').  They specify the UDP port-range that will be
+a dash ('-').  They specify the UDP port-range that will be
 used between the \fBsocks-client\fP and the \fBDante-server for UDP
 packets.  Note that this has no relation to the UDP port-range
 used between the \fBDante-server and external, non-socks, clients/servers.
@@ -878,12 +878,12 @@ network traffic.
 The following example shows the general monitor syntax, specifying a
 monitor without any monitoring operations:
 
-.RS 1
+.Vb 8
  monitor {
   from: 0.0.0.0/0 to: www.example.org port = 80
   protocol: tcp
  }
-.RE
+.Ve
 
 A monitor can include many of the same keywords that are available in
 the Dante ACL rules. The following subset is currently supported:
@@ -1054,12 +1054,12 @@ multiple alarms are specified in a monitor rule.
 .SH ROUTES
 The routes are specified with a \fBroute\fP keyword.  Inside a pair of
 curly braces ({}) a set of keywords control the behavior of the route.
-See dante.conf(5) for a description.  This is used to perform so-called
+See socks.conf(5) for a description.  This is used to perform so-called
 "server-chaining", where one socks-server connects to another socks-server
 further upstream.
 
 The syntax for these routes is the same as the routes used by the client.
-Please see dante.conf(5) for information about the route syntax.
+Please see socks.conf(5) for information about the route syntax.
 
 There are however some special things one need to be aware of
 regarding serverchaining and routes specified for the server:
@@ -1068,7 +1068,7 @@ At present serverchaining is only supported for the \fBtcp connect\fP command.
 .IP
 If the route specifies that a username/password-method should be offered
 to the upstream proxy, \fBDante\fP will forward the username/password received
-from its own client to the foreign upstream proxy, meaning the
+from it's own client to the foreign upstream proxy, meaning the
 upstream proxy will receive the user's username and password in cleartext
 from \fBDante.
 .IP
@@ -1081,7 +1081,7 @@ See the example/ directory in the distribution.
 .SH FILES
 .nf
 .ta \w 1
-/etc/danted.conf   \fBDante\fP server configuration file.
+/etc/sockd.conf   \fBDante\fP server configuration file.
 /etc/passwd       systemfile used when doing standard username/password
                   authentication.
 .fi
@@ -1090,7 +1090,7 @@ For inferno Nettverk A/S:
    Michael Shuldman
    Karl-Andre' Skevik
 .SH SEE ALSO
-danted(8), dante.conf(5), hosts_access(5)
+sockd(8), socks.conf(5), hosts_access(5)
 
 .PP
 Information about new releases and other related issues can be found

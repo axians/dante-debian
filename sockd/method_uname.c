@@ -140,7 +140,7 @@ passworddbisunique(void)
 #if HAVE_PAM
          else if (methodisset(AUTHMETHOD_PAM_USERNAME,
                               sockscf.smethodv,
-                              sockscf.smethodc))
+                              sockscf.smethodc)) {
          rc = 0;
 #endif /* HAVE_PAM */
       else
@@ -266,14 +266,14 @@ recv_passwd(s, request, state)
     * Very sadly we can't always do checking of the username/password here
     * since we don't know what authentication to use yet.  It could
     * be username, but it could also be PAM, or some future method.
-    * It depends on what the socks request is.  We therefore would have
+    * It depends on what the socks request is.  We therefor would have
     * liked to give the client success status back no matter what
     * the username/password is, and later deny the connection if need be
     * after we have gotten the request.
     *
     * That however creates problems with clients that, naturally, cache
     * the wrong username/password if they get success.
-    * We therefore check if we have a unique passworddb to use, and if so,
+    * We therefor check if we have a unique passworddb to use, and if so,
     * check the password here so we can return an immediate error to client.
     * This we can do because if the passworddb is unique there is
     * no chance of the result varying based to the client's request.

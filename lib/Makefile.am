@@ -1,7 +1,7 @@
-lib_LTLIBRARIES = libsocksd.la
+lib_LTLIBRARIES = libsocks.la
 #config_parse/scan compiled first to get yacc/lex run as early as possible
 #(other dirs rely on yacc/lex being run here).
-libsocksd_la_SOURCES = config_parse.c config_scan.c                      \
+libsocks_la_SOURCES = config_parse.c config_scan.c                      \
    Raccept.c Rbind.c Rbindresvport.c Rcompat.c Rconnect.c               \
    Rgethostbyname.c Rgetpeername.c Rgetsockname.c Rgetsockopt.c         \
    Rlisten.c Rrresvport.c address.c addressmatch.c authneg.c broken.c   \
@@ -13,20 +13,20 @@ libsocksd_la_SOURCES = config_parse.c config_scan.c                      \
    upnp.c userio.c util.c
 
 #libscompat - files common for both client and server
-EXTRA_libsocksd_la_SOURCES = ../libscompat/getifaddrs.c  \
+EXTRA_libsocks_la_SOURCES = ../libscompat/getifaddrs.c  \
    ../libscompat/hstrerror.c ../libscompat/inet_ntoa.c  \
    ../libscompat/inet_pton.c ../libscompat/memmove.c    \
    ../libscompat/pselect.c ../libscompat/setproctitle.c \
    ../libscompat/strlcpy.c ../libscompat/strvis.c       \
    ../libscompat/vsyslog.c
 #libscompat - files only used by client
-EXTRA_libsocksd_la_SOURCES += ../libscompat/issetugid.c
+EXTRA_libsocks_la_SOURCES += ../libscompat/issetugid.c
 
-#libsocksd version info, interfaceversion:revision:old interfaces supported
+#libsocks version info, interfaceversion:revision:old interfaces supported
 #XXX SPEC/dante.spec.in must have the same value as version info
-libsocksd_la_LDFLAGS = -version-info 1:1:1 @MAPOPT@
-libsocksd_la_LIBADD = @LIBSCSRC@ @DLIBDEPS@ @LIBSCOMPAT@
-libsocksd_la_DEPENDENCIES = Makefile.am _reconf @LIBSCSRC@
+libsocks_la_LDFLAGS = -version-info 1:1:1 @MAPOPT@
+libsocks_la_LIBADD = @LIBSCSRC@ @DLIBDEPS@ @LIBSCOMPAT@
+libsocks_la_DEPENDENCIES = Makefile.am _reconf @LIBSCSRC@
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libscompat
 
@@ -51,9 +51,9 @@ dumpunitenv:
 	@echo CPPFLAGS=\"$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS)\"
 	@echo LDFLAGS=\"$(LDFLAGS)\"
 	@echo LIBS=\"$(LIBS) $(DLIBDEPS)\"
-	@echo AMSRC=\"$(libsocksd_la_SOURCES)\"
-#	@echo AMOBJ=\"$(libsocksd_la_OBJECTS)\"
-	@echo AMOPTSRC=\"$(EXTRA_libsocksd_la_SOURCES)\"
+	@echo AMSRC=\"$(libsocks_la_SOURCES)\"
+#	@echo AMOBJ=\"$(libsocks_la_OBJECTS)\"
+	@echo AMOPTSRC=\"$(EXTRA_libsocks_la_SOURCES)\"
 	@echo AMOPTOBJ=\"@LIBSCSRC@\"
 
 PREFIX = socks_yy
@@ -100,10 +100,10 @@ LINTFLAGS = @LINTFLAGS@
 
 if RUNLINT
 SUFFIXES = .ln
-LINTFILESa = $(libsocksd_la_SOURCES:.c=.ln)
+LINTFILESa = $(libsocks_la_SOURCES:.c=.ln)
 LINTFILESb = $(LINTFILESa:.y=.ln)
 LINTFILES = $(LINTFILESb:.l=.ln)
-libsocksd_la_DEPENDENCIES += $(LINTFILES) llib-lsocks.ln
+libsocks_la_DEPENDENCIES += $(LINTFILES) llib-lsocks.ln
 
 CLEANFILES = $(LINTFILES)
 

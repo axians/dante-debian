@@ -293,7 +293,7 @@ Rrecvmsg(s, msg, flags)
 
    /* no cmsg on proxied sockets. */
    CMSG_TOTLEN(*msg)      = 0;
-   CMSG_CONTROLDATA_MUTABLE(*msg) = NULL;
+   CMSG_CONTROLDATA(*msg) = NULL;
 
    for (received = ioc = rc = 0; ioc < (size_t)msg->msg_iovlen; ++ioc) {
       if ((rc = Rrecvfrom(s,

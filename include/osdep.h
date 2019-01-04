@@ -475,10 +475,6 @@ do {                                                                           \
 #define ETHER_ADDR_LEN  (6)
 #endif /* !ETHER_ADDR_LEN */
 
-#ifndef PATH_MAX
-#define PATH_MAX	1024
-#endif
-
 #if !HAVE_STRUCT_IPOPTS
 #define   MAX_IPOPTLEN   40
 struct ipoption {

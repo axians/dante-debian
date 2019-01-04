@@ -77,9 +77,9 @@ static void proctitleupdate(void);
 static int
 io_connectisinprogress(const sockd_io_t *io);
 /*
- * Returns true if "io" belongs to a connect whose current state is marked
- * as being in progress, but does not check whether its status has changed
- * since the last time state it was updated.
+ * Returns true if "io" belongs to a connect whos current state is marked
+ * as being in progress, but does not check whether it's status has changed
+ * since last time state was updated.
  * Returns false otherwise.
  */
 
@@ -195,7 +195,7 @@ io_timeuntiltimeout(sockd_io_t *io, const struct timeval *tnow,
  * "type", if not NULL, is filled in with the type of timeout that will
  * occur at that time, if any.
  *
- * Returns the number of seconds till the io object "io" will timeout.
+ * Returns the number of seconds til the io object "io" will timeout.
  *
  * 0 if the timeout has already been reached, or
  * -1 if no timeout on the io is currently set.
@@ -252,8 +252,8 @@ connectstatus(sockd_io_t *io, int *badfd);
  * Note that this function must be called after the connect has completed,
  * as in the socks case (and some covenant cases) we need to send a
  * response back to the client before it will start sending us data.
- * We can thus not delay calling this function till we get ordinary i/o
- * from one side, as it's possible none will be coming till after we
+ * We can thus not delay calling this function til we get ordinary i/o
+ * from one side, as it's possible none will be coming til after we
  * have sent the response to the client.
  *
  * Returns 0 if the socket connected successfully.
@@ -311,7 +311,7 @@ iostate_t iostate;
  * if not 0, we have "overflowed" according to max bandwidth configured.
  * We can not attribute it to any given client though, so we penalize
  * all by delaying a little.  This object gives the earliest time at which we
- * can again do i/o over one of the object that has overflown its bandwidth
+ * can again do i/o over one of the object that has overflown it's bandwidth
  * limit.
  */
 static struct timeval bwoverflowtil;
@@ -329,11 +329,7 @@ run_io()
 #endif /* DIAGNOSTIC */
 
    bzero(&sigact, sizeof(sigact));
-#ifdef SA_SIGINFO
    sigact.sa_flags     = SA_RESTART | SA_NOCLDSTOP | SA_SIGINFO;
-#else
-   sigact.sa_flags     = SA_RESTART | SA_NOCLDSTOP;
-#endif
    sigact.sa_sigaction = siginfo;
 
 #if HAVE_SIGNAL_SIGINFO
@@ -361,7 +357,7 @@ run_io()
          serr("%s: could not make rawsocket non-blocking", function);
 
 #if HAVE_PRIVILEGES
-   /* don't need this privilege any more, permanently lose it. */
+   /* don't need this privilege any more, permanently loose it. */
 
    if (sockscf.state.haveprivs) {
       priv_delset(sockscf.privileges.privileged, PRIV_NET_ICMPACCESS);
@@ -614,7 +610,7 @@ run_io()
 #else /* !BAREFOOTD */
          /*
           * this process can continue independent of mother as long as it
-          * has clients, because each client has its own unique
+          * has clients, because each client has it's own unique
           * udp socket on the client-side also.
           */
 #endif /* !BAREFOOTD */
@@ -627,7 +623,7 @@ run_io()
       }
 
       /*
-       * this needs to be after the check of ack-pipe to limit error messages,
+       * this needs to be after check of ack-pipe to limit error messages,
        * because the ack-pipe is a stream pipe, so hopefully we will handle
        * the EOF from mother on the ack-pipe before we get the error on
        * the data-pipe.
@@ -728,7 +724,7 @@ run_io()
 
 #if BAREFOOTD
       /*
-       * Checked before, and checked again now, as its status too may
+       * Checked before, and checked again now, as it's status too may
        * change and it may become readable (again).
        */
       if (rawsocket != -1) {
@@ -738,12 +734,12 @@ run_io()
 #endif /* BAREFOOTD */
 
       /*
-       * Use a separate set to store all udp fds that should be writable.
+       * Use a separate set to to store all udp fds that should be writable.
        * We don't bother actually checking udp sockets for writability
        * because if the udp write ends up failing, it wouldn't make any
        * difference whether the socket was marked as writable or not; for
-       * all we know its "writability" could have been limited to a
-       * single-byte write/packet, while the corresponding packet read was much
+       * all we know it's "writability" could have have been limited to a
+       * one byte write/packet, while the corresponding packet read was much
        * larger, in which case our write could have failed anyway.
        */
       FD_ZERO(udprset);
@@ -768,7 +764,7 @@ run_io()
              * Descriptor has data buffered for write.  That means we should
              * mark the other side as readable.  Regardless of whether we
              * can read from the other side or not at the moment, we have
-             * data that we previously read from it which we need to
+             * data that we previously read from it which which we need to
              * forward to the other side.
              */
             int other_side;
@@ -1151,7 +1147,7 @@ run_io()
              * packet has been read.
              *
              * Try to read as many packets as we can as presumably there is
-             * a much greater risk of losing packets on the client side,
+             * a much greater risk of loosing packets on on the client side,
              * since all the clients send to one address/socket.
              */
 
@@ -1817,7 +1813,7 @@ recv_io(s, io)
 #endif /* BAREFOOTD */
 
             /*
-             * Each client will have its own target/dst object, set once
+             * Each client will have it's own target/dst object, set once
              * we receive the first packet from it.  The client/source socket
              * is however the same for all clients.
              */
@@ -2308,7 +2304,7 @@ io_fillset(set, antiflags, antiflags_set, bwoverflowtil)
             /*
              * the client-socket is shared among many clients, so set it
              * regardless of bw-limits as we don't know from what
-             * client the packet is till we've read the packet.
+             * client the packet is til we've read the packet.
              *
              * XXX But what do we do if the bw overflows?  We can't know
              * that until we've read the packet and seen what client it's

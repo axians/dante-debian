@@ -1551,7 +1551,7 @@ signal2string(sig)
          return "SIGPROF";
 #endif /* SIGPROF */
 
-#if (defined SIGPWR) && (!defined SIGINFO || SIGINFO != SIGPWR) && (!defined SIGLOST || SIGLOST != SIGPWR)
+#ifdef SIGPWR
       case SIGPWR:
          return "SIGPWR";
 #endif /* SIGPWR */

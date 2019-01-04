@@ -506,7 +506,7 @@ again:
 
 #if SOCKS_CLIENT
    /*
-    * When called by the client, we have the considerable added complexity
+    * When called by the client, we have the considerably added complexity
     * that we cannot completely drain the socket if we have data buffered
     * for read.  If the client then select(2)'s on the socket to know when
     * there is more to read, select(2) will block forever as the data has
@@ -517,13 +517,13 @@ again:
     * as long as we have buffered data which we have not yet returned to
     * the client, so as to not drain this last byte from the socket until
     * we can return all the data buffered to the client, and only then
-    * do we completely drain the socket.
+    * do we completly drain the socket.
     *
     * This makes sure the socket remains readable until we have returned
     * all the data belonging to a given token to the caller, which should
     * let all the kernels select(2)/poll(2)/SIGIO/etc. stuff work.
     *
-    * Sounds simple enough, but alas, there have been many bugs here. :-/
+    * Sounds simple enough, but alas, there has been many bugs here. :-/
     *
     * We also need to handle a client only peeking at the data, with
     * MSG_PEEK. In this case we can do the same as for a normal read,
@@ -835,7 +835,7 @@ gssapi_encode_write(s, msg, len, flags, to, tolen, sendtoflags, gs)
    ssize_t towrite, written, p, encodedlen, addedtobuf;
    size_t i;
 
-#if 0 /* for aid in debugging bufferproblems. */
+#if 0 /* for aid in debuging bufferproblems. */
    static size_t j;
    size_t lenv[] = { 60000, 60001, 60002, 60003, 60004, 60005, 60006, 60007,
                      60008, 60009, 60010, 60011, 60012, 60013, 60014, 60015 };
@@ -890,7 +890,7 @@ gssapi_encode_write(s, msg, len, flags, to, tolen, sendtoflags, gs)
     * Two modes: Buffered and unbuffered.
     *
     * Unbuffered:
-    *    We try to write up to "len" bytes, and if that fails, we
+    *    We try to write upto "len" bytes, and if that fails, we
     *    store the remaining bytes in our internal iobuf, encoded.
     *    This makes us able to return either "len" or -1 (only if fatal
     *    error) to caller, so that caller understands we have accepted

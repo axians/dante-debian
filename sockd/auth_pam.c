@@ -122,7 +122,7 @@ pam_passwordcheck(s, src, dst, auth, emsg, emsgsize)
     * some sort of busy-loop if we don't call pam_end(3) ever so
     * often.
     *
-    * Therefore, disregard all possible optimization stuff for now and
+    * Therefor, disregard all possible optimization stuff for now and
     * call pam_start(3) and pam_end(3) every time.
     */
 

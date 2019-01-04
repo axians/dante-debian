@@ -124,14 +124,14 @@ Rconnect(s, _name, namelen)
                 * address and is now trying to connect out from it.
                 * That also indicates the socks server is listening on a port
                 * for this client.
-                * Can't accept() on a connected socket so let's close the
+                * Can't accept() on a connected socket so lets close the
                 * connection to the server so it can stop listening on our
                 * behalf, and we continue as if this was an ordinary connect().
-                * Can only hope the server will use same port as we do for
+                * Can only hope the server will use same port as we for
                 * connecting out.
                 *
                 * Client might get problems if it has done a getsockname(2)
-                * already, and thus thinks it knows its local address,
+                * already, and thus thinks it knows it's local address,
                 * as this Rconnect() will have to change it.
                 */
                int tmp_s;
@@ -166,7 +166,7 @@ Rconnect(s, _name, namelen)
                 * connect out on the same socket.  In this case
                 * we want to keep the port bound on the server, and
                 * just add a connect to the peer, so let udpsetup() do
-                * its thing.
+                * it's thing.
                 */
             }
             else

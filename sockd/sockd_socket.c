@@ -157,7 +157,7 @@ sockd_unconnect(s, oldpeer)
 
       slog(LOG_DEBUG, "%s: re-bind(2) after unconnecting failed: %s.  "
                       "Current address is %s (was %s).  Trying to create a "
-                      "new socket instead, though we might lose some packets "
+                      "new socket instead, though we might loose some packets "
                       "doing so",
                       function,
                       strerror(errno),
