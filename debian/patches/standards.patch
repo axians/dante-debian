@@ -1,20 +1,11 @@
-From 97d6391f618fb505e653af93d29f1f3ecfa767da Mon Sep 17 00:00:00 2001
-From: Peter Pentchev <roam@ringlet.net>
-Date: Mon, 30 Oct 2017 00:42:43 +0200
 Subject: Support kFreeBSD and the Hurd.
-
+Author: Peter Pentchev <roam@ringlet.net>
 Forwarded: not-yet
 Last-Update: 2017-09-27
-Patch-Name: standards.patch
----
- compiler.m4 | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/compiler.m4 b/compiler.m4
-index b93e18a..4ec0494 100644
 --- a/compiler.m4
 +++ b/compiler.m4
-@@ -25,7 +25,7 @@ case $host in
+@@ -25,7 +25,7 @@
  	CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-D__EXTENSIONS__ -DBSD_COMP"
  	;;
  

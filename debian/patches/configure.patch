@@ -1,25 +1,13 @@
-From 707ea6191d9a15a79fb9df8198924d1937c83384 Mon Sep 17 00:00:00 2001
-From: Adrian Bridgett <bridgett@debian.org>
-Date: Mon, 30 Oct 2017 00:42:34 +0200
-Subject: Adapt the configure script for the Debian environment.
-
-Always use Debian's libtool and libdl.so.2.
-Do not add "-g -O2" to the Debian build's CFLAGS.
-
-Forwarded: not-needed
+Description: Adapt the configure script for the Debian environment.
+ Always use Debian's libtool and libdl.so.2.
+ Do not add "-g -O2" to the Debian build's CFLAGS.
 Author: Peter Pentchev <roam@ringlet.net>
+Forwarded: not-needed
 Last-Update: 2016-04-06
-Patch-Name: configure.patch
----
- configure.ac | 2 ++
- preload.m4   | 3 ++-
- 2 files changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/configure.ac b/configure.ac
-index df77ad0..d5b740c 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -79,6 +79,8 @@ AC_CONFIG_MACRO_DIR([m4])
+@@ -79,6 +79,8 @@
  oCFLAGS="$CFLAGS"
  unset CFLAGS
  LT_INIT
@@ -28,11 +16,9 @@ index df77ad0..d5b740c 100644
  autoconf_compflags="$CFLAGS"
  CFLAGS=$oCFLAGS
  
-diff --git a/preload.m4 b/preload.m4
-index 72339bd..e1b8724 100644
 --- a/preload.m4
 +++ b/preload.m4
-@@ -564,7 +564,8 @@ if test x"${preload_enabled}" = xt; then
+@@ -564,7 +564,8 @@
  		;;
  
  	    *)

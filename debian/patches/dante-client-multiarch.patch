@@ -1,27 +1,16 @@
-From b3ba873547c02901cc3b0fa57f71058733c48213 Mon Sep 17 00:00:00 2001
-From: Peter Pentchev <roam@ringlet.net>
-Date: Mon, 30 Oct 2017 00:42:42 +0200
-Subject: Leave it to the loader to preload the correct ABI libraries.
-
-Teach dante-client to put only the library names into LD_PRELOAD so that
-the actual runtime loader can figure out which libraries to load, taking
-into account the ABI of the executable files.
-
-Install the dynamic preload library as a full-fledged library, SONAME and all.
-
+Description: Leave it to the loader to preload the correct ABI libraries.
+ Teach dante-client to put only the library names into LD_PRELOAD so that
+ the actual runtime loader can figure out which libraries to load, taking
+ into account the ABI of the executable files.
+ .
+ Install the dynamic preload library as a full-fledged library, SONAME and all.
+Author: Peter Pentchev <roam@ringlet.net>
 Forwarded: not-yet
 Last-Update: 2016-04-07
-Patch-Name: dante-client-multiarch.patch
----
- bin/socksify.in  | 21 +++++++++++++++++++--
- dlib/Makefile.am |  2 +-
- 2 files changed, 20 insertions(+), 3 deletions(-)
 
-diff --git a/bin/socksify.in b/bin/socksify.in
-index 702e920..83b1df4 100755
 --- a/bin/socksify.in
 +++ b/bin/socksify.in
-@@ -72,14 +72,31 @@ fi
+@@ -72,14 +72,31 @@
  
  #dlib/Makefile.am libtool flags should produce a predictable library name
  #(ending in SOLIB_POSTFIX).
@@ -55,11 +44,9 @@ index 702e920..83b1df4 100755
  export @PRELOAD_VARIABLE@
  
  LD_LIBRARY_PATH="${SOCKS_LIBDIR}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
-diff --git a/dlib/Makefile.am b/dlib/Makefile.am
-index 64248f3..af62a11 100644
 --- a/dlib/Makefile.am
 +++ b/dlib/Makefile.am
-@@ -30,7 +30,7 @@ EXTRA_libdsocksd_la_SOURCES = ../libscompat/getifaddrs.c \
+@@ -30,7 +30,7 @@
  #libscompat - files only used by client
  EXTRA_libdsocksd_la_SOURCES += ../libscompat/issetugid.c
  

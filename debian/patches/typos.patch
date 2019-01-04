@@ -1,66 +1,11 @@
-From 9203c93041cb2e3b293888eb9efd39138302325b Mon Sep 17 00:00:00 2001
-From: Peter Pentchev <roam@ringlet.net>
-Date: Mon, 30 Oct 2017 00:42:45 +0200
-Subject: Fix some typographical and grammatical errors.
-
+Description: Fix some typographical and grammatical errors.
+Author: Peter Pentchev <roam@ringlet.net>
 Forwarded: not-yet
 Last-Update: 2018-04-12
-Patch-Name: typos.patch
----
- INSTALL                 |  4 ++--
- NEWS                    | 14 +++++++-------
- configure.ac            |  4 ++--
- doc/README.survey       |  2 +-
- doc/SOCKS4.protocol     |  6 +++---
- doc/sockd.conf.5        | 10 +++++-----
- doc/socksify.1          |  4 ++--
- example/sockd.conf      |  6 +++---
- example/socks.conf      |  2 +-
- include/common.h        | 14 +++++++-------
- include/monitor.h       |  4 ++--
- include/sockd.h         | 42 +++++++++++++++++++++---------------------
- include/socks.h         |  2 +-
- lib/Raccept.c           |  2 +-
- lib/Rconnect.c          |  8 ++++----
- lib/address.c           |  2 +-
- lib/addressmatch.c      |  6 +++---
- lib/authneg.c           |  4 ++--
- lib/clientprotocol.c    |  2 +-
- lib/config.c            |  2 +-
- lib/config_parse.c      |  2 +-
- lib/config_parse.y      |  2 +-
- lib/connectchild.c      | 11 +++++------
- lib/gssapi.c            | 10 +++++-----
- lib/hostcache.c         |  4 ++--
- lib/httpproxy.c         |  4 ++--
- lib/iobuf.c             |  4 ++--
- lib/log.c               |  2 +-
- lib/socket.c            |  2 +-
- lib/time.c              |  2 +-
- lib/udp.c               |  4 ++--
- lib/upnp.c              | 10 +++++-----
- sockd/auth_pam.c        |  2 +-
- sockd/dante_udp.c       |  2 +-
- sockd/method_uname.c    |  4 ++--
- sockd/mother_util.c     | 10 +++++-----
- sockd/rule.c            | 12 ++++++------
- sockd/serverconfig.c    |  6 +++---
- sockd/shmem.c           |  2 +-
- sockd/sockd.c           |  8 ++++----
- sockd/sockd_child.c     | 14 +++++++-------
- sockd/sockd_io.c        | 36 ++++++++++++++++++------------------
- sockd/sockd_negotiate.c | 12 ++++++------
- sockd/sockd_request.c   | 28 ++++++++++++++--------------
- sockd/sockd_socket.c    |  2 +-
- sockd/sockd_tcp.c       |  6 +++---
- sockd/sockd_udp.c       |  6 +++---
- 47 files changed, 173 insertions(+), 174 deletions(-)
 
-diff --git a/INSTALL b/INSTALL
-index d5de432..fd90c52 100644
 --- a/INSTALL
 +++ b/INSTALL
-@@ -251,7 +251,7 @@ These `configure' options are also supported (run `configure' with
+@@ -251,7 +251,7 @@
  `--disable-preload'
       Do not build libdsocks.  The dynamic socks library might not work
       properly on all architectures.  This option disables building of
@@ -69,7 +14,7 @@ index d5de432..fd90c52 100644
  
  `--disable-clientdl'
       Disable building of libdsocks, used by the socksify application.
-@@ -381,7 +381,7 @@ RUNTIME CONFIGURATION FILES
+@@ -381,7 +381,7 @@
  
  No configuration-files are installed, these must be installed
  manually.
@@ -78,8 +23,6 @@ index d5de432..fd90c52 100644
  The client library uses the file /etc/dante.conf.
  
  The file bin/socksify.sh contains a shell script that allows one
-diff --git a/NEWS b/NEWS
-index 49aada2..1b405a9 100644
 --- a/NEWS
 +++ b/NEWS
 @@ -152,7 +152,7 @@
@@ -136,7 +79,7 @@ index 49aada2..1b405a9 100644
     request (rather than during negotiation, as was the case).
     Required for supporting passwordbased authentication via non-socks
     methods, e.g. pam.
-@@ -1199,7 +1199,7 @@ previous versions of Dante:
+@@ -1199,7 +1199,7 @@
         The correct usage should be that the method field is relative
         to the sourceaddress, and the sourceaddress for replies is
         a "non-socks" connection.  Special care might have to be
@@ -145,11 +88,9 @@ index 49aada2..1b405a9 100644
         can only be using method "none" (the only other alternative
         is "rfc931").
  
-diff --git a/configure.ac b/configure.ac
-index d5b740c..6450cf8 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -343,9 +343,9 @@ else
+@@ -343,9 +343,9 @@
      echo "UPNP:              Enabled"
  fi
  if test x"$COMPATFUNCS" = x; then
@@ -161,8 +102,6 @@ index d5b740c..6450cf8 100644
  fi
  
  echo ""
-diff --git a/doc/README.survey b/doc/README.survey
-index 858d23a..255c168 100644
 --- a/doc/README.survey
 +++ b/doc/README.survey
 @@ -1,6 +1,6 @@
@@ -173,11 +112,9 @@ index 858d23a..255c168 100644
 +at http://www.inet.no/dante/survey.html. Its purpose is to try to
  determine which features are most wanted, and will probably influence
  the direction future development will take.
-diff --git a/doc/SOCKS4.protocol b/doc/SOCKS4.protocol
-index d2618e2..a0c0a4e 100644
 --- a/doc/SOCKS4.protocol
 +++ b/doc/SOCKS4.protocol
-@@ -52,7 +52,7 @@ code with one of the following values:
+@@ -52,7 +52,7 @@
  
  	90: request granted
  	91: request rejected or failed
@@ -186,7 +123,7 @@ index d2618e2..a0c0a4e 100644
  	    identd on the client
  	93: request rejected because the client program and identd
  	    report different user-ids
-@@ -110,7 +110,7 @@ code with one of the following values:
+@@ -110,7 +110,7 @@
  
  	90: request granted
  	91: request rejected or failed
@@ -195,7 +132,7 @@ index d2618e2..a0c0a4e 100644
  	    identd on the client
  	93: request rejected because the client program and identd
  	    report different user-ids.
-@@ -121,7 +121,7 @@ for an incoming connection and sends the port number and the IP address
+@@ -121,7 +121,7 @@
  of that socket to the client in DSTPORT and DSTIP, respectively. If the
  DSTIP in the reply is 0 (the value of constant INADDR_ANY), then the
  client should replace it with the IP address of the SOCKS server to which
@@ -204,11 +141,9 @@ index d2618e2..a0c0a4e 100644
  multi-homed host.)  In the typical scenario, these two numbers are
  made available to the application client prgram via the result of the
  subsequent getsockname() call.  The application protocol must provide a
-diff --git a/doc/sockd.conf.5 b/doc/sockd.conf.5
-index f72d20d..6a779a4 100644
 --- a/doc/sockd.conf.5
 +++ b/doc/sockd.conf.5
-@@ -65,7 +65,7 @@ The following keywords are available:
+@@ -65,7 +65,7 @@
  .\" clients, the child process will exit.
  .\"
  .\" The only reason for the existence of this option is to work around buggy
@@ -217,7 +152,7 @@ index f72d20d..6a779a4 100644
  .\" which may end up leaking resources or create other problems when having
  .\" run to long.  The default value is \fB0\fP, meaning no limit.
  .\"
-@@ -120,7 +120,7 @@ The currently supported options are:
+@@ -120,7 +120,7 @@
  \fBschedule\fP.<process type>: <scheduling policy>/<priority>.
  
  Example: \fBcpu.schedule.mother: SCHED_FIFO/20\fP
@@ -226,7 +161,7 @@ index f72d20d..6a779a4 100644
  using a first-in, first-out policy, at priority 20.
  
  The default is to not request any specific scheduling.
-@@ -302,7 +302,7 @@ not desired on replies, as they are replies sent to the socks-clients
+@@ -302,7 +302,7 @@
  from non-socks clients, and thus only a limited set of authentication
  methods are possible.
  
@@ -235,7 +170,7 @@ index f72d20d..6a779a4 100644
  protocol in any way, and are listed in the \fBclientmethod\fP section
  previously mentioned.  For UDP-replies, no methods can be used.
  
-@@ -646,7 +646,7 @@ The list of action keywords is: \fBbandwidth\fP, \fBlibwrap\fP,
+@@ -646,7 +646,7 @@
  \fBtimeout.connect\fP, \fBtimeout.negotiate\fP, \fBtimeout.io\fP,
  \fBtimeout.tcp_fin_wait\fP, and \fBudp.portrange\fP.
  
@@ -244,7 +179,7 @@ index f72d20d..6a779a4 100644
  socks-rules is identical, but client-rules can contain only a subset of
  the keyword that socks-rules may contain.
  
-@@ -1068,7 +1068,7 @@ At present serverchaining is only supported for the \fBtcp connect\fP command.
+@@ -1068,7 +1068,7 @@
  .IP
  If the route specifies that a username/password-method should be offered
  to the upstream proxy, \fBDante\fP will forward the username/password received
@@ -253,11 +188,9 @@ index f72d20d..6a779a4 100644
  upstream proxy will receive the user's username and password in cleartext
  from \fBDante.
  .IP
-diff --git a/doc/socksify.1 b/doc/socksify.1
-index 1a7e299..e2d7a10 100755
 --- a/doc/socksify.1
 +++ b/doc/socksify.1
-@@ -50,7 +50,7 @@ LD_PRELOAD environment variable to libdsocks.  It will then attempt
+@@ -50,7 +50,7 @@
  to wrap all networking-related system calls.
  
  When used the script can socksify a program by simply prefixing
@@ -266,7 +199,7 @@ index 1a7e299..e2d7a10 100755
  like in the example below.
  
  $ socksify ftp ftp.example.org
-@@ -129,7 +129,7 @@ whether the application to socksify needs threadlocking or not.
+@@ -129,7 +129,7 @@
  \fBSOCKS_DIRECTROUTE_FALLBACK\fP
  If this is set to "yes", the client will fallback to attempting
  a direct connection if the proxy route fails.  The default is
@@ -275,11 +208,9 @@ index 1a7e299..e2d7a10 100755
  .SH FILES
  .I /etc/socks.conf
  .SH AUTHORS
-diff --git a/example/sockd.conf b/example/sockd.conf
-index fa2e52d..4976ef9 100644
 --- a/example/sockd.conf
 +++ b/example/sockd.conf
-@@ -118,12 +118,12 @@ user.libwrap: nobody
+@@ -118,12 +118,12 @@
  # Misc options.
  #
  
@@ -295,8 +226,6 @@ index fa2e52d..4976ef9 100644
  # any data before we dump it?  Unless you disable tcp keep-alive for
  # some reason, it's probably best to set this to 0, which is
  # "forever".
-diff --git a/example/socks.conf b/example/socks.conf
-index 4d0c6a0..5499c5f 100644
 --- a/example/socks.conf
 +++ b/example/socks.conf
 @@ -64,7 +64,7 @@
@@ -308,11 +237,9 @@ index 4d0c6a0..5499c5f 100644
  #
  # Assuming your the DNS server runs on address 10.1.1.1, you can do it like this:
  #route {
-diff --git a/include/common.h b/include/common.h
-index 81f3779..0d2e316 100755
 --- a/include/common.h
 +++ b/include/common.h
-@@ -115,7 +115,7 @@ extern char *__progname;
+@@ -115,7 +115,7 @@
  #if PRERELEASE
  
  /*
@@ -321,7 +248,7 @@ index 81f3779..0d2e316 100755
   * into never-never land forever on half the sendmsg() calls if they
   * involve ancillary data.  (it seems to deadlock the processes.)
   * XXX need to retest what the current status of this is.
-@@ -739,7 +739,7 @@ do {                                                                           \
+@@ -739,7 +739,7 @@
   */
  #define DEBUG_NORMAL    (1)
  #define DEBUG_VERBOSE   (2)
@@ -330,7 +257,7 @@ index 81f3779..0d2e316 100755
  
  /*
   * If client, it might need to call malloc(3) to expand socksfdv
-@@ -2189,7 +2189,7 @@ typedef struct {
+@@ -2189,7 +2189,7 @@
   * to getr the ipv4-mapped addresses returned to is to set ai_family to
   * zero, but then we get the regular ipv6-addresses also.  Since there
   * are cases when we want the ipv4-mapped addresses returned also, we
@@ -339,7 +266,7 @@ index 81f3779..0d2e316 100755
   */
  #define MAX_ADDRINFO_NEXT (10)
  
-@@ -3077,7 +3077,7 @@ void slog(int priority, const char *fmt, ...)
+@@ -3077,7 +3077,7 @@
  /*
   * Logs message "fmt" at priority "priority" to previously configured
   * output device.
@@ -348,7 +275,7 @@ index 81f3779..0d2e316 100755
   */
  
  void vslog(int priority, const char *fmt, va_list ap, va_list apcopy)
-@@ -3184,7 +3184,7 @@ socks_connectroute(const int s, socks_t *packet,
+@@ -3184,7 +3184,7 @@
   *
   * The route used may take into account the contents of "packet->req",
   * which is assumed to be the packet that will be sent to a socks server,
@@ -357,7 +284,7 @@ index 81f3779..0d2e316 100755
   *
   * When it has successfully connected to a gateway it will set
   * the packet->method members to point to the methods the gateway
-@@ -3287,7 +3287,7 @@ socks_getroute(const request_t *req, const sockshost_t *src,
+@@ -3287,7 +3287,7 @@
   *
   * The route used may take into account the contents of "req", which is
   * assumed to be the packet that will be sent to a socks server, so it is
@@ -366,7 +293,7 @@ index 81f3779..0d2e316 100755
   *
   * Returns:
   *      On success: pointer to route that should be used.
-@@ -4104,7 +4104,7 @@ makedummyfd(const sa_family_t safamily, const int socktype);
+@@ -4104,7 +4104,7 @@
  
  
  /*
@@ -375,11 +302,9 @@ index 81f3779..0d2e316 100755
   */
  
  #if DEBUG
-diff --git a/include/monitor.h b/include/monitor.h
-index afbef9f..a7b22f6 100755
 --- a/include/monitor.h
 +++ b/include/monitor.h
-@@ -74,7 +74,7 @@ typedef struct {
+@@ -74,7 +74,7 @@
  
  
     /*
@@ -388,7 +313,7 @@ index afbef9f..a7b22f6 100755
      */
     struct timeval         ts_sent;
     struct timeval         ts_received;
-@@ -141,7 +141,7 @@ mtutest(const int s, const interfaceside_t side, const struct timeval *tnow,
+@@ -141,7 +141,7 @@
   * possibly progressing to the next state.
   *
   * Upon return, "mtu" will be updated to indicate its current state,
@@ -397,8 +322,6 @@ index afbef9f..a7b22f6 100755
   * disabling further testing on this socket.
   */
  
-diff --git a/include/sockd.h b/include/sockd.h
-index 0312d24..c00eec4 100755
 --- a/include/sockd.h
 +++ b/include/sockd.h
 @@ -97,23 +97,23 @@
@@ -432,7 +355,7 @@ index 0312d24..c00eec4 100755
   */
  #define SOCKD_FIN_WAIT_2_TIMEOUT  (0) /* Seconds.  Set to 0 to disable. */
  
-@@ -837,7 +837,7 @@ do {                                                                           \
+@@ -837,7 +837,7 @@
  
  /*
   * a request child can currently handle a maximum of one client, so can't
@@ -441,7 +364,7 @@ index 0312d24..c00eec4 100755
   */
  #define SOCKD_REQUESTMAX   1
  
-@@ -2032,7 +2032,7 @@ typedef struct {
+@@ -2032,7 +2032,7 @@
        struct timeval    accepted;      /* time connection accepted.           */
        struct timeval    negotiatestart;/* time negotiation started.           */
        struct timeval    negotiateend;  /* time negotiation ended.             */
@@ -450,7 +373,7 @@ index 0312d24..c00eec4 100755
        struct timeval    established;   /* time session was fully established. */
        struct timeval    firstio;       /* time of first i/o operation.        */
     } time;
-@@ -2155,9 +2155,9 @@ typedef struct {
+@@ -2155,9 +2155,9 @@
      *      but not both).
      *    - two (packets forwarded to both ipv4 and ipv6 addresses).
      * This however assumes our external interface has both IPv4 and IPv6
@@ -462,7 +385,7 @@ index 0312d24..c00eec4 100755
      * is one-to-many; we receive all udp packets from different clients on
      * the one source socket, and we forward them to various targets based
      * what client it was received from.  Since the target is hardcoded in
-@@ -2285,7 +2285,7 @@ typedef struct {
+@@ -2285,7 +2285,7 @@
     /*
      * if not zero, this is an "old" client that has been sent back
      * to the negotiate process from the i/o process, due to the client
@@ -471,7 +394,7 @@ index 0312d24..c00eec4 100755
      * "clientdata" contains the request received from the client,
      * already parsed into "request".
      */
-@@ -2405,7 +2405,7 @@ typedef struct {
+@@ -2405,7 +2405,7 @@
                                       * should it be included in any counts.
                                       *
                                       * Basically just waiting for the SIGCHLD
@@ -480,7 +403,7 @@ index 0312d24..c00eec4 100755
                                       * our counters.
                                       */
     unsigned char    exitingnormally;/* exiting normally, on our request?      */
-@@ -2413,7 +2413,7 @@ typedef struct {
+@@ -2413,7 +2413,7 @@
     int              ack;            /* connection to child for acks.          */
     int              s;              /* connection to child for data.          */
  
@@ -489,7 +412,7 @@ index 0312d24..c00eec4 100755
     int              type;           /* child type.                            */
  
     time_t           created;        /* time created.                          */
-@@ -2872,9 +2872,9 @@ closechild(const pid_t childpid, const int isnormalexit);
+@@ -2872,9 +2872,9 @@
   *
   * If "isnormalexit" is set, we are closing the pipes to this child and
   * expect it to exit normally.  This notifies the child about the close,
@@ -501,7 +424,7 @@ index 0312d24..c00eec4 100755
   *
   * If "childpid" is 0, closes all children.
   */
-@@ -3238,7 +3238,7 @@ shmem2config(const struct config *old, struct config *new);
+@@ -3238,7 +3238,7 @@
   * as necessary (i.e., it's a "deep copy").
   *
   * Note that memory that is only set once at startup and never changed
@@ -510,7 +433,7 @@ index 0312d24..c00eec4 100755
   * current config object.
   *
   * Returns 0 on success, -1 on failure.
-@@ -3451,7 +3451,7 @@ iolog(const rule_t *rule, const connectionstate_t *state, const operation_t op,
+@@ -3451,7 +3451,7 @@
        const char *data, size_t datalen);
  
  /*
@@ -519,7 +442,7 @@ index 0312d24..c00eec4 100755
   * (read then write, or read then block).
   * Does misc. logging based on the log options set in "log".
   * - "rule" is the rule that matched the iooperation, not "const" due to
-@@ -4413,8 +4413,8 @@ getoutaddr(struct sockaddr_storage *laddr,
+@@ -4413,8 +4413,8 @@
  /*
   * Gets the outgoing IP address to use.
   *
@@ -530,7 +453,7 @@ index 0312d24..c00eec4 100755
   *  binding an address on the external side.
   *
   * "command" is the SOCKS command the client requested.
-@@ -4548,7 +4548,7 @@ sighup_child(int sig, siginfo_t *si, void *sc);
+@@ -4548,7 +4548,7 @@
  void
  io_handlesighup(void);
  /*
@@ -539,11 +462,9 @@ index 0312d24..c00eec4 100755
   * upon receiving a sighup.
   */
  
-diff --git a/include/socks.h b/include/socks.h
-index bf8dd20..ace5d32 100755
 --- a/include/socks.h
 +++ b/include/socks.h
-@@ -634,7 +634,7 @@ socks_addaddr(const int clientfd, const socksfd_t *socksaddress,
+@@ -634,7 +634,7 @@
   * If "takelock" is true, it means the function should take the
   * socksfdv/addrlock.
   *
@@ -552,11 +473,9 @@ index bf8dd20..ace5d32 100755
   * not access the memory referenced by them afterwards.
   *
   * The function checks the state of all file descriptors on each call and
-diff --git a/lib/Raccept.c b/lib/Raccept.c
-index a75a6f6..e96c2d9 100755
 --- a/lib/Raccept.c
 +++ b/lib/Raccept.c
-@@ -437,7 +437,7 @@ addforwarded(local, remote, remoteaddr, virtualremoteaddr)
+@@ -437,7 +437,7 @@
     }
  
     /*
@@ -565,11 +484,9 @@ index a75a6f6..e96c2d9 100755
      * local address too, so need to add it to the socksfd table.
      */
  
-diff --git a/lib/Rconnect.c b/lib/Rconnect.c
-index 52a36c2..8023613 100755
 --- a/lib/Rconnect.c
 +++ b/lib/Rconnect.c
-@@ -124,14 +124,14 @@ Rconnect(s, _name, namelen)
+@@ -124,14 +124,14 @@
                  * address and is now trying to connect out from it.
                  * That also indicates the socks server is listening on a port
                  * for this client.
@@ -587,7 +504,7 @@ index 52a36c2..8023613 100755
                  * as this Rconnect() will have to change it.
                  */
                 int tmp_s;
-@@ -166,7 +166,7 @@ Rconnect(s, _name, namelen)
+@@ -166,7 +166,7 @@
                  * connect out on the same socket.  In this case
                  * we want to keep the port bound on the server, and
                  * just add a connect to the peer, so let udpsetup() do
@@ -596,11 +513,9 @@ index 52a36c2..8023613 100755
                  */
              }
              else
-diff --git a/lib/address.c b/lib/address.c
-index 389c92e..ed92531 100644
 --- a/lib/address.c
 +++ b/lib/address.c
-@@ -822,7 +822,7 @@ socks_addrlock(locktype, lock)
+@@ -822,7 +822,7 @@
      * With the OpenBSD thread implementation, if a thread is interrupted,
      * calling pthread_mutex_lock() seems to clear the interrupt flag, so
      * that e.g. select(2) will restart rather than returning EINTR.
@@ -609,11 +524,9 @@ index 389c92e..ed92531 100644
      * being interrupted by the process used to handle non-blocking connects.
      * We instead take the risk of not taking the thread-lock in this case.
      */
-diff --git a/lib/addressmatch.c b/lib/addressmatch.c
-index cfd94b4..bd37eb2 100644
 --- a/lib/addressmatch.c
 +++ b/lib/addressmatch.c
-@@ -232,8 +232,8 @@ addrmatch(rule, addr, addrmatched, protocol, alias)
+@@ -232,8 +232,8 @@
  
  #if SOCKS_CLIENT
     /*
@@ -624,7 +537,7 @@ index cfd94b4..bd37eb2 100644
      * the 1.4.1 socks.conf-files for now.
      */
     if (rule->atype                 == SOCKS_ADDR_IPV4
-@@ -595,7 +595,7 @@ addrmatch(rule, addr, addrmatched, protocol, alias)
+@@ -595,7 +595,7 @@
         *      addr.ipaddr isin rule.hostname->ipaddr
         *
         * If still no match, and alias is set, resolve addr.ipv4 to hostname(s),
@@ -633,11 +546,9 @@ index cfd94b4..bd37eb2 100644
         * rule.hostame->ipaddr:
         *    rule.hostname->ipaddr isin addr->ipaddr->hostname(s)->ipaddr
         *    .
-diff --git a/lib/authneg.c b/lib/authneg.c
-index 91d1c82..c6c38af 100644
 --- a/lib/authneg.c
 +++ b/lib/authneg.c
-@@ -150,9 +150,9 @@ negotiate_method(s, packet, route, emsg, emsglen)
+@@ -150,9 +150,9 @@
              case AUTHMETHOD_GSSAPI:
                 break; /*
                         * ok?  Can't forward gssapi/kerberos credentials,
@@ -649,11 +560,9 @@ index 91d1c82..c6c38af 100644
                         */
  
              default:
-diff --git a/lib/clientprotocol.c b/lib/clientprotocol.c
-index 89ef0e0..0aeb545 100644
 --- a/lib/clientprotocol.c
 +++ b/lib/clientprotocol.c
-@@ -1243,7 +1243,7 @@ clientmethod_gssapi(s, protocol, gw, version, auth, emsg, emsglen)
+@@ -1243,7 +1243,7 @@
                                             * RFC 1961 says GSS_C_DELEG_FLAG
                                             * should also be set, but I can't
                                             * see any reason why the client
@@ -662,11 +571,9 @@ index 89ef0e0..0aeb545 100644
                                             * tickets to a socks server ...
                                             *
                                             * Don't set unless until we find
-diff --git a/lib/config.c b/lib/config.c
-index c4f8d4f..074c711 100644
 --- a/lib/config.c
 +++ b/lib/config.c
-@@ -224,7 +224,7 @@ postconfigloadinit(void)
+@@ -224,7 +224,7 @@
      * after we receive a signal (e.g. SIGHUP) is not the same it was before
      * the signal, as well as other weirdness.  There are some bug-reports
      * related to what looks similar e.g.: kern/157657.  That bug has apparently
@@ -675,11 +582,9 @@ index c4f8d4f..074c711 100644
      * running on our testmachine.
      */
     struct sched_param param;
-diff --git a/lib/config_parse.c b/lib/config_parse.c
-index 6ec053d..9051435 100644
 --- a/lib/config_parse.c
 +++ b/lib/config_parse.c
-@@ -2601,7 +2601,7 @@ parseconfig(filename)
+@@ -2601,7 +2601,7 @@
               * we are started with.  If logfiles created by that euid/egid are
               * not writable by our configured privileged userid (if any), it
               * means that upon SIGHUP we will be unable to re-open our own
@@ -688,11 +593,9 @@ index 6ec053d..9051435 100644
               * by ourselves, and if so, make sure they have the right owner.
               */
              logtype_t *logv[] = { &sockscf.log, &sockscf.errlog };
-diff --git a/lib/config_parse.y b/lib/config_parse.y
-index a0132de..d39e727 100644
 --- a/lib/config_parse.y
 +++ b/lib/config_parse.y
-@@ -3204,7 +3204,7 @@ parseconfig(filename)
+@@ -3204,7 +3204,7 @@
               * we are started with.  If logfiles created by that euid/egid are
               * not writable by our configured privileged userid (if any), it
               * means that upon SIGHUP we will be unable to re-open our own
@@ -701,11 +604,9 @@ index a0132de..d39e727 100644
               * by ourselves, and if so, make sure they have the right owner.
               */
              logtype_t *logv[] = { &sockscf.log, &sockscf.errlog };
-diff --git a/lib/connectchild.c b/lib/connectchild.c
-index 9692710..afb380d 100644
 --- a/lib/connectchild.c
 +++ b/lib/connectchild.c
-@@ -51,14 +51,14 @@ static const char rcsid[] =
+@@ -51,14 +51,14 @@
   * This sets things up for performing a non-blocking connect for the client.
   * We do this by initiating a connect on a non-blocking socket.
   * If the initial response is positive, we then save the endpoint
@@ -724,7 +625,7 @@ index 9692710..afb380d 100644
   * at the real socket.
   *
   * When the connect-child is done, it will send us back the same socket
-@@ -683,8 +683,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
+@@ -683,8 +683,7 @@
  }
  
  /*
@@ -734,11 +635,9 @@ index 9692710..afb380d 100644
   */
  static void
  run_connectchild(mother_data, mother_ack)
-diff --git a/lib/gssapi.c b/lib/gssapi.c
-index 977e696..2c435c2 100644
 --- a/lib/gssapi.c
 +++ b/lib/gssapi.c
-@@ -506,7 +506,7 @@ again:
+@@ -506,7 +506,7 @@
  
  #if SOCKS_CLIENT
     /*
@@ -747,7 +646,7 @@ index 977e696..2c435c2 100644
      * that we cannot completely drain the socket if we have data buffered
      * for read.  If the client then select(2)'s on the socket to know when
      * there is more to read, select(2) will block forever as the data has
-@@ -517,13 +517,13 @@ again:
+@@ -517,13 +517,13 @@
      * as long as we have buffered data which we have not yet returned to
      * the client, so as to not drain this last byte from the socket until
      * we can return all the data buffered to the client, and only then
@@ -763,7 +662,7 @@ index 977e696..2c435c2 100644
      *
      * We also need to handle a client only peeking at the data, with
      * MSG_PEEK. In this case we can do the same as for a normal read,
-@@ -835,7 +835,7 @@ gssapi_encode_write(s, msg, len, flags, to, tolen, sendtoflags, gs)
+@@ -835,7 +835,7 @@
     ssize_t towrite, written, p, encodedlen, addedtobuf;
     size_t i;
  
@@ -772,7 +671,7 @@ index 977e696..2c435c2 100644
     static size_t j;
     size_t lenv[] = { 60000, 60001, 60002, 60003, 60004, 60005, 60006, 60007,
                       60008, 60009, 60010, 60011, 60012, 60013, 60014, 60015 };
-@@ -890,7 +890,7 @@ gssapi_encode_write(s, msg, len, flags, to, tolen, sendtoflags, gs)
+@@ -890,7 +890,7 @@
      * Two modes: Buffered and unbuffered.
      *
      * Unbuffered:
@@ -781,11 +680,9 @@ index 977e696..2c435c2 100644
      *    store the remaining bytes in our internal iobuf, encoded.
      *    This makes us able to return either "len" or -1 (only if fatal
      *    error) to caller, so that caller understands we have accepted
-diff --git a/lib/hostcache.c b/lib/hostcache.c
-index dfe3f50..c6e5c62 100755
 --- a/lib/hostcache.c
 +++ b/lib/hostcache.c
-@@ -64,7 +64,7 @@ static const char rcsid[] =
+@@ -64,7 +64,7 @@
  static size_t
  hosthash(const char *name, const size_t size);
  /*
@@ -794,7 +691,7 @@ index dfe3f50..c6e5c62 100755
   * Size of hash table is given by "size".
  */
  
-@@ -91,7 +91,7 @@ hostentcopy(hostentry_t *to, const struct hostent *from);
+@@ -91,7 +91,7 @@
  static size_t
  addrhash(const struct sockaddr_storage *addr, const size_t size);
  /*
@@ -803,11 +700,9 @@ index dfe3f50..c6e5c62 100755
   * Size of hash table is given by "size".
  */
  
-diff --git a/lib/httpproxy.c b/lib/httpproxy.c
-index 9d49d80..1142c77 100644
 --- a/lib/httpproxy.c
 +++ b/lib/httpproxy.c
-@@ -105,7 +105,7 @@ httpproxy_negotiate(s, packet, emsg, emsglen)
+@@ -105,7 +105,7 @@
     }
  
     /*
@@ -816,7 +711,7 @@ index 9d49d80..1142c77 100644
      * for client, then return the response code.
      */
     eof = checked = readsofar = 0;
-@@ -137,7 +137,7 @@ httpproxy_negotiate(s, packet, emsg, emsglen)
+@@ -137,7 +137,7 @@
        readsofar += len;
  
        if ((strstr(buf, eofresponse_str)) == NULL)
@@ -825,11 +720,9 @@ index 9d49d80..1142c77 100644
        else
           eof = 1;
  
-diff --git a/lib/iobuf.c b/lib/iobuf.c
-index 450ed7d..22c65e6 100644
 --- a/lib/iobuf.c
 +++ b/lib/iobuf.c
-@@ -154,7 +154,7 @@ socks_flushbuffer(s, len, sendtoflags)
+@@ -154,7 +154,7 @@
      * In the client-case, we don't want to encode the packet on
      * every buffered write.  E.g. we don't want 100 putc(3)'s to
      * end up creating 100 gssapi-encoded one-byte packets.
@@ -838,7 +731,7 @@ index 450ed7d..22c65e6 100644
      * encode the data we have, and write it as one token.
      * That means any already encoded data in the buffer must be written
      * before the unencoded data.
-@@ -573,7 +573,7 @@ socks_addtobuffer(s, which, encoded, data, datalen)
+@@ -573,7 +573,7 @@
         * more complex; appended to the end of the unencoded data,
         * which comes before the encoded data.  Meaning we have to first
         * move the encoded data further out in the buffer before we add the
@@ -847,11 +740,9 @@ index 450ed7d..22c65e6 100644
         * gets appended to any already present unencoded data, before
         * the encoded data.
         */
-diff --git a/lib/log.c b/lib/log.c
-index 671712a..04e1145 100644
 --- a/lib/log.c
 +++ b/lib/log.c
-@@ -105,7 +105,7 @@ static void
+@@ -105,7 +105,7 @@
  dolog(const int priority, const char *buf,
        const size_t logprefixlen, const size_t messagelen);
  /*
@@ -860,11 +751,9 @@ index 671712a..04e1145 100644
   *
   * The last character in "buf", before the NUL, must be a newline.
   *
-diff --git a/lib/socket.c b/lib/socket.c
-index 8c584d5..bc6cca6 100644
 --- a/lib/socket.c
 +++ b/lib/socket.c
-@@ -1144,7 +1144,7 @@ fdisdup(fd1, fd2)
+@@ -1144,7 +1144,7 @@
     /*
      * Test is to set a flag on fd1, and see if the same flag then gets set on
      * fd2.  Note that this flag must be a flag we can set on a socket that
@@ -873,11 +762,9 @@ index 8c584d5..bc6cca6 100644
      * of the session, and which will be shared between descriptors that are
      * dup(2)'s of each other.
      *
-diff --git a/lib/time.c b/lib/time.c
-index 48e2cca..10be1d4 100644
 --- a/lib/time.c
 +++ b/lib/time.c
-@@ -107,7 +107,7 @@ gettimeofday_monotonic(tv)
+@@ -107,7 +107,7 @@
  
     /*
      * for some reason Coverity produces a warning about
@@ -886,11 +773,9 @@ index 48e2cca..10be1d4 100644
      * assignment here. :-/
      */
     tv_lasttime.tv_sec  = tv->tv_sec;
-diff --git a/lib/udp.c b/lib/udp.c
-index 55554c4..479cbbb 100644
 --- a/lib/udp.c
 +++ b/lib/udp.c
-@@ -207,7 +207,7 @@ Rsendto(s, msg, len, flags, _to, tolen)
+@@ -207,7 +207,7 @@
               * via select(2)/poll(2)/etc. failed.
               *
               * In case of 1), the correct thing would be to return ENOTCONN,
@@ -899,7 +784,7 @@ index 55554c4..479cbbb 100644
               * multiple fd's pointing to the same filedescription index,
               * meaning that even though we have hidden our usage of "s", the
               * user is using another fd (s').  Normally we would of course be
-@@ -227,7 +227,7 @@ Rsendto(s, msg, len, flags, _to, tolen)
+@@ -227,7 +227,7 @@
               * an indication that the connect(2) failed, which it has
               * not (yet, at least) done.  If we return EAGAIN, the
               * user will hopefully retry again, whenever the systemcall
@@ -908,11 +793,9 @@ index 55554c4..479cbbb 100644
               * If the connect is still in progress, we again assume the
               * readability was only related to i/o done by our connect-child
               * over the fd, and was not intended for the user, and again
-diff --git a/lib/upnp.c b/lib/upnp.c
-index 7904641..199d68f 100644
 --- a/lib/upnp.c
 +++ b/lib/upnp.c
-@@ -337,8 +337,8 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
+@@ -337,8 +337,8 @@
            * Can only find out what the external ip address of the device is.
            *
            * We could fetch the address here, but if the client never intends
@@ -923,7 +806,7 @@ index 7904641..199d68f 100644
            * comes, and just connect(2) to the target for now, without
            * attempting to retrieve any information from the IGD.
            *
-@@ -471,8 +471,8 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
+@@ -471,8 +471,8 @@
  
        case SOCKS_BIND: {
           /*
@@ -934,7 +817,7 @@ index 7904641..199d68f 100644
            * Then we need to get the ip address the device is using
            * on the external side.
            */
-@@ -544,7 +544,7 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
+@@ -544,7 +544,7 @@
                                     (void *)GET_SOCKADDRADDR(&extaddr),
                                     NULL)) != 1) {
              snprintf(emsg, emsglen,
@@ -943,11 +826,9 @@ index 7904641..199d68f 100644
                       "the %s \"%s\", but can't parse that with inet_pton(3).  "
                       "Errorcode %d (%s)",
                       safamily2string(extaddr.ss_family),
-diff --git a/sockd/auth_pam.c b/sockd/auth_pam.c
-index f59247b..1e4f2ee 100644
 --- a/sockd/auth_pam.c
 +++ b/sockd/auth_pam.c
-@@ -122,7 +122,7 @@ pam_passwordcheck(s, src, dst, auth, emsg, emsgsize)
+@@ -122,7 +122,7 @@
      * some sort of busy-loop if we don't call pam_end(3) ever so
      * often.
      *
@@ -956,11 +837,9 @@ index f59247b..1e4f2ee 100644
      * call pam_start(3) and pam_end(3) every time.
      */
  
-diff --git a/sockd/dante_udp.c b/sockd/dante_udp.c
-index c29de48..ab83d00 100644
 --- a/sockd/dante_udp.c
 +++ b/sockd/dante_udp.c
-@@ -1404,7 +1404,7 @@ fromaddr_as_expected(expected, from, emsg, emsglen)
+@@ -1404,7 +1404,7 @@
  
     if (!ADDRISBOUND(expected)) {
        /*
@@ -969,11 +848,9 @@ index c29de48..ab83d00 100644
         * the parts of the address it has sent (if any) matches
         * the source of this packet, we have to assume this packet
         * is from it.  We can then update the expected address with
-diff --git a/sockd/method_uname.c b/sockd/method_uname.c
-index d8de9b1..01d521e 100644
 --- a/sockd/method_uname.c
 +++ b/sockd/method_uname.c
-@@ -266,14 +266,14 @@ recv_passwd(s, request, state)
+@@ -266,14 +266,14 @@
      * Very sadly we can't always do checking of the username/password here
      * since we don't know what authentication to use yet.  It could
      * be username, but it could also be PAM, or some future method.
@@ -990,11 +867,9 @@ index d8de9b1..01d521e 100644
      * check the password here so we can return an immediate error to client.
      * This we can do because if the passworddb is unique there is
      * no chance of the result varying based to the client's request.
-diff --git a/sockd/mother_util.c b/sockd/mother_util.c
-index 15731f4..606da38 100755
 --- a/sockd/mother_util.c
 +++ b/sockd/mother_util.c
-@@ -63,8 +63,8 @@ static void  sighup(int sig, siginfo_t *si, void *sc);
+@@ -63,8 +63,8 @@
  static void unexpecteddeath(void);
  /*
   * Should be called after any unexpected child death / child removal.
@@ -1005,7 +880,7 @@ index 15731f4..606da38 100755
   */
  
  void
-@@ -727,7 +727,7 @@ siginfo(sig, si, sc)
+@@ -727,7 +727,7 @@
      * The practical effect of this seems to be that if we use different
      * userids, we, when running with the euid of something other than root,
      * may not be able to send the SIGINFO signal to our own children. :-/
@@ -1014,7 +889,7 @@ index 15731f4..606da38 100755
      *
      * To workaround the problem, send SIGUSR1 to the children instead of
      * SIGINFO, as SIGUSR1 has always been treated the same way as SIGINFO
-@@ -992,7 +992,7 @@ sighup(sig, si, sc)
+@@ -992,7 +992,7 @@
      *
      * The only reason for locking shmemconfig is so we do not update it (due
      * to another SIGHUP) while the children try to read it (children lock it
@@ -1023,7 +898,7 @@ index 15731f4..606da38 100755
      */
  
     socks_lock(sockscf.shmemconfigfd, 0, 0, 1, 1);
-@@ -1154,7 +1154,7 @@ sigchld(sig, si, sc)
+@@ -1154,7 +1154,7 @@
               * Note that this might be a pid from our former self also
               * if we failed on an internal error, fork(2)-ed process to
               * get the coredump and continue.  When the fork(2)-ed process
@@ -1032,11 +907,9 @@ index 15731f4..606da38 100755
               * SIGCHLD, but no account of it.  To avoid that, hopefully
               * never happening, problem generating a recursive error, let
               * this be a swarnx(), and not a SWARNX().
-diff --git a/sockd/rule.c b/sockd/rule.c
-index 336e7d0..b65081e 100755
 --- a/sockd/rule.c
 +++ b/sockd/rule.c
-@@ -154,7 +154,7 @@ addclientrule(newrule)
+@@ -154,7 +154,7 @@
      *    - make sure all rules have the same rule number (the user has only
      *      created one rule, our problem that it expands to multiple rules).
      *    - make sure the shmem-objects reference the same shmem ids, as the
@@ -1045,7 +918,7 @@ index 336e7d0..b65081e 100755
      *      all clients matching the rule(s).
      */
  
-@@ -1536,15 +1536,15 @@ rulespermit(s, peer, local, clientauth, srcauth, match, state,
+@@ -1536,15 +1536,15 @@
            * subsequent close(2) without us having sent the whole banner to
            * the client first.  But if the kernel wants to send RST while
            * we have data not yet sent, it will discard the data not yet
@@ -1064,7 +937,7 @@ index 336e7d0..b65081e 100755
            */
            char buf[1024];
            ssize_t p;
-@@ -2301,7 +2301,7 @@ addrule(newrule, rulebase, ruletype)
+@@ -2301,7 +2301,7 @@
      * If no socksmethod is set in this rule, set all from the global methods.
      * For the client-rule there isn't really many checks we can do on what
      * methods to set (e.g., do they support what will be  required by the
@@ -1073,7 +946,7 @@ index 336e7d0..b65081e 100755
      * what the matching socks-rule will be for the clients request.
      *
      * For the socks-rule, we can check things however.
-@@ -2451,7 +2451,7 @@ addrule(newrule, rulebase, ruletype)
+@@ -2451,7 +2451,7 @@
      * Set default values for some authentication-methods, if none
      * set.  Note that this needs to be set regardless of what the
      * method set in the rule is, as checkconfig() might add methods
@@ -1082,11 +955,9 @@ index 336e7d0..b65081e 100755
      * adding default methods to the global clientmethod line, if appropriate,
      * and then adding the same methods to the client-rules, if the rules
      * do not already have a method.
-diff --git a/sockd/serverconfig.c b/sockd/serverconfig.c
-index 1ef5880..6511dc0 100644
 --- a/sockd/serverconfig.c
 +++ b/sockd/serverconfig.c
-@@ -63,7 +63,7 @@ static int addexternaladdr(const struct ruleaddr_t *ra);
+@@ -63,7 +63,7 @@
   * Returns 0 if the address "ra" was addedd to the list of external addresses.
   *
   * Returns -1 if the address "ra" was not added for a non-fatal reason,
@@ -1095,7 +966,7 @@ index 1ef5880..6511dc0 100644
   */
  
  static int addinternaladdr(const char *ifname,
-@@ -73,7 +73,7 @@ static int addinternaladdr(const char *ifname,
+@@ -73,7 +73,7 @@
   * Returns 0 if the address "ra" was addedd to the list of internal addresses.
   *
   * Returns -1 if the address "ra" was not added for a non-fatal reason,
@@ -1104,7 +975,7 @@ index 1ef5880..6511dc0 100644
   */
  
  
-@@ -741,7 +741,7 @@ resetconfig(config, exiting)
+@@ -741,7 +741,7 @@
     /* srchost, read from config file. */
     bzero(&config->srchost, sizeof(config->srchost));
  
@@ -1113,11 +984,9 @@ index 1ef5880..6511dc0 100644
  
     /*
      * state; keep most of it, with the following exceptions:
-diff --git a/sockd/shmem.c b/sockd/shmem.c
-index 59ce6a7..f543b47 100644
 --- a/sockd/shmem.c
 +++ b/sockd/shmem.c
-@@ -176,7 +176,7 @@ shmem_setup(void)
+@@ -176,7 +176,7 @@
             function, SOCKD_SHMEMFILE);
  
     /*
@@ -1126,11 +995,9 @@ index 59ce6a7..f543b47 100644
      */
     hostcachesetup();
  
-diff --git a/sockd/sockd.c b/sockd/sockd.c
-index 520a18d..034ff98 100755
 --- a/sockd/sockd.c
 +++ b/sockd/sockd.c
-@@ -199,7 +199,7 @@ main(argc, argv)
+@@ -199,7 +199,7 @@
     /*
      * The monitor-child is special, as there is only one and it
      * is shared/used by all processes, the mother processes
@@ -1139,7 +1006,7 @@ index 520a18d..034ff98 100755
      * even before the mother processes.
      */
     if (childcheck(PROC_MONITOR) < 1) {
-@@ -1610,9 +1610,9 @@ handlechildcommand(command, child, finished)
+@@ -1610,9 +1610,9 @@
  
           if (child->type == PROC_IO) {
              /*
@@ -1152,11 +1019,9 @@ index 520a18d..034ff98 100755
               */
              ++sockscf.stat.io.received;
  #if COVENANT
-diff --git a/sockd/sockd_child.c b/sockd/sockd_child.c
-index 8b48bfe..c25e888 100644
 --- a/sockd/sockd_child.c
 +++ b/sockd/sockd_child.c
-@@ -554,7 +554,7 @@ clearchildtype(childtype, pipetype, nfds, set)
+@@ -554,7 +554,7 @@
     size_t i, *childc;
  
  
@@ -1165,7 +1030,7 @@ index 8b48bfe..c25e888 100644
          function, childtype2string(childtype));
  
     setchildtype(childtype, &childv, &childc, NULL);
-@@ -1116,7 +1116,7 @@ send_io(s, io)
+@@ -1116,7 +1116,7 @@
     /*
      * if not mother, request child.  Since that child only handles one
      * client at a time, it's safe to block as long as it takes.  Mother
@@ -1174,7 +1039,7 @@ index 8b48bfe..c25e888 100644
      */
     if (sendmsgn(s, &msg, 0, sockscf.state.type == PROC_MOTHER ? 0 : -1)
     != length) {
-@@ -1806,8 +1806,8 @@ addchild(type)
+@@ -1806,8 +1806,8 @@
  
           /*
            * signals mother has set up but which we need ignore at this
@@ -1185,7 +1050,7 @@ index 8b48bfe..c25e888 100644
            * particular signal.
            * Later on, the child sets up its own signal handlers.
            */
-@@ -1888,7 +1888,7 @@ addchild(type)
+@@ -1888,7 +1888,7 @@
  
  #if HAVE_PRIVILEGES
                 if (sockscf.state.haveprivs) {
@@ -1194,7 +1059,7 @@ index 8b48bfe..c25e888 100644
                    priv_delset(sockscf.privileges.privileged, PRIV_NET_PRIVADDR);
  
                    if (setppriv(PRIV_SET,
-@@ -1952,13 +1952,13 @@ addchild(type)
+@@ -1952,13 +1952,13 @@
            * newprocinit() will close the old syslog descriptor, if any,
            * before opening a new one.  If we have started to use the
            * descriptor for something else already (e.g. due to dup(2)),
@@ -1210,11 +1075,9 @@ index 8b48bfe..c25e888 100644
            * by avoiding having two increasingly high-numbered descriptors
            * to check for, with most of the other descriptors in the lower-end.
            */
-diff --git a/sockd/sockd_io.c b/sockd/sockd_io.c
-index bfe6dd6..240eba0 100644
 --- a/sockd/sockd_io.c
 +++ b/sockd/sockd_io.c
-@@ -77,9 +77,9 @@ static void proctitleupdate(void);
+@@ -77,9 +77,9 @@
  static int
  io_connectisinprogress(const sockd_io_t *io);
  /*
@@ -1227,7 +1090,7 @@ index bfe6dd6..240eba0 100644
   * Returns false otherwise.
   */
  
-@@ -195,7 +195,7 @@ io_timeuntiltimeout(sockd_io_t *io, const struct timeval *tnow,
+@@ -195,7 +195,7 @@
   * "type", if not NULL, is filled in with the type of timeout that will
   * occur at that time, if any.
   *
@@ -1236,7 +1099,7 @@ index bfe6dd6..240eba0 100644
   *
   * 0 if the timeout has already been reached, or
   * -1 if no timeout on the io is currently set.
-@@ -252,8 +252,8 @@ connectstatus(sockd_io_t *io, int *badfd);
+@@ -252,8 +252,8 @@
   * Note that this function must be called after the connect has completed,
   * as in the socks case (and some covenant cases) we need to send a
   * response back to the client before it will start sending us data.
@@ -1247,7 +1110,7 @@ index bfe6dd6..240eba0 100644
   * have sent the response to the client.
   *
   * Returns 0 if the socket connected successfully.
-@@ -311,7 +311,7 @@ iostate_t iostate;
+@@ -311,7 +311,7 @@
   * if not 0, we have "overflowed" according to max bandwidth configured.
   * We can not attribute it to any given client though, so we penalize
   * all by delaying a little.  This object gives the earliest time at which we
@@ -1256,7 +1119,7 @@ index bfe6dd6..240eba0 100644
   * limit.
   */
  static struct timeval bwoverflowtil;
-@@ -361,7 +361,7 @@ run_io()
+@@ -361,7 +361,7 @@
           serr("%s: could not make rawsocket non-blocking", function);
  
  #if HAVE_PRIVILEGES
@@ -1265,7 +1128,7 @@ index bfe6dd6..240eba0 100644
  
     if (sockscf.state.haveprivs) {
        priv_delset(sockscf.privileges.privileged, PRIV_NET_ICMPACCESS);
-@@ -614,7 +614,7 @@ run_io()
+@@ -614,7 +614,7 @@
  #else /* !BAREFOOTD */
           /*
            * this process can continue independent of mother as long as it
@@ -1274,7 +1137,7 @@ index bfe6dd6..240eba0 100644
            * udp socket on the client-side also.
            */
  #endif /* !BAREFOOTD */
-@@ -627,7 +627,7 @@ run_io()
+@@ -627,7 +627,7 @@
        }
  
        /*
@@ -1283,7 +1146,7 @@ index bfe6dd6..240eba0 100644
         * because the ack-pipe is a stream pipe, so hopefully we will handle
         * the EOF from mother on the ack-pipe before we get the error on
         * the data-pipe.
-@@ -728,7 +728,7 @@ run_io()
+@@ -728,7 +728,7 @@
  
  #if BAREFOOTD
        /*
@@ -1292,7 +1155,7 @@ index bfe6dd6..240eba0 100644
         * change and it may become readable (again).
         */
        if (rawsocket != -1) {
-@@ -738,12 +738,12 @@ run_io()
+@@ -738,12 +738,12 @@
  #endif /* BAREFOOTD */
  
        /*
@@ -1308,7 +1171,7 @@ index bfe6dd6..240eba0 100644
         * larger, in which case our write could have failed anyway.
         */
        FD_ZERO(udprset);
-@@ -768,7 +768,7 @@ run_io()
+@@ -768,7 +768,7 @@
               * Descriptor has data buffered for write.  That means we should
               * mark the other side as readable.  Regardless of whether we
               * can read from the other side or not at the moment, we have
@@ -1317,7 +1180,7 @@ index bfe6dd6..240eba0 100644
               * forward to the other side.
               */
              int other_side;
-@@ -1151,7 +1151,7 @@ run_io()
+@@ -1151,7 +1151,7 @@
               * packet has been read.
               *
               * Try to read as many packets as we can as presumably there is
@@ -1326,7 +1189,7 @@ index bfe6dd6..240eba0 100644
               * since all the clients send to one address/socket.
               */
  
-@@ -1817,7 +1817,7 @@ recv_io(s, io)
+@@ -1817,7 +1817,7 @@
  #endif /* BAREFOOTD */
  
              /*
@@ -1335,7 +1198,7 @@ index bfe6dd6..240eba0 100644
               * we receive the first packet from it.  The client/source socket
               * is however the same for all clients.
               */
-@@ -2308,7 +2308,7 @@ io_fillset(set, antiflags, antiflags_set, bwoverflowtil)
+@@ -2308,7 +2308,7 @@
              /*
               * the client-socket is shared among many clients, so set it
               * regardless of bw-limits as we don't know from what
@@ -1344,11 +1207,9 @@ index bfe6dd6..240eba0 100644
               *
               * XXX But what do we do if the bw overflows?  We can't know
               * that until we've read the packet and seen what client it's
-diff --git a/sockd/sockd_negotiate.c b/sockd/sockd_negotiate.c
-index d6980d5..926d02e 100644
 --- a/sockd/sockd_negotiate.c
 +++ b/sockd/sockd_negotiate.c
-@@ -151,7 +151,7 @@ proctitleupdate(void);
+@@ -151,7 +151,7 @@
  static struct timeval *
  neg_gettimeout(struct timeval *timeout);
  /*
@@ -1357,7 +1218,7 @@ index d6980d5..926d02e 100644
   * expires.
   * Returns:
   *      If there is a timeout: pointer to filled in "timeout".
-@@ -211,7 +211,7 @@ proctitleupdate(void);
+@@ -211,7 +211,7 @@
  static struct timeval *
  neg_gettimeout(struct timeval *timeout);
  /*
@@ -1366,7 +1227,7 @@ index d6980d5..926d02e 100644
   * Returns:
   *      If there is a timeout: pointer to filled in "timeout".
   *      If there is no timeout: NULL.
-@@ -1234,8 +1234,8 @@ recv_negotiate(void)
+@@ -1234,8 +1234,8 @@
       * Normally there is no client data in Dante's case, but some clients
       * may piggy-back the payload together with the socks request, without
       * waiting for our response.  That is not legal to do, but some clients
@@ -1377,7 +1238,7 @@ index d6980d5..926d02e 100644
       * we can send on to the i/o process, which will eventually need to
       * forward it to the destination.
       */
-@@ -1316,7 +1316,7 @@ recv_negotiate(void)
+@@ -1316,7 +1316,7 @@
              if (permit) {
                 /*
                  * Let the hostid-rule inherit settings from the client-rule,
@@ -1386,7 +1247,7 @@ index d6980d5..926d02e 100644
                  */
                 if (rule_inheritoruse(&neg->crule,
                                       &cinfo,
-@@ -1436,7 +1436,7 @@ recv_negotiate(void)
+@@ -1436,7 +1436,7 @@
        if (client.clientdatalen > 0) {
           slog(LOG_DEBUG,
                "%s: received client already has %lu bytes read from it.  "
@@ -1395,11 +1256,9 @@ index d6980d5..926d02e 100644
                "to %s, so request should already be parsed",
                function,
                (unsigned long)client.clientdatalen,
-diff --git a/sockd/sockd_request.c b/sockd/sockd_request.c
-index 868e401..6221c7c 100644
 --- a/sockd/sockd_request.c
 +++ b/sockd/sockd_request.c
-@@ -1280,7 +1280,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
+@@ -1280,7 +1280,7 @@
               *
               * Unfortunately the meaning given in these standard provides
               * limited usability, so people "interpret" the standards more
@@ -1408,7 +1267,7 @@ index 868e401..6221c7c 100644
               *
               * - If the client provided an ip address when requesting the
               *   bind, we should only return remote connections matching
-@@ -1395,7 +1395,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
+@@ -1395,7 +1395,7 @@
                                emsglen);
  
           /*
@@ -1417,7 +1276,7 @@ index 868e401..6221c7c 100644
            * also.  No need to stick around if no replies will be allowed.
            */
  
-@@ -1464,10 +1464,10 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
+@@ -1464,10 +1464,10 @@
            * have a lot of complicated stuff for handling it in the i/o
            * process.
            *
@@ -1431,7 +1290,7 @@ index 868e401..6221c7c 100644
            * UDP address in the udpassociate request, we can also evaluate
            * here whether it's at all possible that any udp packets from
            * it will be let through.  If not, we can just as well block it
-@@ -1912,7 +1912,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
+@@ -1912,7 +1912,7 @@
  
                 /*
                  * The problem is that both we and the process which receives
@@ -1440,7 +1299,7 @@ index 868e401..6221c7c 100644
                  * connection, but _we_ need to receive a query from the
                  * client on the connection as well, and the io process would
                  * get confused about that.  We try to hack around that
-@@ -1941,7 +1941,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
+@@ -1941,7 +1941,7 @@
  
           if (rc == 0) {
              /*
@@ -1449,7 +1308,7 @@ index 868e401..6221c7c 100644
               */
  
              sockaddr2sockshost(&io.dst.laddr, &response.host);
-@@ -1993,7 +1993,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
+@@ -1993,7 +1993,7 @@
           if (bindio.state.extension.bind) {
              sockshost2sockaddr(&bindio.dst.host, &bindio.dst.raddr);
  
@@ -1458,7 +1317,7 @@ index 868e401..6221c7c 100644
              bzero(&bindio.dst.laddr, sizeof(bindio.dst.laddr));
              SET_SOCKADDR(&bindio.dst.laddr, AF_INET);
              TOIN(&bindio.dst.laddr)->sin_addr.s_addr = htonl(INADDR_ANY);
-@@ -2011,7 +2011,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
+@@ -2011,7 +2011,7 @@
           sockaddr2sockshost(&bindio.src.laddr, &bindio.src.host);
  
           /*
@@ -1467,7 +1326,7 @@ index 868e401..6221c7c 100644
            */
           bzero(&bindio.src.raddr, sizeof(bindio.src.raddr));
           SET_SOCKADDR(&bindio.src.raddr, bindio.src.laddr.ss_family);
-@@ -2836,7 +2836,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
+@@ -2836,7 +2836,7 @@
            * Let the created socket be of the same address family as
            * the client tells us it will send packets from.  Note that
            * even if the client sends us an all-zero address now, even
@@ -1476,7 +1335,7 @@ index 868e401..6221c7c 100644
            * specified, as either ipv4 or ipv6.
            *
            * Exception is if the client does something so strange as to
-@@ -2964,12 +2964,12 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
+@@ -2964,12 +2964,12 @@
  #else /* SOCKS_SERVER */
           /*
            * bind client-side address for receiving UDP packets, so we can tell
@@ -1492,7 +1351,7 @@ index 868e401..6221c7c 100644
            *     address.
            * XXX add check for privileges on startup if range is privileged
            */
-@@ -3733,7 +3733,7 @@ getroute(client, req, emsg, emsglen)
+@@ -3733,7 +3733,7 @@
           /*
            * Possibly there is a route supporting an ipaddress destination,
            * even if there was no route supporting the hostname destination
@@ -1501,11 +1360,9 @@ index 868e401..6221c7c 100644
            * destination locally before giving up on finding a route.
            *
            * We will need to resolve the destination sooner or later
-diff --git a/sockd/sockd_socket.c b/sockd/sockd_socket.c
-index de8d20b..8b038e2 100644
 --- a/sockd/sockd_socket.c
 +++ b/sockd/sockd_socket.c
-@@ -157,7 +157,7 @@ sockd_unconnect(s, oldpeer)
+@@ -157,7 +157,7 @@
  
        slog(LOG_DEBUG, "%s: re-bind(2) after unconnecting failed: %s.  "
                        "Current address is %s (was %s).  Trying to create a "
@@ -1514,11 +1371,9 @@ index de8d20b..8b038e2 100644
                        "doing so",
                        function,
                        strerror(errno),
-diff --git a/sockd/sockd_tcp.c b/sockd/sockd_tcp.c
-index 20bb75d..d52cd0e 100644
 --- a/sockd/sockd_tcp.c
 +++ b/sockd/sockd_tcp.c
-@@ -503,7 +503,7 @@ io_tcp_rw(in, out, badfd, iostatus,
+@@ -503,7 +503,7 @@
     sendto_info_t sendtoflags;
     recvfrom_info_t recvfromflags;
     ssize_t r, w, p;
@@ -1527,7 +1382,7 @@ index 20bb75d..d52cd0e 100644
     static size_t j;
     size_t lenv[] = { 60000, 60001, 60002, 60003, 60004, 60005, 60006, 60007,
                       60008, 60009, 60010, 60011, 60012, 60013, 60014, 60015 };
-@@ -769,11 +769,11 @@ io_tcp_rw(in, out, badfd, iostatus,
+@@ -769,11 +769,11 @@
  #if COVENANT
     if (in->isclientside && !reqflags->httpconnect) {
        /*
@@ -1541,11 +1396,9 @@ index 20bb75d..d52cd0e 100644
         * as if the request is to a different server, it should not be
         * forwarded to the current target.
         */
-diff --git a/sockd/sockd_udp.c b/sockd/sockd_udp.c
-index 5b43ce8..7b9f040 100644
 --- a/sockd/sockd_udp.c
 +++ b/sockd/sockd_udp.c
-@@ -116,7 +116,7 @@ doio_udp(io, rset, badfd)
+@@ -116,7 +116,7 @@
      *               maxsessions: 1 }
      *
      * Correspondingly, in Dante, the below will not work as the
@@ -1554,7 +1407,7 @@ index 5b43ce8..7b9f040 100644
      *
      * pass { from: 10/8 to: 10.1.1.1/32 port = echo
      *        maxsessions: 10 }
-@@ -132,7 +132,7 @@ doio_udp(io, rset, badfd)
+@@ -132,7 +132,7 @@
      * Do we move the client from the session belonging to rule #1 when it
      * sends a packet matching rule #2, and then move it back again from
      * rule #2 to rule #1?  Also obviously not.
@@ -1563,7 +1416,7 @@ index 5b43ce8..7b9f040 100644
      * udp session is established, which will be in the request child.
      */
     const char *function   = "doio_udp()";
-@@ -215,7 +215,7 @@ doio_udp(io, rset, badfd)
+@@ -215,7 +215,7 @@
  
  #if BAREFOOTD
        /*

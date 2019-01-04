@@ -1,28 +1,12 @@
-From f43419456d6b340cd26b47cf0c74bcb33498c5b8 Mon Sep 17 00:00:00 2001
-From: Adrian Bridgett <bridgett@debian.org>
-Date: Mon, 30 Oct 2017 00:40:58 +0200
-Subject: Rename the libdsocks library to avoid a conflict with libsocks4.
-
+Description: Rename the libdsocks library to avoid a conflict with libsocks4.
 Bug-Debian: https://bugs.debian.org/52475
+Author: Adrian Bridgett <bridgett@debian.org>
 Forwarded: not-needed
 Last-Update: 2016-04-05
-Patch-Name: rename-library.patch
----
- bin/socksify.in     |  2 +-
- dlib/Makefile.am    | 20 ++++++++++----------
- dlib/int_osf3.c     |  2 +-
- doc/README.socksify |  2 +-
- doc/README.usage    | 16 ++++++++--------
- include/socks.h     |  2 +-
- lib/Makefile.am     | 26 +++++++++++++-------------
- libscompat.m4       |  2 +-
- 8 files changed, 36 insertions(+), 36 deletions(-)
 
-diff --git a/bin/socksify.in b/bin/socksify.in
-index f9a6fad..702e920 100755
 --- a/bin/socksify.in
 +++ b/bin/socksify.in
-@@ -72,7 +72,7 @@ fi
+@@ -72,7 +72,7 @@
  
  #dlib/Makefile.am libtool flags should produce a predictable library name
  #(ending in SOLIB_POSTFIX).
@@ -31,8 +15,6 @@ index f9a6fad..702e920 100755
  
  #platform dependent LD_PRELOAD-variant format
  PRELOAD_SEPERATOR="@PRELOAD_SEPERATOR@"
-diff --git a/dlib/Makefile.am b/dlib/Makefile.am
-index 8e77c57..64248f3 100644
 --- a/dlib/Makefile.am
 +++ b/dlib/Makefile.am
 @@ -1,8 +1,8 @@
@@ -46,7 +28,7 @@ index 8e77c57..64248f3 100644
     ../lib/Raccept.c ../lib/Rbind.c ../lib/Rbindresvport.c               \
     ../lib/Rcompat.c ../lib/Rconnect.c ../lib/Rgethostbyname.c           \
     ../lib/Rgetpeername.c ../lib/Rgetsockname.c ../lib/Rgetsockopt.c     \
-@@ -21,19 +21,19 @@ libdsocks_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c \
+@@ -21,19 +21,19 @@
     ../lib/util.c
  
  #libscompat - files common for both client and server
@@ -72,7 +54,7 @@ index 8e77c57..64248f3 100644
  
  INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libscompat \
  	   -I$(top_srcdir)/lib
-@@ -52,10 +52,10 @@ LINTFLAGS = @LINTFLAGS@
+@@ -52,10 +52,10 @@
  
  if RUNLINT
  SUFFIXES = .ln
@@ -85,11 +67,9 @@ index 8e77c57..64248f3 100644
  
  CLEANFILES = $(LINTFILES)
  
-diff --git a/dlib/int_osf3.c b/dlib/int_osf3.c
-index f0305d1..61c3825 100644
 --- a/dlib/int_osf3.c
 +++ b/dlib/int_osf3.c
-@@ -81,7 +81,7 @@ static const char rcsid[] =
+@@ -81,7 +81,7 @@
  #undef sendto
  
  /* XXX Attempt to support old library calls, which use old version of
@@ -98,11 +78,9 @@ index f0305d1..61c3825 100644
     using the new versions. */
  
  /* sockaddr struct, with sa_len */
-diff --git a/doc/README.socksify b/doc/README.socksify
-index 568ecc2..d4a3c29 100644
 --- a/doc/README.socksify
 +++ b/doc/README.socksify
-@@ -2,7 +2,7 @@ $Id: README.socksify,v 1.8 2009/10/27 12:00:12 karls Exp $
+@@ -2,7 +2,7 @@
  
  The shell script socksify in the bin directory is meant to aid in
  using socks with already compiled dynamic binaries.  This works by
@@ -111,11 +89,9 @@ index 568ecc2..d4a3c29 100644
  then wrap all networking-related system calls.
  
  When used the script can socksify a program by simply giving it as a
-diff --git a/doc/README.usage b/doc/README.usage
-index 6512415..d00757c 100644
 --- a/doc/README.usage
 +++ b/doc/README.usage
-@@ -7,15 +7,15 @@ Dynamically
+@@ -7,15 +7,15 @@
  	The simplest way to add socks support to an already
  (dynamically) complied application is to use the LD_PRELOAD facility
  to replace the standard library functions with socksified ones.  The
@@ -134,7 +110,7 @@ index 6512415..d00757c 100644
  support without making any code changes.
  
  Static Compilation
-@@ -24,8 +24,8 @@ Static Compilation
+@@ -24,8 +24,8 @@
  changed to use socks, even if it is not linked dynamically.
  Several system calls and library calls must be changed to use the
  socksified versions instead of the standard ones.  The application
@@ -145,7 +121,7 @@ index 6512415..d00757c 100644
  
  These function calls can be found in the socks library:
  Raccept
-@@ -71,6 +71,6 @@ compiling.
+@@ -71,6 +71,6 @@
  Libraries
  	In total there are three libraries distributed with this package:
  
@@ -155,11 +131,9 @@ index 6512415..d00757c 100644
 + libsocksd.so  - standard shared library, contains Rfoo type functions.
 + libsocksd.a   - static version of the above.
 + libdsocksd.so - shared library which does "on the fly" socksification.
-diff --git a/include/socks.h b/include/socks.h
-index 3ced074..bf8dd20 100755
 --- a/include/socks.h
 +++ b/include/socks.h
-@@ -479,7 +479,7 @@ typedef struct {
+@@ -479,7 +479,7 @@
  typedef sigset_t addrlockopaque_t;
  
  /*
@@ -168,8 +142,6 @@ index 3ced074..bf8dd20 100755
   */
  
  void __ATTRIBUTE__((ATTRIBUTE_CONSTRUCTOR))
-diff --git a/lib/Makefile.am b/lib/Makefile.am
-index bcbf101..c328731 100644
 --- a/lib/Makefile.am
 +++ b/lib/Makefile.am
 @@ -1,7 +1,7 @@
@@ -182,7 +154,7 @@ index bcbf101..c328731 100644
     Raccept.c Rbind.c Rbindresvport.c Rcompat.c Rconnect.c               \
     Rgethostbyname.c Rgetpeername.c Rgetsockname.c Rgetsockopt.c         \
     Rlisten.c Rrresvport.c address.c addressmatch.c authneg.c broken.c   \
-@@ -13,20 +13,20 @@ libsocks_la_SOURCES = config_parse.c config_scan.c                      \
+@@ -13,20 +13,20 @@
     upnp.c userio.c util.c
  
  #libscompat - files common for both client and server
@@ -209,7 +181,7 @@ index bcbf101..c328731 100644
  
  INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libscompat
  
-@@ -51,9 +51,9 @@ dumpunitenv:
+@@ -51,9 +51,9 @@
  	@echo CPPFLAGS=\"$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS)\"
  	@echo LDFLAGS=\"$(LDFLAGS)\"
  	@echo LIBS=\"$(LIBS) $(DLIBDEPS)\"
@@ -222,7 +194,7 @@ index bcbf101..c328731 100644
  	@echo AMOPTOBJ=\"@LIBSCSRC@\"
  
  PREFIX = socks_yy
-@@ -100,10 +100,10 @@ LINTFLAGS = @LINTFLAGS@
+@@ -100,10 +100,10 @@
  
  if RUNLINT
  SUFFIXES = .ln
@@ -235,11 +207,9 @@ index bcbf101..c328731 100644
  
  CLEANFILES = $(LINTFILES)
  
-diff --git a/libscompat.m4 b/libscompat.m4
-index 913e9e5..445d6c2 100644
 --- a/libscompat.m4
 +++ b/libscompat.m4
-@@ -227,7 +227,7 @@ for func in $CLIENTONLY $SHAREDFUNCS; do
+@@ -227,7 +227,7 @@
      fi
      if eval "test x\"\$${var}\" = xno"; then
  	LIBSCSRC="${LIBSCSRC}${LIBSCSRC:+ }${func}.lo"

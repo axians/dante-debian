@@ -1,20 +1,11 @@
-From 2d7808950e891391c6800850008e1c376e2c66e1 Mon Sep 17 00:00:00 2001
-From: Adrian Bridgett <bridgett@debian.org>
-Date: Mon, 30 Oct 2017 00:42:36 +0200
-Subject: Remove the list of overridden functions; better to include socks.h
-
+Description: Remove the list of overridden functions; better to include socks.h
+Author: Adrian Bridgett <bridgett@debian.org>
 Forwarded: no
 Last-Update: 2010-07-02
-Patch-Name: readme-functions.patch
----
- doc/README.usage | 36 ++----------------------------------
- 1 file changed, 2 insertions(+), 34 deletions(-)
 
-diff --git a/doc/README.usage b/doc/README.usage
-index d00757c..a31f170 100644
 --- a/doc/README.usage
 +++ b/doc/README.usage
-@@ -27,46 +27,14 @@ socksified versions instead of the standard ones.  The application
+@@ -27,46 +27,14 @@
  is then linked with the libsocks library in the distribution (-lsocksd,
  not -ldsocksd).
  
