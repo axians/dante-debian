@@ -1,4 +1,4 @@
-dante (1.4.2+dfsg-5) UNRELEASED; urgency=medium
+dante (1.4.2+dfsg-5) unstable; urgency=medium
 
   * Bump the debhelper compatibility level to 12 with no changes.
   * Add ${misc:Pre-Depends} to dante-server.
@@ -9,7 +9,7 @@ dante (1.4.2+dfsg-5) UNRELEASED; urgency=medium
     the debian/not-installed file listing some files that we modify
     and install manually.
 
- -- Peter Pentchev <roam@debian.org>  Fri, 04 Jan 2019 01:45:12 +0200
+ -- Peter Pentchev <roam@debian.org>  Fri, 04 Jan 2019 23:54:23 +0200
 
 dante (1.4.2+dfsg-4) unstable; urgency=medium
 
