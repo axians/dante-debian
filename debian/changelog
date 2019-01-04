@@ -5,6 +5,9 @@ dante (1.4.2+dfsg-5) UNRELEASED; urgency=medium
   * Declare compliance with Debian Policy 4.3.0 with no changes.
   * Move away from git-dpm.
   * Add the year 2019 to my debian/* copyright notice.
+  * Run dh_missing with the --fail-missing option and create
+    the debian/not-installed file listing some files that we modify
+    and install manually.
 
  -- Peter Pentchev <roam@debian.org>  Fri, 04 Jan 2019 01:45:12 +0200
 
