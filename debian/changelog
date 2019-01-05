@@ -1,3 +1,10 @@
+dante (1.4.2+dfsg-6) UNRELEASED; urgency=medium
+
+  * Dynamically generate the debian/not-installed file to fix
+    a FTBFS on any architecture other than x86_64-linux-gnu.
+
+ -- Peter Pentchev <roam@debian.org>  Sat, 05 Jan 2019 12:08:07 +0200
+
 dante (1.4.2+dfsg-5) unstable; urgency=medium
 
   * Bump the debhelper compatibility level to 12 with no changes.
