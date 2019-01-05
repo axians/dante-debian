@@ -1,10 +1,10 @@
-dante (1.4.2+dfsg-6) UNRELEASED; urgency=medium
+dante (1.4.2+dfsg-6) unstable; urgency=medium
 
   * Use a wildcard in debian/not-installed instead of hardcoding
     the x86_64-linux-gnu multiarch triplet, thus fixing the FTBFS on
     any other architecture.  Closes: #918355
 
- -- Peter Pentchev <roam@debian.org>  Sat, 05 Jan 2019 12:08:07 +0200
+ -- Peter Pentchev <roam@debian.org>  Sat, 05 Jan 2019 16:23:14 +0200
 
 dante (1.4.2+dfsg-5) unstable; urgency=medium
 
