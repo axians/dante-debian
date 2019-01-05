@@ -1,7 +1,8 @@
 dante (1.4.2+dfsg-6) UNRELEASED; urgency=medium
 
-  * Dynamically generate the debian/not-installed file to fix
-    a FTBFS on any architecture other than x86_64-linux-gnu.
+  * Use a wildcard in debian/not-installed instead of hardcoding
+    the x86_64-linux-gnu multiarch triplet, thus fixing the FTBFS on
+    any other architecture.  Closes: #918355
 
  -- Peter Pentchev <roam@debian.org>  Sat, 05 Jan 2019 12:08:07 +0200
 

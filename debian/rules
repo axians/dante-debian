@@ -62,7 +62,6 @@ override_dh_installsystemd:
 	dh_installsystemd -pdante-server --name=danted
 
 override_dh_missing:
-	sed -e 's/%%MULTIARCH%%/${DEB_HOST_MULTIARCH}/g' < debian/not-installed.in > debian/not-installed
 	dh_missing --fail-missing
 
 %:

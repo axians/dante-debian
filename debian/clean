@@ -2,7 +2,6 @@ _reconf
 _sockopttmp0.c
 buildenv.txt
 buildenvrc
-debian/not-installed
 dlib/_reconf
 dlib/config_parse.c
 dlib/config_scan.c
