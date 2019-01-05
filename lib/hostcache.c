@@ -64,7 +64,7 @@ static const char rcsid[] =
 static size_t
 hosthash(const char *name, const size_t size);
 /*
- * Calculates a hash value for "name" and returns it's value.
+ * Calculates a hash value for "name" and returns its value.
  * Size of hash table is given by "size".
 */
 
@@ -91,7 +91,7 @@ hostentcopy(hostentry_t *to, const struct hostent *from);
 static size_t
 addrhash(const struct sockaddr_storage *addr, const size_t size);
 /*
- * Calculates a hash value for the IP-address "addr" and returns it's value.
+ * Calculates a hash value for the IP-address "addr" and returns its value.
  * Size of hash table is given by "size".
 */
 
