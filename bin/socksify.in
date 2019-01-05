@@ -72,7 +72,7 @@ fi
 
 #dlib/Makefile.am libtool flags should produce a predictable library name
 #(ending in SOLIB_POSTFIX).
-LIBRARY="${SOCKS_LIBRARY:-${FULLPATH}libdsocks.@SOLIB_POSTFIX@}"
+LIBRARY="${SOCKS_LIBRARY:-${FULLPATH}libdsocksd.@SOLIB_POSTFIX@}"
 
 #platform dependent LD_PRELOAD-variant format
 PRELOAD_SEPERATOR="@PRELOAD_SEPERATOR@"
