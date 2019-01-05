@@ -259,7 +259,11 @@ mother_envsetup(argc, argv)
     */
 
    bzero(&sigact, sizeof(sigact));
+#ifdef SA_SIGINFO
    sigact.sa_flags = SA_RESTART | SA_NOCLDSTOP | SA_SIGINFO;
+#else
+   sigact.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+#endif
 
    sigact.sa_sigaction = siginfo;
 #if HAVE_SIGNAL_SIGINFO
@@ -292,7 +296,9 @@ mother_envsetup(argc, argv)
       if (sigaction(ignoresignalv[i], &sigact, NULL) != 0)
          serr("sigaction(%d)", ignoresignalv[i]);
 
+#ifdef SA_SIGINFO
    sigact.sa_flags     = SA_SIGINFO;   /* want to be interrupted. */
+#endif
    sigact.sa_sigaction = sigalrm;
    if (sigaction(SIGALRM, &sigact, NULL) != 0)
       serr("sigaction(SIGALRM)");
