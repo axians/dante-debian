@@ -1227,8 +1227,8 @@ socks_addrinit(void)
                serr("%s: mutex_init() failed", function);
          }
       }
-#endif /* HAVE_PTHREAD_H */
    }
+#endif /* HAVE_PTHREAD_H */
 
    inited         = 1;
    doing_addrinit = 0;
