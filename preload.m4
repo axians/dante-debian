@@ -564,7 +564,8 @@ if test x"${preload_enabled}" = xt; then
 		;;
 
 	    *)
-		LIBRARY_DLOPEN="${base_library_path}libdl.${SOLIB_POSTFIX}"
+	    	# multiarch-find-lib only needs the filename anyway
+		LIBRARY_DLOPEN="/lib/libdl.so.2"
 		;;
 	esac
 	SOCKSIFY_PRELOAD_LIBS="${SOCKSIFY_PRELOAD_LIBS}${LIBRARY_DLOPEN:+${PRELOAD_SEPERATOR}}${LIBRARY_DLOPEN}"
