@@ -5,8 +5,11 @@ dante (1.4.2+dfsg-7) UNRELEASED; urgency=medium
   * Fix a use-after-free bug in the config parsing.
   * Use the test-name autopkgtest feature.
   * Add a trivial git-buildpackage config file.
+  * Bump Standards-Version to 4.4.0 with no changes.
+  * Mark the /lib64 directory as optional in the danted service file.
+    Closes: #932169
 
- -- Peter Pentchev <roam@debian.org>  Tue, 16 Jul 2019 14:29:41 +0300
+ -- Peter Pentchev <roam@debian.org>  Tue, 16 Jul 2019 16:22:40 +0300
 
 dante (1.4.2+dfsg-6) unstable; urgency=medium
 
