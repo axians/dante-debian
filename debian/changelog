@@ -1,8 +1,12 @@
 dante (1.4.2+dfsg-7) UNRELEASED; urgency=medium
 
   * Run dpkg-gensymbols with -c4 for more stringent checks.
+  * Drop Breaks/Replaces satisfied in oldstable.
+  * Fix a use-after-free bug in the config parsing.
+  * Use the test-name autopkgtest feature.
+  * Add a trivial git-buildpackage config file.
 
- -- Peter Pentchev <roam@debian.org>  Sun, 06 Jan 2019 13:21:01 +0200
+ -- Peter Pentchev <roam@debian.org>  Tue, 16 Jul 2019 14:29:41 +0300
 
 dante (1.4.2+dfsg-6) unstable; urgency=medium
 
