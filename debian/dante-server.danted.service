@@ -16,7 +16,7 @@ ExecStartPre=/bin/sh -c ' \
 	'
 PrivateTmp=yes
 InaccessibleDirectories=/boot /home /media /mnt /opt /root
-ReadOnlyDirectories=/bin /etc /lib /lib64 /sbin /usr /var
+ReadOnlyDirectories=/bin /etc /lib -/lib64 /sbin /usr /var
 DeviceAllow=/dev/null rw
 
 [Install]
