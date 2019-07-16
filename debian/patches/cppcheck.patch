@@ -1,7 +1,7 @@
 Description: Fix some cppcheck warnings.
 Author: Peter Pentchev <roam@ringlet.net>
 Forwarded: no
-Last-Update: 2016-04-05
+Last-Update: 2019-07-16
 
 --- a/lib/address.c
 +++ b/lib/address.c
@@ -42,3 +42,25 @@ Last-Update: 2016-04-05
           rc = 0;
  #endif /* HAVE_PAM */
        else
+--- a/lib/config_parse.y
++++ b/lib/config_parse.y
+@@ -965,7 +965,7 @@
+ #if !SOCKS_CLIENT
+    static ruleaddr_t mem;
+    struct servent    *service;
+-   serverstate_t     statemem;
++   static serverstate_t statemem;
+ 
+    bzero(&statemem, sizeof(statemem));
+    state               = &statemem;
+--- a/lib/config_parse.c
++++ b/lib/config_parse.c
+@@ -3936,7 +3936,7 @@
+ #if !SOCKS_CLIENT
+    static ruleaddr_t mem;
+    struct servent    *service;
+-   serverstate_t     statemem;
++   static serverstate_t statemem;
+ 
+    bzero(&statemem, sizeof(statemem));
+    state               = &statemem;
