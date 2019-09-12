@@ -41,11 +41,11 @@
 .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
 .\" the rights to redistribute these changes.
 .\"
-.TH SOCKD 8 "July 29 2013"
+.TH DANTED 8 "July 29 2013"
 .SH NAME
-sockd \- network proxyserver
+danted \- network proxyserver
 .SH SYNOPSIS
-.B sockd
+.B danted
 .RB [ \-DLVdhnv ]
 .RB [ \-N
 .IR number ]
@@ -103,7 +103,7 @@ Disables TCP keep-alive messages.  Normally
 enables TCP keep-alive messages so that connections from machines that
 have crashed or for other reasons no longer can be reached time out.
 Note that this can take several hours.  See also the "timeout"
-option in sockd.conf(5).
+option in danted.conf(5).
 .TP
 .BI \-p file
 .B Dante
@@ -134,10 +134,10 @@ It is recommended that
 be set to a (local) filesystem with low latency.  The directory
 should have read/write/execute permission by both the
 privileged and unprivileged userid (as specified in
-/etc/sockd.conf), but no other non-privileged users.
+/etc/danted.conf), but no other non-privileged users.
 .SH FILES
 .TP
-/etc/sockd.conf
+/etc/danted.conf
 .B Dante
 server configuration file.
 .SH AUTHORS
@@ -145,7 +145,7 @@ For inferno Nettverk A/S:
    Michael Shuldman
    Karl-Andre' Skevik
 .SH SEE ALSO
-socks.conf(5), sockd.conf(5)
+dante.conf(5), danted.conf(5)
 .PP
 Information about new releases and other related issues can be found
 on the \fBDante\fP WWW home page: http://www.inet.no/dante/
