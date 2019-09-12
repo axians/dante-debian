@@ -154,7 +154,7 @@ addclientrule(newrule)
     *    - make sure all rules have the same rule number (the user has only
     *      created one rule, our problem that it expands to multiple rules).
     *    - make sure the shmem-objects reference the same shmem ids, as the
-    *      limits/settings the user has specifed should be shared across
+    *      limits/settings the user has specified should be shared across
     *      all clients matching the rule(s).
     */
 
@@ -1536,15 +1536,15 @@ rulespermit(s, peer, local, clientauth, srcauth, match, state,
           * subsequent close(2) without us having sent the whole banner to
           * the client first.  But if the kernel wants to send RST while
           * we have data not yet sent, it will discard the data not yet
-          * sent.  We therefor drain the data first, trying to make sure the
+          * sent.  We therefore drain the data first, trying to make sure the
           * kernel does not discard the data in the outbuffer and sends a
           * RST when we close(2).  Note that this changes the RST to FIN.
           * See 2.17 in RFC 2525, "Failure to RST on close with data pending",
           * for more information about this.
           *
           * Note there is a race here, as the client could send us data
-          * between our last read(2) call and us closing the session later, not
-          * but much to do about that.
+          * between our last read(2) call and us closing the session later, but
+          * there's not much we can do about that.
           */
           char buf[1024];
           ssize_t p;
@@ -2301,7 +2301,7 @@ addrule(newrule, rulebase, ruletype)
     * If no socksmethod is set in this rule, set all from the global methods.
     * For the client-rule there isn't really many checks we can do on what
     * methods to set (e.g., do they support what will be  required by the
-    * matchin socks-rule?), as we won't know what is required until we know
+    * matching socks-rule?), as we won't know what is required until we know
     * what the matching socks-rule will be for the clients request.
     *
     * For the socks-rule, we can check things however.
@@ -2451,7 +2451,7 @@ addrule(newrule, rulebase, ruletype)
     * Set default values for some authentication-methods, if none
     * set.  Note that this needs to be set regardless of what the
     * method set in the rule is, as checkconfig() might add methods
-    * to the rules as part of it's operation.  This happens e.g. when
+    * to the rules as part of its operation.  This happens e.g. when
     * adding default methods to the global clientmethod line, if appropriate,
     * and then adding the same methods to the client-rules, if the rules
     * do not already have a method.
