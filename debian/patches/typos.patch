@@ -1,7 +1,7 @@
 Description: Fix some typographical and grammatical errors.
 Author: Peter Pentchev <roam@ringlet.net>
 Forwarded: not-yet
-Last-Update: 2018-04-12
+Last-Update: 2019-09-12
 
 --- a/INSTALL
 +++ b/INSTALL
@@ -132,15 +132,18 @@ Last-Update: 2018-04-12
  	    identd on the client
  	93: request rejected because the client program and identd
  	    report different user-ids.
-@@ -121,7 +121,7 @@
+@@ -121,9 +121,9 @@
  of that socket to the client in DSTPORT and DSTIP, respectively. If the
  DSTIP in the reply is 0 (the value of constant INADDR_ANY), then the
  client should replace it with the IP address of the SOCKS server to which
 -the cleint is connected. (This happens if the SOCKS server is not a
 +the client is connected. (This happens if the SOCKS server is not a
  multi-homed host.)  In the typical scenario, these two numbers are
- made available to the application client prgram via the result of the
+-made available to the application client prgram via the result of the
++made available to the application client program via the result of the
  subsequent getsockname() call.  The application protocol must provide a
+ way for these two pieces of information to be sent from the client to
+ the application server so that it can initiate the connection, which
 --- a/doc/sockd.conf.5
 +++ b/doc/sockd.conf.5
 @@ -65,7 +65,7 @@
