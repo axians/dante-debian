@@ -140,7 +140,7 @@ passworddbisunique(void)
 #if HAVE_PAM
          else if (methodisset(AUTHMETHOD_PAM_USERNAME,
                               sockscf.smethodv,
-                              sockscf.smethodc)) {
+                              sockscf.smethodc))
          rc = 0;
 #endif /* HAVE_PAM */
       else
