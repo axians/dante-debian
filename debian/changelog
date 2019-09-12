@@ -1,4 +1,4 @@
-dante (1.4.2+dfsg-7) UNRELEASED; urgency=medium
+dante (1.4.2+dfsg-7) unstable; urgency=medium
 
   * Run dpkg-gensymbols with -c4 for more stringent checks.
   * Drop Breaks/Replaces satisfied in oldstable.
