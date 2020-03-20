@@ -1,3 +1,9 @@
+dante (1.4.2+dfsg-8) UNRELEASED; urgency=medium
+
+  * Declare compliance with Policy 4.5.0 with no changes.
+
+ -- Peter Pentchev <roam@debian.org>  Fri, 20 Mar 2020 02:45:27 +0200
+
 dante (1.4.2+dfsg-7) unstable; urgency=medium
 
   * Run dpkg-gensymbols with -c4 for more stringent checks.
