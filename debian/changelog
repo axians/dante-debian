@@ -1,8 +1,9 @@
 dante (1.4.2+dfsg-8) UNRELEASED; urgency=medium
 
   * Declare compliance with Policy 4.5.0 with no changes.
+  * Add the year 2020 to my debian/* copyright notice.
 
- -- Peter Pentchev <roam@debian.org>  Fri, 20 Mar 2020 02:45:27 +0200
+ -- Peter Pentchev <roam@debian.org>  Sun, 29 Mar 2020 02:24:41 +0200
 
 dante (1.4.2+dfsg-7) unstable; urgency=medium
 
