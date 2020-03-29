@@ -2,7 +2,7 @@ Source: dante
 Section: net
 Priority: optional
 Maintainer: Peter Pentchev <roam@debian.org>
-Build-Depends: debhelper-compat (= 12),
+Build-Depends: debhelper (>> 12.8~),
  flex, libtool-bin, libpam0g-dev, libwrap0-dev
 Homepage: https://www.inet.no/dante/
 Standards-Version: 4.5.0
