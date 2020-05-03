@@ -3,8 +3,6 @@ dante (1.4.2+dfsg-8) UNRELEASED; urgency=medium
   * Declare compliance with Policy 4.5.0 with no changes.
   * Add the year 2020 to my debian/* copyright notice.
   * Bump the debhelper compatibility level to 13:
-    - reintroduce the debian/compat file while compat level 13 is
-      still in beta
     - drop the conditional around the "auto_test" target - debhelper
       will not execute it at all unless it is needed
     - use "execute_after" for the "auto_clean" target
