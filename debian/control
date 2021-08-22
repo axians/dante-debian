@@ -5,7 +5,7 @@ Maintainer: Peter Pentchev <roam@debian.org>
 Build-Depends: debhelper-compat (= 13),
  flex, libtool-bin, libpam0g-dev, libwrap0-dev
 Homepage: https://www.inet.no/dante/
-Standards-Version: 4.5.0
+Standards-Version: 4.6.0
 Vcs-Git: https://gitlab.com/dante/pkg-debian-full.git
 Vcs-Browser: https://gitlab.com/dante/pkg-debian-full
 Rules-Requires-Root: no

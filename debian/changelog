@@ -1,6 +1,6 @@
 dante (1.4.2+dfsg-8) UNRELEASED; urgency=medium
 
-  * Declare compliance with Policy 4.5.0 with no changes.
+  * Declare compliance with Policy 4.6.0 with no changes.
   * Add the year 2020 to my debian/* copyright notice.
   * Bump the debhelper compatibility level to 13:
     - drop the conditional around the "auto_test" target - debhelper
@@ -8,7 +8,7 @@ dante (1.4.2+dfsg-8) UNRELEASED; urgency=medium
     - use "execute_after" for the "auto_clean" target
     - drop the "dh_missing" override; "--fail-missing" is the default now
 
- -- Peter Pentchev <roam@debian.org>  Sun, 29 Mar 2020 02:24:41 +0200
+ -- Peter Pentchev <roam@debian.org>  Sun, 22 Aug 2021 16:31:41 +0300
 
 dante (1.4.2+dfsg-7) unstable; urgency=medium
 
