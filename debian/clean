@@ -8,6 +8,7 @@ dlib/config_scan.c
 dlib/socks.map
 dlib/socks.sym
 include/errorsymbols_gen.h
+include/redefac.h
 lib/_reconf
 lib/sockopt_gen.c
 lib/socks.sym
