@@ -178,7 +178,7 @@ Last-Update: 2010-07-01
  .SH DESCRIPTION
  The configuration file for the socks client library allow control over
  logging and server selection.  It is divided into two parts;
-@@ -186,13 +186,13 @@
+@@ -188,13 +188,13 @@
  Some additional environment variables are documented in socksify(1).
  .TP
  .SH FILES

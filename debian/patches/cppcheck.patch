@@ -1,11 +1,11 @@
 Description: Fix some cppcheck warnings.
 Author: Peter Pentchev <roam@ringlet.net>
 Forwarded: no
-Last-Update: 2019-07-16
+Last-Update: 2023-07-25
 
 --- a/lib/address.c
 +++ b/lib/address.c
-@@ -1227,8 +1227,8 @@
+@@ -1259,8 +1259,8 @@
                 serr("%s: mutex_init() failed", function);
           }
        }
@@ -17,7 +17,7 @@ Last-Update: 2019-07-16
     doing_addrinit = 0;
 --- a/lib/clientprotocol.c
 +++ b/lib/clientprotocol.c
-@@ -1213,7 +1213,12 @@
+@@ -1219,7 +1219,12 @@
     SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);
  
     if (gss_err_isset(major_status, minor_status, tmpbuf, sizeof(tmpbuf))) {
@@ -31,20 +31,9 @@ Last-Update: 2019-07-16
  
        SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);
        goto error;
---- a/sockd/method_uname.c
-+++ b/sockd/method_uname.c
-@@ -140,7 +140,7 @@
- #if HAVE_PAM
-          else if (methodisset(AUTHMETHOD_PAM_USERNAME,
-                               sockscf.smethodv,
--                              sockscf.smethodc)) {
-+                              sockscf.smethodc))
-          rc = 0;
- #endif /* HAVE_PAM */
-       else
 --- a/lib/config_parse.y
 +++ b/lib/config_parse.y
-@@ -965,7 +965,7 @@
+@@ -1001,7 +1001,7 @@
  #if !SOCKS_CLIENT
     static ruleaddr_t mem;
     struct servent    *service;
@@ -55,7 +44,7 @@ Last-Update: 2019-07-16
     state               = &statemem;
 --- a/lib/config_parse.c
 +++ b/lib/config_parse.c
-@@ -3936,7 +3936,7 @@
+@@ -3199,7 +3199,7 @@
  #if !SOCKS_CLIENT
     static ruleaddr_t mem;
     struct servent    *service;

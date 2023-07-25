@@ -9,7 +9,7 @@ Last-Update: 2016-04-06
 
 --- a/include/common.h
 +++ b/include/common.h
-@@ -1088,7 +1088,8 @@
+@@ -1098,7 +1098,8 @@
   * cast is necessary on AIX, due to buggy headers there?
   * needs additional testing on AIX, disable for now.
   */
@@ -21,7 +21,7 @@ Last-Update: 2016-04-06
  #endif /* HAVE_CMSGHDR */
 --- a/lib/Rcompat.c
 +++ b/lib/Rcompat.c
-@@ -293,7 +293,7 @@
+@@ -297,7 +297,7 @@
  
     /* no cmsg on proxied sockets. */
     CMSG_TOTLEN(*msg)      = 0;

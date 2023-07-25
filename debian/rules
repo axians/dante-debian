@@ -15,8 +15,6 @@ override_dh_auto_configure:
 	  --with-sockd-conf=/etc/danted.conf \
 	  --with-pidfile=/var/run/danted.pid \
 	  --without-gssapi
-	cp lib/config_parse.c lib/config_scan.c dlib/
-	cp lib/config_parse.c lib/config_scan.c sockd/
 
 execute_after_dh_auto_clean:
 	for d in sockd dlib; do \

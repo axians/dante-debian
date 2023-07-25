@@ -1,4 +1,4 @@
-dante (1.4.2+dfsg-8) UNRELEASED; urgency=medium
+dante (1.4.3+dfsg-1) UNRELEASED; urgency=medium
 
   * Declare compliance with Policy 4.6.2 with no changes.
   * Bump the debhelper compatibility level to 13:
@@ -11,6 +11,9 @@ dante (1.4.2+dfsg-8) UNRELEASED; urgency=medium
   * dante-server: drop the dependency on lsb-base; the sysvinit-utils
     package that provides the functionality needed by the SysV init script
     is marked as essential.
+  * New upstream release:
+    - update the upstream copyright years
+    - refresh the patches
 
  -- Peter Pentchev <roam@debian.org>  Sun, 25 Jun 2023 08:34:58 +0300
 

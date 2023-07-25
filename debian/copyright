@@ -6,7 +6,7 @@ License: BSD-3-clause-Inferno
 Files-Excluded: doc/rfc1928.txt doc/rfc1929.txt doc/rfc1961.txt
 
 Files: *
-Copyright: (c) 1997 - 2017
+Copyright: (c) 1997 - 2021
            Inferno Nettverk A/S, Norway.  All rights reserved.
 License: BSD-3-clause-Inferno
 
