@@ -1,4 +1,4 @@
-libdsocksd.so.0 libdsocksd0 #MINVER#
+libdsocksd.so.0 libdsocksd0t64 #MINVER#
  accept@Base 1.4.1+dfsg
  bind@Base 1.4.1+dfsg
  bindresvport@Base 1.4.1+dfsg
