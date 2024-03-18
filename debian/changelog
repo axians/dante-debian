@@ -14,8 +14,19 @@ dante (1.4.3+dfsg-1) UNRELEASED; urgency=medium
   * New upstream release:
     - update the upstream copyright years
     - refresh the patches
+  * Add the year 2024 to my debian/* copyright notice.
+  * Add the implicit patch to fix some GCC warnings.
+  * Acknowledge NMU for the 64-bit time_t library renaming.
+    Thanks, Michael Hudson-Doyle!
 
- -- Peter Pentchev <roam@debian.org>  Sun, 25 Jun 2023 08:34:58 +0300
+ -- Peter Pentchev <roam@debian.org>  Mon, 18 Mar 2024 12:28:16 +0200
+
+dante (1.4.2+dfsg-7.1~exp1) experimental; urgency=medium
+
+  * Non-maintainer upload.
+  * Rename libraries for 64-bit time_t transition.
+
+ -- Michael Hudson-Doyle <mwhudson@debian.org>  Mon, 05 Feb 2024 02:19:17 +0000
 
 dante (1.4.2+dfsg-7) unstable; urgency=medium
 
