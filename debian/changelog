@@ -1,5 +1,6 @@
-dante (1.4.3+dfsg-1) UNRELEASED; urgency=medium
+dante (1.4.3+dfsg-1) unstable; urgency=medium
 
+  * Upload to unstable.
   * Declare compliance with Policy 4.6.2 with no changes.
   * Bump the debhelper compatibility level to 13:
     - drop the conditional around the "auto_test" target - debhelper
@@ -19,7 +20,7 @@ dante (1.4.3+dfsg-1) UNRELEASED; urgency=medium
   * Acknowledge NMU for the 64-bit time_t library renaming.
     Thanks, Michael Hudson-Doyle! Closes: #1064285
 
- -- Peter Pentchev <roam@debian.org>  Mon, 18 Mar 2024 12:28:16 +0200
+ -- Peter Pentchev <roam@debian.org>  Mon, 18 Mar 2024 12:36:18 +0200
 
 dante (1.4.2+dfsg-7.1~exp1) experimental; urgency=medium
 
