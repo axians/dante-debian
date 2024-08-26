@@ -3,4 +3,3 @@
 # specify the libc headers package here.
 #
 libdsocksd0t64: symbols-file-missing-build-depends-package-field
-libdsocksd0t64: package-name-doesnt-match-sonames libdsocksd0
