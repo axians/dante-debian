@@ -6,7 +6,7 @@ Last-Update: 2017-01-09
 
 --- a/lib/tostring.c
 +++ b/lib/tostring.c
-@@ -1551,7 +1551,7 @@
+@@ -1555,7 +1555,7 @@
           return "SIGPROF";
  #endif /* SIGPROF */
  

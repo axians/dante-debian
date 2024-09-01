@@ -5,7 +5,7 @@ Last-Update: 2017-01-12
 
 --- a/include/osdep.h
 +++ b/include/osdep.h
-@@ -475,6 +475,10 @@
+@@ -480,6 +480,10 @@
  #define ETHER_ADDR_LEN  (6)
  #endif /* !ETHER_ADDR_LEN */
  

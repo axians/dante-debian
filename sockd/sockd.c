@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
- *               2008, 2009, 2010, 2011, 2012, 2013, 2014, 2016, 2017
+ *               2008, 2009, 2010, 2011, 2012, 2013, 2014, 2016, 2017, 2019,
+ *               2020, 2021
  *      Inferno Nettverk A/S, Norway.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +46,7 @@
 #include "common.h"
 
 static const char rcsid[] =
-"$Id: sockd.c,v 1.925.4.5.2.4 2017/01/31 16:16:03 karls Exp $";
+"$Id: sockd.c,v 1.925.4.5.2.4.4.10 2021/03/24 23:06:07 karls Exp $";
 
 
 
@@ -69,7 +70,8 @@ serverinit(int argc, char *argv[]);
  */
 
 static void
-usage(int code);
+usage(int code)
+      __ATTRIBUTE__((noreturn));
 /*
  * print usage.
  */
@@ -81,7 +83,8 @@ showversion(const int level);
  */
 
 static void
-showlicense(void);
+showlicense(void)
+            __ATTRIBUTE__((noreturn));
 /*
  * shows license and exits.
  */
@@ -676,7 +679,6 @@ moncontrol(1);
           * returned above points to.
           */
          const sockd_child_t fromchild = *child;
-         unsigned char command;
          int childhasfinished;
 
          if (sockd_handledsignals())
@@ -734,7 +736,10 @@ moncontrol(1);
                }
 
                ++sockscf.stat.negotiate.received;
-               command = req.reqinfo.command;
+
+               handlechildcommand(req.reqinfo.command,
+                                  getchild(fromchild.pid),
+                                  &childhasfinished);
 
                log_clientsend(&req.from, child, 0);
 
@@ -859,7 +864,10 @@ moncontrol(1);
                }
 
                ++sockscf.stat.request.received;
-               command = io.reqinfo.command;
+
+               handlechildcommand(io.reqinfo.command,
+                                  getchild(fromchild.pid),
+                                  &childhasfinished);
 
                switch (io.state.protocol) {
                   case SOCKS_TCP:
@@ -1007,7 +1015,11 @@ moncontrol(1);
                }
 
                ++sockscf.stat.io.received;
-               command = client.reqinfo.command;
+
+               handlechildcommand(client.reqinfo.command,
+                                  getchild(fromchild.pid),
+                                  &childhasfinished);
+
 
                log_clientsend(&client.from, child, 0);
                p = send_client(child->s, &client, NULL, 0);
@@ -1064,10 +1076,6 @@ moncontrol(1);
             default:
                SERRX(fromchild.type);
          }
-
-         handlechildcommand(command,
-                            getchild(fromchild.pid),
-                            &childhasfinished);
 
          if (childhasfinished)
             closechild(fromchild.pid, 1);
@@ -1228,7 +1236,7 @@ usage(code)
 {
 
    (void)fprintf(code == 0 ? stdout : stderr,
-"%s v%s.  Copyright (c) 1997 - 2014, Inferno Nettverk A/S, Norway.\n"
+"%s v%s.  Copyright (c) 1997 - 2021, Inferno Nettverk A/S, Norway.\n"
 "usage: %s [-DLNVdfhnv]\n"
 "   -D             : run in daemon mode\n"
 "   -L             : shows the license for this program\n"
@@ -1295,7 +1303,7 @@ showversion(level)
 
    size_t i;
 
-   printf("%s v%s.  Copyright (c) 1997 - 2014 Inferno Nettverk A/S, Norway\n",
+   printf("%s v%s.  Copyright (c) 1997 - 2021 Inferno Nettverk A/S, Norway\n",
           PRODUCT, VERSION);
 
    for (i = 0; i < licenseinfoc; ++i) {
@@ -1348,7 +1356,7 @@ showlicense(void)
 /*\n\
  * Copyright (c) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,\n\
  *               2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016,\n\
- *               2017\n\
+ *               2017, 2018, 2019, 2020, 2021\n\
  *      Inferno Nettverk A/S, Norway.  All rights reserved.\n\
  *\n\
  * Redistribution and use in source and binary forms, with or without\n\
@@ -1399,6 +1407,7 @@ serverinit(argc, argv)
    char *argv[];
 {
    const char *function = "serverinit()";
+   size_t i;
    int ch;
 
 #if !HAVE_PROGNAME
@@ -1425,6 +1434,9 @@ serverinit(argc, argv)
    sockscf.loglock        = -1;
    sockscf.shmemconfigfd  = -1;
    sockscf.shmemfd        = -1;
+
+   for (i = 0; i < ELEMENTS(sockscf.state.reservedfdv); ++i)
+      sockscf.state.reservedfdv[i] = -1;
 
    while ((ch = getopt(argc, argv, "DLN:Vd:f:hnp:v")) != -1) {
       switch (ch) {
@@ -1633,16 +1645,18 @@ handlechildcommand(command, child, finished)
          SWARNX(command);
    }
 
-   if (sockscf.child.maxrequests != 0
-   &&  child->freec              == maxfreeslots(child->type)
-   &&  child->sentc              >= sockscf.child.maxrequests) {
+   if (child->freec == maxfreeslots(child->type)
+   &&  child_should_retire(child)) {
+      time_t tnow;
+
       slog(LOG_DEBUG,
-           "%s: should close  connection to %s %ld: %lu request%s handled",
+           "%s: %s %ld is ready for retirement: %lu requests handled "
+           "during %lu seconds",
            function,
            childtype2string(child->type),
            (long)child->pid,
            (unsigned long)child->sentc,
-           (unsigned long)child->sentc == 1 ? "" : "s");
+           socks_difftime(time_monotonic(&tnow), child->created));
 
       *finished = 1;
    }
@@ -1654,7 +1668,7 @@ handlechildcommand(command, child, finished)
 static void
 dotest(void)
 {
-   const char *function = "dotest()";
+/*   const char *function = "dotest()"; */
 
    doconfigtest();
 

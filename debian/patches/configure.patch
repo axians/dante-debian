@@ -7,15 +7,15 @@ Last-Update: 2016-04-06
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -79,6 +79,8 @@
- oCFLAGS="$CFLAGS"
+@@ -81,6 +81,8 @@
  unset CFLAGS
+ unset LDFLAGS
  LT_INIT
 +strippedCFLAGS=`echo "$CFLAGS" | sed -e 's/^[[:space:]]*//; s/[[:space:]]\+/ /g; s/[[:space:]]*$//'`
 +if test "$strippedCFLAGS" = '-g -O2'; then CFLAGS=''; fi
  autoconf_compflags="$CFLAGS"
  CFLAGS=$oCFLAGS
- 
+ LDFLAGS="$oLDFLAGS"
 --- a/preload.m4
 +++ b/preload.m4
 @@ -564,7 +564,8 @@

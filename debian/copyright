@@ -6,7 +6,7 @@ License: BSD-3-clause-Inferno
 Files-Excluded: doc/rfc1928.txt doc/rfc1929.txt doc/rfc1961.txt
 
 Files: *
-Copyright: (c) 1997 - 2017
+Copyright: (c) 1997 - 2021
            Inferno Nettverk A/S, Norway.  All rights reserved.
 License: BSD-3-clause-Inferno
 
@@ -47,7 +47,7 @@ Files: debian/*
 Copyright: Copyright (C) 1999-2005  Adrian Bridgett <bridgett@debian.org>
            Copyright (C) 2006  Thijs Kinkhorst <thijs@debian.org>
            Copyright (C) 2007  Julien Cristau <jcristau@debian.org>
-           Copyright (C) 2008, 2010, 2016-2019  Peter Pentchev <roam@debian.org>
+           Copyright (C) 2008, 2010, 2016-2024  Peter Pentchev <roam@debian.org>
 License: GPL-2+
 
 License: BSD-3-clause-Inferno
