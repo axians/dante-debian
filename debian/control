@@ -2,22 +2,33 @@ Source: dante
 Section: net
 Priority: optional
 Maintainer: Peter Pentchev <roam@debian.org>
-Build-Depends: debhelper-compat (= 13),
- bison, flex, libtool-bin, libpam0g-dev, libwrap0-dev
+Build-Depends:
+ bison,
+ debhelper-compat (= 13),
+ flex,
+ libpam0g-dev,
+ libtool-bin,
+ libwrap0-dev,
 Homepage: https://www.inet.no/dante/
 Standards-Version: 4.7.0
 Vcs-Git: https://gitlab.com/dante/pkg-debian-full.git
 Vcs-Browser: https://gitlab.com/dante/pkg-debian-full
 Rules-Requires-Root: no
+X-Style: black
 
 Package: libsocksd0t64
-Provides: ${t64:Provides}
-Replaces: libsocksd0
-Breaks: libsocksd0 (<< ${source:Version})
+Provides:
+ ${t64:Provides},
+Replaces:
+ libsocksd0,
+Breaks:
+ libsocksd0 (<< ${source:Version}),
 Architecture: any
 Multi-Arch: same
 Section: libs
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: SOCKS library for packages built using libsocksd-dev
  Dante is a circuit-level firewall/proxy that can be used to provide
  convenient and secure network connectivity to a wide range of hosts
@@ -31,7 +42,9 @@ Package: libsocksd0-dev
 Architecture: any
 Multi-Arch: same
 Section: libdevel
-Depends: libsocksd0t64 (= ${binary:Version}), ${misc:Depends}
+Depends:
+ libsocksd0t64 (= ${binary:Version}),
+ ${misc:Depends},
 Description: Development files for compiling programs with SOCKS support
  Dante is a circuit-level firewall/proxy that can be used to provide
  convenient and secure network connectivity to a wide range of hosts
@@ -42,13 +55,18 @@ Description: Development files for compiling programs with SOCKS support
  with SOCKS support.
 
 Package: libdsocksd0t64
-Provides: ${t64:Provides}
-Replaces: libdsocksd0
-Breaks: libdsocksd0 (<< ${source:Version})
+Provides:
+ ${t64:Provides},
+Replaces:
+ libdsocksd0,
+Breaks:
+ libdsocksd0 (<< ${source:Version}),
 Architecture: any
 Multi-Arch: same
 Section: libs
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: SOCKS library preloaded in user applications
  Dante is a circuit-level firewall/proxy that can be used to provide
  convenient and secure network connectivity to a wide range of hosts
@@ -61,8 +79,12 @@ Description: SOCKS library preloaded in user applications
 Package: dante-client
 Architecture: all
 Multi-Arch: foreign
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends},
- libdsocksd0t64 (>= ${source:Version}), libfile-which-perl
+Depends:
+ libdsocksd0t64 (>= ${source:Version}),
+ libfile-which-perl,
+ ${misc:Depends},
+ ${perl:Depends},
+ ${shlibs:Depends},
 Description: SOCKS wrapper for users behind a firewall
  Dante is a circuit-level firewall/proxy that can be used to provide
  convenient and secure network connectivity to a wide range of hosts
@@ -76,8 +98,11 @@ Description: SOCKS wrapper for users behind a firewall
 Package: dante-server
 Architecture: any
 Multi-Arch: foreign
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Pre-Depends:
+ ${misc:Pre-Depends},
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: SOCKS (v4 and v5) proxy daemon (danted)
  Dante is a circuit-level firewall/proxy that can be used to provide
  convenient and secure network connectivity to a wide range of hosts
