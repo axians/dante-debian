@@ -41,9 +41,9 @@
 .\" any improvements or extensions that they make and grant Inferno Nettverk A/S
 .\" the rights to redistribute these changes.
 .\"
-.TH SOCKS.CONF 5 "July 29 2013"
+.TH DANTE.CONF 5 "July 29 2013"
 .SH NAME
-socks.conf \- socks client configuration file syntax
+dante.conf \- socks client configuration file syntax
 .SH DESCRIPTION
 The configuration file for the socks client library allow control over
 logging and server selection.  It is divided into two parts;
@@ -188,13 +188,13 @@ whether the application to socksify needs threadlocking or not.
 Some additional environment variables are documented in socksify(1).
 .TP
 .SH FILES
-.I /etc/socks.conf
+.I /etc/dante.conf
 .SH AUTHORS
 For inferno Nettverk A/S:
    Michael Shuldman
    Karl-Andre' Skevik
 .SH SEE ALSO
-socksify(1), sockd(8), sockd.conf(5)
+socksify(1), danted(8), danted.conf(5)
 
 .PP
 Information about new releases and other related issues can be found on
