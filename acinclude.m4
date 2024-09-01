@@ -994,6 +994,9 @@ void sigalrm(int signal);
 
 int resval = -1; /* -1: fail, 0: ok */
 
+void binsearch(long startval, long maxval);
+int checkval(long val);
+
 int
 main(void)
 {
@@ -1013,6 +1016,7 @@ main(void)
    binsearch(0, MAXVAL);
 }
 
+void
 binsearch(long startval, long endval)
 {
    long midval = (endval - startval) / 2 + startval;
