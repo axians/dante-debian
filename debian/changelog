@@ -2,6 +2,11 @@ dante (1.4.3+dfsg-2) UNRELEASED; urgency=medium
 
   * Drop the Lintian overrides related to the 64-bit time_t transition,
     Lintian was fixed to recognize the t64 library name suffix.
+  * Declare compliance with Policy 4.7.0 with no changes.
+  * Use debputy's X-Style: black.
+  * Hopefully the armel/armhf build failure was fixed in other packages,
+    so that this upload Closes: #1067709
+  * Belatedly note that 1.4.3+dfsg-1 also Closes: #1044901
 
  -- Peter Pentchev <roam@debian.org>  Mon, 26 Aug 2024 16:44:47 +0300
 
