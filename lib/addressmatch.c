@@ -232,8 +232,8 @@ addrmatch(rule, addr, addrmatched, protocol, alias)
 
 #if SOCKS_CLIENT
    /*
-    * Wrong, but maintains compatability with 1.4.1 regarding
-    * 0.0.0.0/0 matching everything.  Keep that compatability with the
+    * Wrong, but maintains compatibility with 1.4.1 regarding
+    * 0.0.0.0/0 matching everything.  Keep that compatibility with the
     * the 1.4.1 socks.conf-files for now.
     */
    if (rule->atype                 == SOCKS_ADDR_IPV4
@@ -595,7 +595,7 @@ addrmatch(rule, addr, addrmatched, protocol, alias)
        *      addr.ipaddr isin rule.hostname->ipaddr
        *
        * If still no match, and alias is set, resolve addr.ipv4 to hostname(s),
-       * those hostnames back to ip, and and match against
+       * those hostnames back to ip, and match against
        * rule.hostame->ipaddr:
        *    rule.hostname->ipaddr isin addr->ipaddr->hostname(s)->ipaddr
        *    .

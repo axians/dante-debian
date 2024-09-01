@@ -154,7 +154,7 @@ socks_flushbuffer(s, len, sendtoflags)
     * In the client-case, we don't want to encode the packet on
     * every buffered write.  E.g. we don't want 100 putc(3)'s to
     * end up creating 100 gssapi-encoded one-byte packets.
-    * We therefore postpone encoding til we get a flush call, then
+    * We therefore postpone encoding till we get a flush call, then
     * encode the data we have, and write it as one token.
     * That means any already encoded data in the buffer must be written
     * before the unencoded data.
@@ -573,7 +573,7 @@ socks_addtobuffer(s, which, encoded, data, datalen)
        * more complex; appended to the end of the unencoded data,
        * which comes before the encoded data.  Meaning we have to first
        * move the encoded data further out in the buffer before we add the
-       * new unencoded data, so that that unencoded data we will add
+       * new unencoded data, so that unencoded data we will add
        * gets appended to any already present unencoded data, before
        * the encoded data.
        */

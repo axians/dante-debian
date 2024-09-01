@@ -224,7 +224,7 @@ postconfigloadinit(void)
     * after we receive a signal (e.g. SIGHUP) is not the same it was before
     * the signal, as well as other weirdness.  There are some bug-reports
     * related to what looks similar e.g.: kern/157657.  That bug has apparently
-    * been fixed in in a commit in June 2011, after the FreeBSD 8.2 release
+    * been fixed in a commit in June 2011, after the FreeBSD 8.2 release
     * running on our testmachine.
     */
    struct sched_param param;

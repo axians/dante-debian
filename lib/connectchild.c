@@ -51,14 +51,14 @@ static const char rcsid[] =
  * This sets things up for performing a non-blocking connect for the client.
  * We do this by initiating a connect on a non-blocking socket.
  * If the initial response is positive, we then save the endpoint
- * addresses of the socket and send it our "connect-child", which then
+ * addresses of the socket and send it to our "connect-child", which then
  * handles the socks negotiation and returns the proxy server's response back
  * to us.
  *
- * To avoid the client stepping on our (or rather our connect-childs) toes
+ * To avoid the client stepping on our (or rather our connect-child's) toes
  * while it negotiates with the proxy server, we temporarily let the
- * fd-index the client is using point at at dummy socket, while we use
- * the real socket to negotiate.  Then we set the clients fd to point back
+ * fd-index the client is using point at a dummy socket, while we use
+ * the real socket to negotiate.  Then we set the client's fd to point back
  * at the real socket.
  *
  * When the connect-child is done, it will send us back the same socket
@@ -684,8 +684,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
 }
 
 /*
- * XXX should have more code so we could handle multiple requests at
- * a time.
+ * XXX should have more code so we could handle multiple simultaneous requests
  */
 static void
 run_connectchild(mother_data, mother_ack)

@@ -503,7 +503,7 @@ io_tcp_rw(in, out, badfd, iostatus,
    sendto_info_t sendtoflags;
    recvfrom_info_t recvfromflags;
    ssize_t r, w, p;
-#if 0 /* for aid in debuging bufferproblems. */
+#if 0 /* for aid in debugging bufferproblems. */
    static size_t j;
    size_t lenv[] = { 60000, 60001, 60002, 60003, 60004, 60005, 60006, 60007,
                      60008, 60009, 60010, 60011, 60012, 60013, 60014, 60015 };
@@ -769,11 +769,11 @@ io_tcp_rw(in, out, badfd, iostatus,
 #if COVENANT
    if (in->isclientside && !reqflags->httpconnect) {
       /*
-       * As long as the target of the clients request does not change, we
+       * As long as the target of the client's request does not change, we
        * can forward it as normal.  If it changes, we need to restart
        * negotiation however.
        * Since we have no other way to know when the target changes, we have
-       * to parse all data from the the http client before we can forward it,
+       * to parse all data from the http client before we can forward it,
        * as if the request is to a different server, it should not be
        * forwarded to the current target.
        */

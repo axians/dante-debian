@@ -201,7 +201,7 @@ Rsendto(s, msg, len, flags, _to, tolen)
           * via select(2)/poll(2)/etc. failed.
           *
           * In case of 1), the correct thing would be to return ENOTCONN,
-          * but in case 2), we could be called due to the the user having
+          * but in case 2), we could be called due to the user having
           * multiple fd's pointing to the same filedescription index,
           * meaning that even though we have hidden our usage of "s", the
           * user is using another fd (s').  Normally we would of course be
@@ -221,7 +221,7 @@ Rsendto(s, msg, len, flags, _to, tolen)
           * an indication that the connect(2) failed, which it has
           * not (yet, at least) done.  If we return EAGAIN, the
           * user will hopefully retry again, whenever the systemcall
-          * he used to detect that the fd was readable say it's readable.
+          * he used to detect that the fd was readable says it's readable.
           * If the connect is still in progress, we again assume the
           * readability was only related to i/o done by our connect-child
           * over the fd, and was not intended for the user, and again

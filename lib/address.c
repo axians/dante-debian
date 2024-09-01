@@ -848,7 +848,7 @@ socks_addrlock(locktype, lock)
     * With the OpenBSD thread implementation, if a thread is interrupted,
     * calling pthread_mutex_lock() seems to clear the interrupt flag, so
     * that e.g. select(2) will restart rather than returning EINTR.
-    * We don't wont that to happen since we depend on select(2)/etc.
+    * We don't want that to happen since we depend on select(2)/etc.
     * being interrupted by the process used to handle non-blocking connects.
     * We instead take the risk of not taking the thread-lock in this case.
     */

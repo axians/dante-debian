@@ -561,7 +561,7 @@ clearchildtype(childtype, pipetype, nfds, set)
    size_t i, *childc;
 
 
-   slog(LOG_DEBUG, "%s: clearing all childs of type %s from set",
+   slog(LOG_DEBUG, "%s: clearing all children of type %s from set",
         function, childtype2string(childtype));
 
    setchildtype(childtype, &childv, &childc, NULL);
@@ -1126,7 +1126,7 @@ send_io(s, io)
    /*
     * if not mother, request child.  Since that child only handles one
     * client at a time, it's safe to block as long as it takes.  Mother
-    * on the other hand can not block.
+    * on the other hand cannot block.
     */
    if (sendmsgn(s, &msg, 0, sockscf.state.type == PROC_MOTHER ? 0 : -1)
    != length) {
@@ -1869,8 +1869,8 @@ addchild(type)
 
          /*
           * signals mother has set up but which we need ignore at this
-          * point, lest we accidentally run mothers signal handler if the
-          * child does not install it's own signal handler for the
+          * point, lest we accidentally run mother's signal handler if the
+          * child does not install its own signal handler for the
           * particular signal.
           * Later on, the child sets up its own signal handlers.
           */
@@ -1961,7 +1961,7 @@ addchild(type)
 
 #if HAVE_PRIVILEGES
                if (sockscf.state.haveprivs) {
-                  /* don't need this privilege so permanently loose it. */
+                  /* don't need this privilege so permanently lose it. */
                   priv_delset(sockscf.privileges.privileged, PRIV_NET_PRIVADDR);
 
                   if (setppriv(PRIV_SET,
@@ -2025,13 +2025,13 @@ addchild(type)
           * newprocinit() will close the old syslog descriptor, if any,
           * before opening a new one.  If we have started to use the
           * descriptor for something else already (e.g. due to dup(2)),
-          * newprocinit(), will still close the old descriptor, even
+          * newprocinit() will still close the old descriptor, even
           * though it's no longer a syslog descriptor.
           */
          newprocinit();
 
          /*
-          * This is minor optimization to make things faster for select(2)
+          * This is a minor optimization to make things faster for select(2)
           * by avoiding having two increasingly high-numbered descriptors
           * to check for, with most of the other descriptors in the lower-end.
           */

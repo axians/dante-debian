@@ -337,8 +337,8 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
           * Can only find out what the external ip address of the device is.
           *
           * We could fetch the address here, but if the client never intends
-          * to find out what it's local address is, that's a waste of time.
-          * Therefor postpone it to the Rgetsockname() call, if it ever
+          * to find out what its local address is, that's a waste of time.
+          * Therefore postpone it to the Rgetsockname() call, if it ever
           * comes, and just connect(2) to the target for now, without
           * attempting to retrieve any information from the IGD.
           *
@@ -471,8 +471,8 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
 
       case SOCKS_BIND: {
          /*
-          * Need tell the device to create a port mapping, mapping an
-          * address on it's side to the address we have bound.
+          * Need to tell the device to create a port mapping, mapping an
+          * address on its side to the address we have bound.
           * Then we need to get the ip address the device is using
           * on the external side.
           */
@@ -544,7 +544,7 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
                                    (void *)GET_SOCKADDRADDR(&extaddr),
                                    NULL)) != 1) {
             snprintf(emsg, emsglen,
-                     "strange.  UPNP-device said it's external IP-address is "
+                     "strange.  UPNP-device said its external IP-address is "
                      "the %s \"%s\", but can't parse that with inet_pton(3).  "
                      "Errorcode %d (%s)",
                      safamily2string(extaddr.ss_family),

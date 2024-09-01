@@ -437,7 +437,7 @@ addforwarded(local, remote, remoteaddr, virtualremoteaddr)
    }
 
    /*
-    * a separate socket with it's own remote address and possibly different
+    * a separate socket with its own remote address and possibly different
     * local address too, so need to add it to the socksfd table.
     */
 

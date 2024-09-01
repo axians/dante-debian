@@ -201,7 +201,7 @@
 
  o SIGHUP code rewritten.  Should function considerably better in
    environments were SIGHUP is, for whatever reason, sent an excessive
-   amount of times every second.
+   number of times every second.
 
  o Default for the maximum number of clients an i/o process can handle has
    been increased from 8 to 32.
@@ -358,7 +358,7 @@
    Performance has also been improved.
 
  o When checking whether a username is member of a group, as used in
-   in group-based authentication checks, also check against the
+   group-based authentication checks, also check against the
    primary groupname of the user, as listed in /etc/passwd or similar,
    rather than only against the entries in /etc/group or similar.
 
@@ -696,7 +696,7 @@
 
    Should make it easier to set up direct routes for local lan in
    the client (specify all local interface names in route statements),
-   and block connections to e.g. loopback addresses (specify the the
+   and block connections to e.g. loopback addresses (specify the
    loopback interface name in a block rule) in the server.
 
  o UPnP support in the client, using the miniupnp library by
@@ -846,7 +846,7 @@
    during negotiation.
    Thanks to Robert Marcano <robert@marcanoonline.com.example.com>.
 
- o Fix formating of some warning messages.
+ o Fix formatting of some warning messages.
    Thanks to James Carlson <james.d.carlson@sun.com.example.com>.
 
 ***
@@ -1036,7 +1036,7 @@
    instead of LOG_ERR, by popular request.
 
  o New module available: redirect, gives control over both
-   where clients requests and replies will end up, aswell as what
+   where clients requests and replies will end up, as well as what
    addresses and portranges the Dante server will use.
    Can also be used to limit the number of concurrent sessions
    from each client.
@@ -1061,7 +1061,7 @@
    default value set to "none".
    The global "method" is only used for socks-rules now.
 
- o delay checking of password/etc til we have received the socks
+ o delay checking of password/etc till we have received the socks
    request (rather than during negotiation, as was the case).
    Required for supporting passwordbased authentication via non-socks
    methods, e.g. pam.
@@ -1248,7 +1248,7 @@ previous versions of Dante:
        The correct usage should be that the method field is relative
        to the sourceaddress, and the sourceaddress for replies is
        a "non-socks" connection.  Special care might have to be
-       taken to not accidently block the replies since most of them
+       taken to not accidentally block the replies since most of them
        can only be using method "none" (the only other alternative
        is "rfc931").
 

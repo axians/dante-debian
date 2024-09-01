@@ -105,7 +105,7 @@ httpproxy_negotiate(s, packet, emsg, emsglen)
    }
 
    /*
-    * read til we get the eof response so there's no junk left in buffer
+    * read till we get the eof response so there's no junk left in buffer
     * for client, then return the response code.
     */
    eof = checked = readsofar = 0;
@@ -137,7 +137,7 @@ httpproxy_negotiate(s, packet, emsg, emsglen)
       readsofar += len;
 
       if ((strstr(buf, eofresponse_str)) == NULL)
-         continue; /* don't bother to start parsing til we've got it all. */
+         continue; /* don't bother to start parsing till we've got it all. */
       else
          eof = 1;
 

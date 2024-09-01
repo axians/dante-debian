@@ -1249,7 +1249,7 @@ clientmethod_gssapi(s, protocol, gw, version, auth, emsg, emsglen)
                                            * RFC 1961 says GSS_C_DELEG_FLAG
                                            * should also be set, but I can't
                                            * see any reason why the client
-                                           * should want to forward it's
+                                           * should want to forward its
                                            * tickets to a socks server ...
                                            *
                                            * Don't set unless until we find
