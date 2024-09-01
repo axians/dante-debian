@@ -30,7 +30,7 @@ EXTRA_libdsocksd_la_SOURCES = ../libscompat/getifaddrs.c \
 #libscompat - files only used by client
 EXTRA_libdsocksd_la_SOURCES += ../libscompat/issetugid.c
 
-libdsocksd_la_LDFLAGS = -avoid-version -all-dynamic @MAPOPT@
+libdsocksd_la_LDFLAGS = -version-info 0:0:0 -all-dynamic @MAPOPT@
 libdsocksd_la_LIBADD = @LIBDSCSRC@ @DLIBDEPS@ @LIBSCOMPAT@
 libdsocksd_la_DEPENDENCIES = Makefile.am _reconf @LIBDSCSRC@
 libdsocksd_la_LIBTOOLFLAGS = --tag=disable-static
