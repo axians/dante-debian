@@ -3199,7 +3199,7 @@ yyreduce:
 #if !SOCKS_CLIENT
    static ruleaddr_t mem;
    struct servent    *service;
-   serverstate_t     statemem;
+   static serverstate_t statemem;
 
    bzero(&statemem, sizeof(statemem));
    state               = &statemem;
