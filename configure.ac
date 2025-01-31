@@ -81,6 +81,8 @@ oLDFLAGS="$LDFLAGS"
 unset CFLAGS
 unset LDFLAGS
 LT_INIT
+strippedCFLAGS=`echo "$CFLAGS" | sed -e 's/^[[:space:]]*//; s/[[:space:]]\+/ /g; s/[[:space:]]*$//'`
+if test "$strippedCFLAGS" = '-g -O2'; then CFLAGS=''; fi
 autoconf_compflags="$CFLAGS"
 CFLAGS=$oCFLAGS
 LDFLAGS="$oLDFLAGS"
