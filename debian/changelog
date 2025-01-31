@@ -1,3 +1,9 @@
+dante (1.4.3+dfsg-3) UNRELEASED; urgency=medium
+
+  * Refresh the debputy-style formatting.
+
+ -- Peter Pentchev <roam@debian.org>  Sat, 01 Feb 2025 00:52:07 +0200
+
 dante (1.4.3+dfsg-2) unstable; urgency=medium
 
   * Drop the Lintian overrides related to the 64-bit time_t transition,
