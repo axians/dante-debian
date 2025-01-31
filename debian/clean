@@ -1,10 +1,13 @@
 _reconf
 _sockopttmp0.c
+bin/_reconf
 buildenv.txt
 buildenvrc
 dlib/_reconf
 dlib/config_parse.c
+dlib/config_parse.y
 dlib/config_scan.c
+dlib/config_scan.l
 dlib/socks.map
 dlib/socks.sym
 include/errorsymbols_gen.h
@@ -14,4 +17,7 @@ lib/sockopt_gen.c
 lib/socks.sym
 sockd/_reconf
 sockd/config_parse.c
+sockd/config_parse.y
 sockd/config_scan.c
+sockd/config_scan.l
+unlicensed/_reconf
