@@ -1,6 +1,11 @@
 dante (1.4.3+dfsg-3) UNRELEASED; urgency=medium
 
   * Refresh the debputy-style formatting.
+  * Build-depend on libc-bin for ldconfig.
+  * Add the year 2025 to my debian/* copyright notice.
+  * Add the sbin-ldconfig patch for the configure script;
+    hopefully Closes: #1067709
+  * Add more generated files to debian/clean.
 
  -- Peter Pentchev <roam@debian.org>  Sat, 01 Feb 2025 00:52:07 +0200
 
