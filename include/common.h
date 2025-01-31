@@ -1098,7 +1098,8 @@ do {                                                                           \
  * cast is necessary on AIX, due to buggy headers there?
  * needs additional testing on AIX, disable for now.
  */
-#define CMSG_CONTROLDATA(msg)   ((msg).msg_control)
+#define CMSG_CONTROLDATA(msg)   ((struct cmsghdr *)((msg).msg_control))
+#define CMSG_CONTROLDATA_MUTABLE(msg)   ((msg).msg_control)
 #else /* !HAVE_CMSGHDR */
 #define CMSG_CONTROLDATA(msg)   ((msg).msg_accrights)
 #endif /* HAVE_CMSGHDR */
