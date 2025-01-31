@@ -6,6 +6,7 @@ Build-Depends:
  debhelper-compat (= 13),
  bison,
  flex,
+ libc-bin,
  libpam0g-dev,
  libtool-bin,
  libwrap0-dev,
