@@ -14,3 +14,4 @@ sendbuf-ioctl.patch
 signal-names.patch
 path-max.patch
 implicit.patch
+sbin-ldconfig.patch

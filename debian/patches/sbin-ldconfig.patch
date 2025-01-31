@@ -1,0 +1,20 @@
+--- a/preload.m4	2025-01-31 23:14:43.050935532 +0000
++++ b/preload.m4	2025-01-31 23:15:56.611292065 +0000
+@@ -605,6 +605,8 @@
+ 	*-*-freebsd*)
+ 	    #XXX
+ 	    #can't set it to libc.so directly, might be ld script
++	    PATH=$PATH:/sbin
++	    export PATH
+ 	    unset LIBC_ALTS
+ 	    for file in `ldconfig -r | grep /libc.so| awk '{ print $3 }'`; do
+ 		test -s "$file" && LIBC_ALTS="${LIBC_ALTS}${LIBC_ALTS:+ }$file"
+@@ -619,6 +621,8 @@
+ 	*-*-linux-*|*-gnu)
+ 	    #XXX
+ 	    #can't set it to libc.so directly, might be ld script
++	    PATH=$PATH:/sbin
++	    export PATH
+ 	    unset LIBC_ALTS
+ 	    for file in `ldconfig -p | grep /libc.so| xargs -n 1 echo | grep /libc.so`; do
+ 		test -s "$file" && LIBC_ALTS="${LIBC_ALTS}${LIBC_ALTS:+ }$file"
