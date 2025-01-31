@@ -1901,7 +1901,11 @@ addchild(type)
           * Next install a SIGHUP handler.  Same for all children and
           * different from the one mother uses.
           */
+#ifdef SA_SIGINFO
          sigact.sa_flags = SA_RESTART | SA_NOCLDSTOP | SA_SIGINFO;
+#else
+         sigact.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+#endif
 
          sigact.sa_sigaction = sighup_child;
          if (sigaction(SIGHUP, &sigact, NULL) != 0)

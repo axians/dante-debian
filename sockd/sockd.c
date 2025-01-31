@@ -239,7 +239,11 @@ main(argc, argv)
             newprocinit();
 
             bzero(&sigact, sizeof(sigact));
+#ifdef SA_SIGINFO
             sigact.sa_flags = SA_RESTART | SA_NOCLDSTOP | SA_SIGINFO;
+#else
+            sigact.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+#endif
 
             sigact.sa_sigaction = sighup_child;
             if (sigaction(SIGHUP, &sigact, NULL) != 0) {

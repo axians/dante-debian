@@ -130,6 +130,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
       return NULL;
    }
 
+#ifdef SA_SIGINFO
    if (currentsig.sa_flags & SA_SIGINFO) { /* sa_sigaction. */
       isourhandler = (currentsig.sa_sigaction == sigio);
 
@@ -147,6 +148,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
       }
    }
    else { /* sa_handler. */
+#endif
       isourhandler = 0; /* we install with SA_SIGINFO. */
 
       if (currentsig.sa_handler != SIG_IGN
@@ -156,12 +158,16 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
       else
          slog(LOG_DEBUG,
               "%s: no SIGIO handler previously installed", function);
+#ifdef SA_SIGINFO
    }
+#endif
 
    if (!isourhandler) {
       newsig               = currentsig; /* keep same as much as possible. */
       newsig.sa_sigaction  = sigio;
+#ifdef SA_SIGINFO
       newsig.sa_flags     |= SA_SIGINFO;
+#endif
 
       slog(LOG_DEBUG, "%s: our signal handler is not installed, installing ...",
            function);
@@ -1298,6 +1304,7 @@ sigio(sig, sip, scp)
       return;
    }
 
+#ifdef SA_SIGINFO
    if (originalsig.sa_flags & SA_SIGINFO
    &&  originalsig.sa_sigaction != NULL) {
       const char *msgv[] =
@@ -1312,6 +1319,7 @@ sigio(sig, sip, scp)
       originalsig.sa_sigaction(sig, sip, scp);
    }
    else {
+#endif
       if (originalsig.sa_handler != SIG_IGN
       &&  originalsig.sa_handler != SIG_DFL) {
          const char *msgv[] =
@@ -1325,7 +1333,9 @@ sigio(sig, sip, scp)
 
          originalsig.sa_handler(sig);
       }
+#ifdef SA_SIGINFO
    }
+#endif
 
    if (sockscf.connectchild == 0) {
       sockscf.state.insignal = 0;

@@ -329,7 +329,11 @@ run_io()
 #endif /* DIAGNOSTIC */
 
    bzero(&sigact, sizeof(sigact));
+#ifdef SA_SIGINFO
    sigact.sa_flags     = SA_RESTART | SA_NOCLDSTOP | SA_SIGINFO;
+#else
+   sigact.sa_flags     = SA_RESTART | SA_NOCLDSTOP;
+#endif
    sigact.sa_sigaction = siginfo;
 
 #if HAVE_SIGNAL_SIGINFO
