@@ -1154,7 +1154,7 @@ fdisdup(fd1, fd2)
    /*
     * Test is to set a flag on fd1, and see if the same flag then gets set on
     * fd2.  Note that this flag must be a flag we can set on a socket that
-    * failed during connect(2), or where the peer has closed it's side
+    * failed during connect(2), or where the peer has closed its side
     * of the session, and which will be shared between descriptors that are
     * dup(2)'s of each other.
     *

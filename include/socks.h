@@ -634,7 +634,7 @@ socks_addaddr(const int clientfd, const socksfd_t *socksaddress,
  * If "takelock" is true, it means the function should take the
  * socksfdv/addrlock.
  *
- * The function duplicates all arguments in it's own form and does
+ * The function duplicates all arguments in its own form and does
  * not access the memory referenced by them afterwards.
  *
  * The function checks the state of all file descriptors on each call and

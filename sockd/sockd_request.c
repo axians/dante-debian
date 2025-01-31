@@ -1277,7 +1277,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
              *
              * Unfortunately the meaning given in these standard provides
              * limited usability, so people "interpret" the standards more
-             * loose to get more practical functionality out of them.
+             * loosely to get more practical functionality out of them.
              *
              * - If the client provided an ip address when requesting the
              *   bind, we should only return remote connections matching
@@ -1392,7 +1392,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
                               emsglen);
 
          /*
-          * XXX we should check whether it's possible receive any bindreply
+          * XXX we should check whether it's possible to receive any bindreply
           * also.  No need to stick around if no replies will be allowed.
           */
 
@@ -1461,10 +1461,10 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
           * have a lot of complicated stuff for handling it in the i/o
           * process.
           *
-          * The procedure thus becomes that we use the clients TCP
+          * The procedure thus becomes that we use the client's TCP
           * address to evaluate what resources to allocate, and then
-          * use the clients UDP address to evaluate whether each individual
-          * packet should be passed through.  If the client sends us it's
+          * use the client's UDP address to evaluate whether each individual
+          * packet should be passed through.  If the client sends us its
           * UDP address in the udpassociate request, we can also evaluate
           * here whether it's at all possible that any udp packets from
           * it will be let through.  If not, we can just as well block it
@@ -1944,7 +1944,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
 
                /*
                 * The problem is that both we and the process which receives
-                * the io packet needs to know when the client closes it's
+                * the io packet needs to know when the client closes its
                 * connection, but _we_ need to receive a query from the
                 * client on the connection as well, and the io process would
                 * get confused about that.  We try to hack around that
@@ -1973,7 +1973,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
 
          if (rc == 0) {
             /*
-             * let client know what address we bound to on it's behalf.
+             * let client know what address we bound to on its behalf.
              */
 
             sockaddr2sockshost(&io.dst.laddr, &response.host);
@@ -2025,7 +2025,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
          if (bindio.state.extension.bind) {
             sockshost2sockaddr(&bindio.dst.host, &bindio.dst.raddr);
 
-            /* won't create socket for this til we connect to the client. */
+            /* won't create socket for this till we connect to the client. */
             bzero(&bindio.dst.laddr, sizeof(bindio.dst.laddr));
             SET_SOCKADDR(&bindio.dst.laddr, AF_INET);
             TOIN(&bindio.dst.laddr)->sin_addr.s_addr = htonl(INADDR_ANY);
@@ -2043,7 +2043,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
          sockaddr2sockshost(&bindio.src.laddr, &bindio.src.host);
 
          /*
-          * don't know what peer will be til we accept(2) it.
+          * don't know what peer will be till we accept(2) it.
           */
          bzero(&bindio.src.raddr, sizeof(bindio.src.raddr));
          SET_SOCKADDR(&bindio.src.raddr, bindio.src.laddr.ss_family);
@@ -2871,7 +2871,7 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
           * Let the created socket be of the same address family as
           * the client tells us it will send packets from.  Note that
           * even if the client sends us an all-zero address now, even
-          * the all-zero address will have to have it's family
+          * the all-zero address will have to have its family
           * specified, as either ipv4 or ipv6.
           *
           * Exception is if the client does something so strange as to
@@ -2999,12 +2999,12 @@ dorequest(mother, request, clientudpaddr, weclosedfirst, emsg, emsglen)
 #else /* SOCKS_SERVER */
          /*
           * bind client-side address for receiving UDP packets, so we can tell
-          * the client where to send it's packets.
+          * the client where to send its packets.
           * XXX should perhaps have a global udprange option also, for clients
           *     that don't know what address they will be sending from.  This
-          *     rule is possibly not the one the client will finaly end up
+          *     rule is possibly not the one the client will finally end up
           *     using, in which the udprange specification would not apply,
-          *     but how can we know if the client doesn't tell us it's source
+          *     but how can we know if the client doesn't tell us its source
           *     address.
           * XXX add check for privileges on startup if range is privileged
           */
@@ -3773,7 +3773,7 @@ getroute(client, req, emsg, emsglen)
          /*
           * Possibly there is a route supporting an ipaddress destination,
           * even if there was no route supporting the hostname destination
-          * (e.g., there is only socks v4 route).  Therefor try resolving the
+          * (e.g., there is only a socks v4 route).  Therefore try to resolve the
           * destination locally before giving up on finding a route.
           *
           * We will need to resolve the destination sooner or later

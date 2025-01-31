@@ -1405,7 +1405,7 @@ fromaddr_as_expected(expected, from, emsg, emsglen)
 
    if (!ADDRISBOUND(expected)) {
       /*
-       * Client hasn't sent us it's complete address yet, but if
+       * Client hasn't sent us its complete address yet, but if
        * the parts of the address it has sent (if any) matches
        * the source of this packet, we have to assume this packet
        * is from it.  We can then update the expected address with

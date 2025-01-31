@@ -98,23 +98,23 @@
 
 /*
  * This is to handle a potential resource issue that can occur
- * in TCP when side 'A' of the TCP session closes it's end, but
- * the other end, side 'B', does not close it's end.  In this
+ * in TCP when side 'A' of the TCP session closes its end, but
+ * the other end, side 'B', does not close its end.  In this
  * situation, TCP will be forced to keep state for the TCP session
- * until side B closes it's end, or "never" if side B never closes.
+ * until side B closes its end, or "never" if side B never closes.
  *
  * Some kernels have added kernel support for tuning this on a global
  * basis, but implementations may vary.
  *
  * If this value is set, it gives the number of seconds to wait
- * for B to close it's side.  Note that this may break the application
+ * for B to close its side.  Note that this may break the application
  * protocol, as there may be nothing wrong with B using a long time,
- * days even, to close it's end.  It may however produce an unfortunate
- * resource problem with both the Dante server and the kernels TCP having to
+ * days even, to close its end.  It may however produce an unfortunate
+ * resource problem with both the Dante server and the kernel's TCP having to
  * keep state for these sessions, which in 99.999% of the cases could
  * probably be closed as B will not send anything more.
  *
- * The default therefor is to not enable this "feature".
+ * The default therefore is to not enable this "feature".
  */
 #define SOCKD_FIN_WAIT_2_TIMEOUT  (0) /* Seconds.  Set to 0 to disable. */
 
@@ -851,7 +851,7 @@ do {                                                                           \
 
 /*
  * a request child can currently handle a maximum of one client, so can't
- * be changed and is therefor #defined here rather than in config.h.
+ * be changed and is therefore #defined here rather than in config.h.
  */
 #define SOCKD_REQUESTMAX   1
 
@@ -2062,7 +2062,7 @@ typedef struct {
       struct timeval    accepted;      /* time connection accepted.           */
       struct timeval    negotiatestart;/* time negotiation started.           */
       struct timeval    negotiateend;  /* time negotiation ended.             */
-      struct timeval    requestend;    /* time requestprocesssing ended.      */
+      struct timeval    requestend;    /* time request processing ended.      */
       struct timeval    established;   /* time session was fully established. */
       struct timeval    firstio;       /* time of first i/o operation.        */
    } time;
@@ -2185,9 +2185,9 @@ typedef struct {
     *      but not both).
     *    - two (packets forwarded to both ipv4 and ipv6 addresses).
     * This however assumes our external interface has both IPv4 and IPv6
-    * addresses.  Does it not, at most one target socket will be created.
+    * addresses.  If it does not, at most one target socket will be created.
     *
-    * In Barefoots case, we don't have a TCP control-session, so the scenario
+    * In Barefoot's case, we don't have a TCP control-session, so the scenario
     * is one-to-many; we receive all udp packets from different clients on
     * the one source socket, and we forward them to various targets based
     * what client it was received from.  Since the target is hardcoded in
@@ -2315,7 +2315,7 @@ typedef struct {
    /*
     * if not zero, this is an "old" client that has been sent back
     * to the negotiate process from the i/o process, due to the client
-    * changing it's target (remote http server).
+    * changing its target (remote http server).
     * "clientdata" contains the request received from the client,
     * already parsed into "request".
     */
@@ -2435,7 +2435,7 @@ typedef struct {
                                      * should it be included in any counts.
                                      *
                                      * Basically just waiting for the SIGCHLD
-                                     * so we can add it's resourceusage to
+                                     * so we can add its resourceusage to
                                      * our counters.
                                      */
    unsigned char    exitingnormally;/* exiting normally, on our request?      */
@@ -2443,7 +2443,7 @@ typedef struct {
    int              ack;            /* connection to child for acks.          */
    int              s;              /* connection to child for data.          */
 
-   pid_t            pid;            /* childs pid.                            */
+   pid_t            pid;            /* child's pid.                           */
    int              type;           /* child type.                            */
 
    time_t           created;        /* time created.                          */
@@ -2902,9 +2902,9 @@ closechild(const pid_t childpid, const int isnormalexit);
  *
  * If "isnormalexit" is set, we are closing the pipes to this child and
  * expect it to exit normally.  This notifies the child about the close,
- * telling it to exit normally when done serving it's clients, unlike what
+ * telling it to exit normally when done serving its clients, unlike what
  * happens if the child exiting by itself without us telling it to do so,
- * or closing it's pipes to us first.
+ * or closing its pipes to us first.
  *
  * If "childpid" is 0, closes all children.
  */
@@ -3276,7 +3276,7 @@ shmem2config(const struct config *old, struct config *new);
  * as necessary (i.e., it's a "deep copy").
  *
  * Note that memory that is only set once at startup and never changed
- * is not copied from "old".  Instead it is copied from the processes
+ * is not copied from "old".  Instead it is copied from the process's
  * current config object.
  *
  * Returns 0 on success, -1 on failure.
@@ -3489,7 +3489,7 @@ iolog(const rule_t *rule, const connectionstate_t *state, const operation_t op,
       const char *data, size_t datalen);
 
 /*
- * Called after each each complete io operation
+ * Called after each complete io operation
  * (read then write, or read then block).
  * Does misc. logging based on the log options set in "log".
  * - "rule" is the rule that matched the iooperation, not "const" due to
@@ -4511,8 +4511,8 @@ getoutaddr(struct sockaddr_storage *laddr,
 /*
  * Gets the outgoing IP address to use.
  *
- * "client_laddr" is address we accepted the client on.
- " "client_raddr" is the address of the client, on whos behalf we are
+ * "client_laddr" is the address we accepted the client on.
+ " "client_raddr" is the address of the client, on whose behalf we are
  *  binding an address on the external side.
  *
  * "command" is the SOCKS command the client requested.
@@ -4657,7 +4657,7 @@ sighup_child(int sig, siginfo_t *si, void *sc);
 void
 io_handlesighup(void);
 /*
- * Called at sighup to let the i/o childs do what they need to do
+ * Called at sighup to let the i/o children do what they need to do
  * upon receiving a sighup.
  */
 

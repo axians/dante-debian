@@ -6460,7 +6460,7 @@ parseconfig(filename)
              * we are started with.  If logfiles created by that euid/egid are
              * not writable by our configured privileged userid (if any), it
              * means that upon SIGHUP we will be unable to re-open our own
-             * logfiles.  We therefor check whether the logfile(s) were created
+             * logfiles.  We therefore check whether the logfile(s) were created
              * by ourselves, and if so, make sure they have the right owner.
              */
             logtype_t *logv[] = { &sockscf.log, &sockscf.errlog };
