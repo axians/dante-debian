@@ -1219,7 +1219,12 @@ clientmethod_gssapi(s, protocol, gw, version, auth, emsg, emsglen)
    SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);
 
    if (gss_err_isset(major_status, minor_status, tmpbuf, sizeof(tmpbuf))) {
-      snprintf(emsg, emsglen, "gss_import_name() failed: %s", emsg);
+      char *ebuf = malloc(emsglen);
+      if (ebuf != NULL) {
+        snprintf(ebuf, emsglen, "%s", emsg);
+        snprintf(emsg, emsglen, "gss_import_name() failed: %s", ebuf);
+        free(ebuf);
+      }
 
       SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);
       goto error;
