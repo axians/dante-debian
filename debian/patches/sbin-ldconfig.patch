@@ -1,3 +1,11 @@
+Description: Look for ldconfig in /sbin
+ The preload.m4 script adds /sbin to the path in some cases, but
+ not all; let us hope this fixes the build on some architectures.
+Bug-Debian: https://bugs.debian.org/1067709
+Forwarded: no
+Author: Peter Pentchev <roam@ringlet.net>
+Last-Update: 2025-02-01
+
 --- a/preload.m4	2025-01-31 23:14:43.050935532 +0000
 +++ b/preload.m4	2025-01-31 23:15:56.611292065 +0000
 @@ -605,6 +605,8 @@
