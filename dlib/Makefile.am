@@ -1,8 +1,8 @@
-lib_LTLIBRARIES = libdsocks.la
+lib_LTLIBRARIES = libdsocksd.la
 #NOTE: file additions below also need to be added to dlib64/Makefile.am
 #the interposition.c file is compiled first as it historically has had
 #most compile problems.
-libdsocks_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c \
+libdsocksd_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c \
    ../lib/Raccept.c ../lib/Rbind.c ../lib/Rbindresvport.c               \
    ../lib/Rcompat.c ../lib/Rconnect.c ../lib/Rgethostbyname.c           \
    ../lib/Rgetpeername.c ../lib/Rgetsockname.c ../lib/Rgetsockopt.c     \
@@ -21,19 +21,19 @@ libdsocks_la_SOURCES = interposition.c int_osf1.c int_osf2.c int_osf3.c \
    ../lib/util.c
 
 #libscompat - files common for both client and server
-EXTRA_libdsocks_la_SOURCES = ../libscompat/getifaddrs.c \
+EXTRA_libdsocksd_la_SOURCES = ../libscompat/getifaddrs.c \
    ../libscompat/hstrerror.c ../libscompat/inet_ntoa.c  \
    ../libscompat/inet_pton.c ../libscompat/memmove.c    \
    ../libscompat/pselect.c ../libscompat/setproctitle.c \
    ../libscompat/strlcpy.c ../libscompat/strvis.c       \
    ../libscompat/vsyslog.c
 #libscompat - files only used by client
-EXTRA_libdsocks_la_SOURCES += ../libscompat/issetugid.c
+EXTRA_libdsocksd_la_SOURCES += ../libscompat/issetugid.c
 
-libdsocks_la_LDFLAGS = -avoid-version -all-dynamic @MAPOPT@
-libdsocks_la_LIBADD = @LIBDSCSRC@ @DLIBDEPS@ @LIBSCOMPAT@
-libdsocks_la_DEPENDENCIES = Makefile.am _reconf @LIBDSCSRC@
-libdsocks_la_LIBTOOLFLAGS = --tag=disable-static
+libdsocksd_la_LDFLAGS = -avoid-version -all-dynamic @MAPOPT@
+libdsocksd_la_LIBADD = @LIBDSCSRC@ @DLIBDEPS@ @LIBSCOMPAT@
+libdsocksd_la_DEPENDENCIES = Makefile.am _reconf @LIBDSCSRC@
+libdsocksd_la_LIBTOOLFLAGS = --tag=disable-static
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libscompat \
 	   -I$(top_srcdir)/lib
@@ -52,10 +52,10 @@ LINTFLAGS = @LINTFLAGS@
 
 if RUNLINT
 SUFFIXES = .ln
-LINTFILESa = $(libdsocks_la_SOURCES:.c=.ln)
+LINTFILESa = $(libdsocksd_la_SOURCES:.c=.ln)
 LINTFILESb = $(LINTFILESa:.y=.ln)
 LINTFILES = $(LINTFILESb:.l=.ln)
-libdsocks_la_DEPENDENCIES += $(LINTFILES) llib-ldsocks.ln
+libdsocksd_la_DEPENDENCIES += $(LINTFILES) llib-ldsocks.ln
 
 CLEANFILES = $(LINTFILES)
 

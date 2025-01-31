@@ -479,7 +479,7 @@ typedef struct {
 typedef sigset_t addrlockopaque_t;
 
 /*
- * libsocks function declarations
+ * libsocksd function declarations
  */
 
 void __ATTRIBUTE__((ATTRIBUTE_CONSTRUCTOR))
