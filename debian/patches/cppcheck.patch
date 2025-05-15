@@ -1,11 +1,21 @@
-Description: Fix some cppcheck warnings.
-Author: Peter Pentchev <roam@ringlet.net>
+From: Peter Pentchev <roam@ringlet.net>
+Date: Tue, 25 Jul 2023 14:56:23 +0300
+Subject: Fix some cppcheck warnings.
+
 Forwarded: no
 Last-Update: 2023-07-25
+---
+ lib/address.c        | 2 +-
+ lib/clientprotocol.c | 7 ++++++-
+ lib/config_parse.c   | 2 +-
+ lib/config_parse.y   | 2 +-
+ 4 files changed, 9 insertions(+), 4 deletions(-)
 
+diff --git a/lib/address.c b/lib/address.c
+index 89d95c8..9131356 100644
 --- a/lib/address.c
 +++ b/lib/address.c
-@@ -1259,8 +1259,8 @@
+@@ -1259,8 +1259,8 @@ socks_addrinit(void)
                 serr("%s: mutex_init() failed", function);
           }
        }
@@ -15,9 +25,11 @@ Last-Update: 2023-07-25
  
     inited         = 1;
     doing_addrinit = 0;
+diff --git a/lib/clientprotocol.c b/lib/clientprotocol.c
+index 0d117ee..159823b 100644
 --- a/lib/clientprotocol.c
 +++ b/lib/clientprotocol.c
-@@ -1219,7 +1219,12 @@
+@@ -1219,7 +1219,12 @@ clientmethod_gssapi(s, protocol, gw, version, auth, emsg, emsglen)
     SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);
  
     if (gss_err_isset(major_status, minor_status, tmpbuf, sizeof(tmpbuf))) {
@@ -31,9 +43,11 @@ Last-Update: 2023-07-25
  
        SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);
        goto error;
---- a/lib/config_parse.y
-+++ b/lib/config_parse.y
-@@ -1001,7 +1001,7 @@
+diff --git a/lib/config_parse.c b/lib/config_parse.c
+index 4feeed4..8da1cfe 100644
+--- a/lib/config_parse.c
++++ b/lib/config_parse.c
+@@ -3199,7 +3199,7 @@ yyreduce:
  #if !SOCKS_CLIENT
     static ruleaddr_t mem;
     struct servent    *service;
@@ -42,9 +56,11 @@ Last-Update: 2023-07-25
  
     bzero(&statemem, sizeof(statemem));
     state               = &statemem;
---- a/lib/config_parse.c
-+++ b/lib/config_parse.c
-@@ -3199,7 +3199,7 @@
+diff --git a/lib/config_parse.y b/lib/config_parse.y
+index af26e93..f50159e 100644
+--- a/lib/config_parse.y
++++ b/lib/config_parse.y
+@@ -1001,7 +1001,7 @@ internalinit: {
  #if !SOCKS_CLIENT
     static ruleaddr_t mem;
     struct servent    *service;

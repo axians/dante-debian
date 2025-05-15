@@ -1,12 +1,22 @@
-Description: Avoid implicit function definitions in the configure checks
- Add function prototypes and include system header files as needed.
+From: Peter Pentchev <roam@ringlet.net>
+Date: Mon, 18 Mar 2024 12:13:12 +0200
+Subject: Avoid implicit function definitions in the configure checks
+
 Forwarded: not-yet
-Author: Peter Pentchev <roam@ringlet.net>
 Last-Update: 2024-03-18
 
+Add function prototypes and include system header files as needed.
+---
+ acinclude.m4  | 4 ++++
+ libscompat.m4 | 7 +++++++
+ sharedopt.m4  | 3 +--
+ 3 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/acinclude.m4 b/acinclude.m4
+index 2a470b5..3342823 100644
 --- a/acinclude.m4
 +++ b/acinclude.m4
-@@ -994,6 +994,9 @@
+@@ -994,6 +994,9 @@ void sigalrm(int signal);
  
  int resval = -1; /* -1: fail, 0: ok */
  
@@ -16,7 +26,7 @@ Last-Update: 2024-03-18
  int
  main(void)
  {
-@@ -1013,6 +1016,7 @@
+@@ -1013,6 +1016,7 @@ main(void)
     binsearch(0, MAXVAL);
  }
  
@@ -24,9 +34,11 @@ Last-Update: 2024-03-18
  binsearch(long startval, long endval)
  {
     long midval = (endval - startval) / 2 + startval;
+diff --git a/libscompat.m4 b/libscompat.m4
+index fd16537..6cac9ba 100644
 --- a/libscompat.m4
 +++ b/libscompat.m4
-@@ -34,6 +34,7 @@
+@@ -34,6 +34,7 @@ AC_TRY_COMPILE([
  #include <sys/types.h>
  #include <sys/socket.h>
  #include <stdio.h>
@@ -34,7 +46,7 @@ Last-Update: 2024-03-18
  #include <sys/ioctl.h>
  #include <net/if.h>
  #ifndef SIOCGIFHWADDR
-@@ -103,6 +104,7 @@
+@@ -103,6 +104,7 @@ AC_CHECK_FUNC(getpassphrase,
  
  AC_MSG_CHECKING([for sched_setaffinity])
  AC_TRY_COMPILE([
@@ -42,7 +54,7 @@ Last-Update: 2024-03-18
  #include <sched.h>
  ],
  [   cpu_set_t set1;
-@@ -127,6 +129,7 @@
+@@ -127,6 +129,7 @@ AC_TRY_RUN([
  #include <netinet/in.h>
  #include <arpa/inet.h>
  #include <sys/socket.h>
@@ -50,7 +62,7 @@ Last-Update: 2024-03-18
  int main(void)
  {
      struct sockaddr_in addr;
-@@ -303,6 +306,7 @@
+@@ -303,6 +306,7 @@ AC_TRY_RUN([
  #include <sys/types.h>
  #include <sys/ioctl.h>
  #include <sys/socket.h>
@@ -58,7 +70,7 @@ Last-Update: 2024-03-18
  
  int
  main(void)
-@@ -332,6 +336,7 @@
+@@ -332,6 +336,7 @@ AC_TRY_RUN([
  #include <sys/types.h>
  #include <sys/ioctl.h>
  #include <sys/socket.h>
@@ -66,7 +78,7 @@ Last-Update: 2024-03-18
  
  int
  main(void)
-@@ -359,6 +364,7 @@
+@@ -359,6 +364,7 @@ main(void)
  #include <sys/types.h>
  #include <sys/ioctl.h>
  #include <sys/socket.h>
@@ -74,7 +86,7 @@ Last-Update: 2024-03-18
  
  int
  main(void)
-@@ -412,6 +418,7 @@
+@@ -412,6 +418,7 @@ AC_SEARCH_LIBS(clock_gettime, rt)
  AC_MSG_CHECKING([for CLOCK_MONOTONIC clock_gettime() support])
  AC_TRY_RUN([
  #include <sys/time.h>
@@ -82,9 +94,11 @@ Last-Update: 2024-03-18
  #include <time.h>
  
  int
+diff --git a/sharedopt.m4 b/sharedopt.m4
+index c0492a6..08d84a9 100644
 --- a/sharedopt.m4
 +++ b/sharedopt.m4
-@@ -101,8 +101,7 @@
+@@ -101,8 +101,7 @@ else
  	#XXX include header in compilation test?
  	LIBS="$LIBS -lwrap"
  	AC_TRY_LINK([

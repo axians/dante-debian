@@ -1,12 +1,20 @@
-Description: Make sure SIGPWR is not the same as SIGINFO or SIGLOST
- Avoid a duplicate case value in a switch statement on e.g. Alpha or Sparc.
-Author: Peter Pentchev <roam@ringlet.net>
+From: Peter Pentchev <roam@ringlet.net>
+Date: Tue, 25 Jul 2023 14:56:23 +0300
+Subject: Make sure SIGPWR is not the same as SIGINFO or SIGLOST
+
 Forwarded: not-yet
 Last-Update: 2017-01-09
 
+Avoid a duplicate case value in a switch statement on e.g. Alpha or Sparc.
+---
+ lib/tostring.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/tostring.c b/lib/tostring.c
+index 0663830..65f84dd 100644
 --- a/lib/tostring.c
 +++ b/lib/tostring.c
-@@ -1555,7 +1555,7 @@
+@@ -1555,7 +1555,7 @@ signal2string(sig)
           return "SIGPROF";
  #endif /* SIGPROF */
  

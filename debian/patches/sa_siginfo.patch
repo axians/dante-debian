@@ -1,11 +1,26 @@
-Description: Only use SA_SIGINFO if available (e.g. not on GNU/Hurd)
-Author: Peter Pentchev <roam@ringlet.net>
+From: Peter Pentchev <roam@ringlet.net>
+Date: Tue, 25 Jul 2023 14:56:23 +0300
+Subject: Only use SA_SIGINFO if available (e.g. not on GNU/Hurd)
+
 Forwarded: no
 Last-Update: 2016-04-05
+---
+ lib/connectchild.c      | 10 ++++++++++
+ lib/upnp.c              |  2 ++
+ sockd/monitor.c         |  4 ++++
+ sockd/mother_util.c     |  6 ++++++
+ sockd/sockd.c           |  4 ++++
+ sockd/sockd_child.c     |  4 ++++
+ sockd/sockd_io.c        |  4 ++++
+ sockd/sockd_negotiate.c |  4 ++++
+ sockd/sockd_request.c   |  4 ++++
+ 9 files changed, 42 insertions(+)
 
+diff --git a/lib/connectchild.c b/lib/connectchild.c
+index 9e007d8..0bf5c91 100644
 --- a/lib/connectchild.c
 +++ b/lib/connectchild.c
-@@ -130,6 +130,7 @@
+@@ -130,6 +130,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
        return NULL;
     }
  
@@ -13,7 +28,7 @@ Last-Update: 2016-04-05
     if (currentsig.sa_flags & SA_SIGINFO) { /* sa_sigaction. */
        isourhandler = (currentsig.sa_sigaction == sigio);
  
-@@ -147,6 +148,7 @@
+@@ -147,6 +148,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
        }
     }
     else { /* sa_handler. */
@@ -21,7 +36,7 @@ Last-Update: 2016-04-05
        isourhandler = 0; /* we install with SA_SIGINFO. */
  
        if (currentsig.sa_handler != SIG_IGN
-@@ -156,12 +158,16 @@
+@@ -156,12 +158,16 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
        else
           slog(LOG_DEBUG,
                "%s: no SIGIO handler previously installed", function);
@@ -38,7 +53,7 @@ Last-Update: 2016-04-05
  
        slog(LOG_DEBUG, "%s: our signal handler is not installed, installing ...",
             function);
-@@ -1298,6 +1304,7 @@
+@@ -1298,6 +1304,7 @@ sigio(sig, sip, scp)
        return;
     }
  
@@ -46,7 +61,7 @@ Last-Update: 2016-04-05
     if (originalsig.sa_flags & SA_SIGINFO
     &&  originalsig.sa_sigaction != NULL) {
        const char *msgv[] =
-@@ -1312,6 +1319,7 @@
+@@ -1312,6 +1319,7 @@ sigio(sig, sip, scp)
        originalsig.sa_sigaction(sig, sip, scp);
     }
     else {
@@ -54,7 +69,7 @@ Last-Update: 2016-04-05
        if (originalsig.sa_handler != SIG_IGN
        &&  originalsig.sa_handler != SIG_DFL) {
           const char *msgv[] =
-@@ -1325,7 +1333,9 @@
+@@ -1325,7 +1333,9 @@ sigio(sig, sip, scp)
  
           originalsig.sa_handler(sig);
        }
@@ -64,9 +79,11 @@ Last-Update: 2016-04-05
  
     if (sockscf.connectchild == 0) {
        sockscf.state.insignal = 0;
+diff --git a/lib/upnp.c b/lib/upnp.c
+index d9535ca..2cc3101 100644
 --- a/lib/upnp.c
 +++ b/lib/upnp.c
-@@ -801,7 +801,9 @@
+@@ -801,7 +801,9 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
  
                 oursig = oldsig;
                 oursig.sa_handler = sighandler;
@@ -76,9 +93,11 @@ Last-Update: 2016-04-05
  
                 if (sigaction(signalv[i], &oursig, NULL) != 0) {
                    swarn("%s: sigaction(%d)", function, signalv[i]);
+diff --git a/sockd/monitor.c b/sockd/monitor.c
+index 33886b6..37485ba 100755
 --- a/sockd/monitor.c
 +++ b/sockd/monitor.c
-@@ -408,7 +408,11 @@
+@@ -408,7 +408,11 @@ run_monitor(void)
     fd_set *rset;
  
     bzero(&sigact, sizeof(sigact));
@@ -90,9 +109,11 @@ Last-Update: 2016-04-05
     sigact.sa_sigaction = siginfo;
  
  #if HAVE_SIGNAL_SIGINFO
+diff --git a/sockd/mother_util.c b/sockd/mother_util.c
+index a504262..c3bb5d6 100755
 --- a/sockd/mother_util.c
 +++ b/sockd/mother_util.c
-@@ -262,7 +262,11 @@
+@@ -262,7 +262,11 @@ mother_envsetup(argc, argv)
      */
  
     bzero(&sigact, sizeof(sigact));
@@ -104,7 +125,7 @@ Last-Update: 2016-04-05
  
     sigact.sa_sigaction = siginfo;
  #if HAVE_SIGNAL_SIGINFO
-@@ -295,7 +299,9 @@
+@@ -295,7 +299,9 @@ mother_envsetup(argc, argv)
        if (sigaction(ignoresignalv[i], &sigact, NULL) != 0)
           serr("sigaction(%d)", ignoresignalv[i]);
  
@@ -114,9 +135,11 @@ Last-Update: 2016-04-05
     sigact.sa_sigaction = sigalrm;
     if (sigaction(SIGALRM, &sigact, NULL) != 0)
        serr("sigaction(SIGALRM)");
+diff --git a/sockd/sockd.c b/sockd/sockd.c
+index 63cf068..87ec3c2 100755
 --- a/sockd/sockd.c
 +++ b/sockd/sockd.c
-@@ -239,7 +239,11 @@
+@@ -239,7 +239,11 @@ main(argc, argv)
              newprocinit();
  
              bzero(&sigact, sizeof(sigact));
@@ -128,9 +151,11 @@ Last-Update: 2016-04-05
  
              sigact.sa_sigaction = sighup_child;
              if (sigaction(SIGHUP, &sigact, NULL) != 0) {
+diff --git a/sockd/sockd_child.c b/sockd/sockd_child.c
+index ccebf04..79b9699 100644
 --- a/sockd/sockd_child.c
 +++ b/sockd/sockd_child.c
-@@ -1901,7 +1901,11 @@
+@@ -1901,7 +1901,11 @@ addchild(type)
            * Next install a SIGHUP handler.  Same for all children and
            * different from the one mother uses.
            */
@@ -142,9 +167,11 @@ Last-Update: 2016-04-05
  
           sigact.sa_sigaction = sighup_child;
           if (sigaction(SIGHUP, &sigact, NULL) != 0)
+diff --git a/sockd/sockd_io.c b/sockd/sockd_io.c
+index c9b4a63..52580f2 100644
 --- a/sockd/sockd_io.c
 +++ b/sockd/sockd_io.c
-@@ -329,7 +329,11 @@
+@@ -329,7 +329,11 @@ run_io()
  #endif /* DIAGNOSTIC */
  
     bzero(&sigact, sizeof(sigact));
@@ -156,9 +183,11 @@ Last-Update: 2016-04-05
     sigact.sa_sigaction = siginfo;
  
  #if HAVE_SIGNAL_SIGINFO
+diff --git a/sockd/sockd_negotiate.c b/sockd/sockd_negotiate.c
+index e5e896a..a1c56c8 100644
 --- a/sockd/sockd_negotiate.c
 +++ b/sockd/sockd_negotiate.c
-@@ -227,7 +227,11 @@
+@@ -227,7 +227,11 @@ run_negotiate()
     int sendfailed;
  
     bzero(&sigact, sizeof(sigact));
@@ -170,9 +199,11 @@ Last-Update: 2016-04-05
     sigact.sa_sigaction = siginfo;
  
  #if HAVE_SIGNAL_SIGINFO
+diff --git a/sockd/sockd_request.c b/sockd/sockd_request.c
+index f87b8ce..934a29b 100644
 --- a/sockd/sockd_request.c
 +++ b/sockd/sockd_request.c
-@@ -251,7 +251,11 @@
+@@ -251,7 +251,11 @@ run_request()
     fd_set *rset;
  
     bzero(&sigact, sizeof(sigact));

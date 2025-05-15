@@ -1,11 +1,18 @@
-Description: Remove the list of overridden functions; better to include socks.h
-Author: Adrian Bridgett <bridgett@debian.org>
+From: Adrian Bridgett <bridgett@debian.org>
+Date: Fri, 4 Jan 2019 10:05:25 +0200
+Subject: Remove the list of overridden functions; better to include socks.h
+
 Forwarded: no
 Last-Update: 2010-07-02
+---
+ doc/README.usage | 36 ++----------------------------------
+ 1 file changed, 2 insertions(+), 34 deletions(-)
 
+diff --git a/doc/README.usage b/doc/README.usage
+index d00757c..a31f170 100644
 --- a/doc/README.usage
 +++ b/doc/README.usage
-@@ -27,46 +27,14 @@
+@@ -27,46 +27,14 @@ socksified versions instead of the standard ones.  The application
  is then linked with the libsocks library in the distribution (-lsocksd,
  not -ldsocksd).
  

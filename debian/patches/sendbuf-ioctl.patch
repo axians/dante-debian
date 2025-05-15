@@ -1,13 +1,21 @@
-Description: Use a flag, not an ioctl value, for HAVE_SENDBUF_IOCTL
- The preprocessor throws a hissy fit if we try to check for
- the truthiness of an ioctl definition itself, at least on PowerPC.
-Author: Peter Pentchev <roam@ringlet.net>
+From: Peter Pentchev <roam@ringlet.net>
+Date: Fri, 4 Jan 2019 10:05:25 +0200
+Subject: Use a flag, not an ioctl value, for HAVE_SENDBUF_IOCTL
+
 Forwarded: not-yet
 Last-Update: 2016-04-11
 
+The preprocessor throws a hissy fit if we try to check for
+the truthiness of an ioctl definition itself, at least on PowerPC.
+---
+ libscompat.m4 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libscompat.m4 b/libscompat.m4
+index 445d6c2..fd16537 100644
 --- a/libscompat.m4
 +++ b/libscompat.m4
-@@ -377,7 +377,7 @@
+@@ -377,7 +377,7 @@ main(void)
  
  	return 0;
  }], [AC_MSG_RESULT(yes)

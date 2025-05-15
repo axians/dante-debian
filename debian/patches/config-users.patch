@@ -1,11 +1,18 @@
-Description: Do not invent our own users, use "proxy" and "nobody".
-Author: Adrian Bridgett <bridgett@debian.org>
+From: Adrian Bridgett <bridgett@debian.org>
+Date: Fri, 4 Jan 2019 10:05:25 +0200
+Subject: Do not invent our own users, use "proxy" and "nobody".
+
 Forwarded: not-needed
 Last-Update: 2010-07-02
+---
+ example/sockd.conf | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
+diff --git a/example/sockd.conf b/example/sockd.conf
+index 5ce9587..fa2e52d 100644
 --- a/example/sockd.conf
 +++ b/example/sockd.conf
-@@ -76,17 +76,18 @@
+@@ -76,17 +76,18 @@ logoutput: stderr
  #
  
  # when doing something that can require privilege, it will use the

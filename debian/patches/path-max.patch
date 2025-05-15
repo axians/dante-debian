@@ -1,11 +1,18 @@
-Description: Use a sensible value for PATH_MAX if it is not defined.
-Author: Peter Pentchev <roam@ringlet.net>
+From: Peter Pentchev <roam@ringlet.net>
+Date: Tue, 25 Jul 2023 14:56:23 +0300
+Subject: Use a sensible value for PATH_MAX if it is not defined.
+
 Forwarded: no
 Last-Update: 2017-01-12
+---
+ include/osdep.h | 4 ++++
+ 1 file changed, 4 insertions(+)
 
+diff --git a/include/osdep.h b/include/osdep.h
+index e1c0fc5..9f64c60 100644
 --- a/include/osdep.h
 +++ b/include/osdep.h
-@@ -480,6 +480,10 @@
+@@ -480,6 +480,10 @@ do {                                                                           \
  #define ETHER_ADDR_LEN  (6)
  #endif /* !ETHER_ADDR_LEN */
  

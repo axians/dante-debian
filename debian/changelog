@@ -9,6 +9,7 @@ dante (1.4.3+dfsg-3.2) testing; urgency=high
 
   [ Antonio Enrico Russo ]
   * New maintainer.  Thanks Peter! (Closes: #1122500)
+  * Standardize patches
 
  -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 08:00:44 -0700
 

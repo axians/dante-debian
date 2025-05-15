@@ -1,13 +1,22 @@
-Description: Adapt the configure script for the Debian environment.
- Always use Debian's libtool and libdl.so.2.
- Do not add "-g -O2" to the Debian build's CFLAGS.
-Author: Peter Pentchev <roam@ringlet.net>
+From: Peter Pentchev <roam@ringlet.net>
+Date: Tue, 25 Jul 2023 14:56:23 +0300
+Subject: Adapt the configure script for the Debian environment.
+
 Forwarded: not-needed
 Last-Update: 2016-04-06
 
+Always use Debian's libtool and libdl.so.2.
+Do not add "-g -O2" to the Debian build's CFLAGS.
+---
+ configure.ac | 2 ++
+ preload.m4   | 3 ++-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 63351f5..fb3bce2 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -81,6 +81,8 @@
+@@ -81,6 +81,8 @@ oLDFLAGS="$LDFLAGS"
  unset CFLAGS
  unset LDFLAGS
  LT_INIT
@@ -16,9 +25,11 @@ Last-Update: 2016-04-06
  autoconf_compflags="$CFLAGS"
  CFLAGS=$oCFLAGS
  LDFLAGS="$oLDFLAGS"
+diff --git a/preload.m4 b/preload.m4
+index 6d5e02a..cf2b777 100644
 --- a/preload.m4
 +++ b/preload.m4
-@@ -564,7 +564,8 @@
+@@ -564,7 +564,8 @@ if test x"${preload_enabled}" = xt; then
  		;;
  
  	    *)

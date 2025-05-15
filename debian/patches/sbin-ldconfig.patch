@@ -1,14 +1,22 @@
-Description: Look for ldconfig in /sbin
- The preload.m4 script adds /sbin to the path in some cases, but
- not all; let us hope this fixes the build on some architectures.
+From: Peter Pentchev <roam@ringlet.net>
+Date: Sat, 1 Feb 2025 01:35:57 +0200
+Subject: Look for ldconfig in /sbin
+
 Bug-Debian: https://bugs.debian.org/1067709
 Forwarded: no
-Author: Peter Pentchev <roam@ringlet.net>
 Last-Update: 2025-02-01
 
---- a/preload.m4	2025-01-31 23:14:43.050935532 +0000
-+++ b/preload.m4	2025-01-31 23:15:56.611292065 +0000
-@@ -605,6 +605,8 @@
+The preload.m4 script adds /sbin to the path in some cases, but
+not all; let us hope this fixes the build on some architectures.
+---
+ preload.m4 | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/preload.m4 b/preload.m4
+index b9e27e3..39b438f 100644
+--- a/preload.m4
++++ b/preload.m4
+@@ -605,6 +605,8 @@ if test x"${LIBC_NAME}" = x; then
  	*-*-freebsd*)
  	    #XXX
  	    #can't set it to libc.so directly, might be ld script
@@ -17,7 +25,7 @@ Last-Update: 2025-02-01
  	    unset LIBC_ALTS
  	    for file in `ldconfig -r | grep /libc.so| awk '{ print $3 }'`; do
  		test -s "$file" && LIBC_ALTS="${LIBC_ALTS}${LIBC_ALTS:+ }$file"
-@@ -619,6 +621,8 @@
+@@ -619,6 +621,8 @@ if test x"${LIBC_NAME}" = x; then
  	*-*-linux-*|*-gnu)
  	    #XXX
  	    #can't set it to libc.so directly, might be ld script

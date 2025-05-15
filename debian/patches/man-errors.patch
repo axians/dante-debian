@@ -1,13 +1,22 @@
-Description: Fix the manual page errors.
- - replace mdoc macros with man ones
- - use minus signs instead of hyphens where necessary
-Author: Peter Pentchev <roam@ringlet.net>
+From: Peter Pentchev <roam@ringlet.net>
+Date: Fri, 4 Jan 2019 10:05:25 +0200
+Subject: Fix the manual page errors.
+
 Forwarded: no
 Last-Update: 2016-04-06
 
+- replace mdoc macros with man ones
+- use minus signs instead of hyphens where necessary
+---
+ doc/sockd.conf.5 | 20 ++++++++++----------
+ doc/socksify.1   |  2 +-
+ 2 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/doc/sockd.conf.5 b/doc/sockd.conf.5
+index 631c5ff..c74203f 100644
 --- a/doc/sockd.conf.5
 +++ b/doc/sockd.conf.5
-@@ -315,7 +315,7 @@
+@@ -315,7 +315,7 @@ Setting it to 0 will use the systems default.
  .IP \fBtimeout.io\fP
  The number of seconds an established connection can be idle.
  The default is 0, meaning forever.
@@ -16,7 +25,7 @@ Last-Update: 2016-04-06
  
  Individual timeouts can be set for TCP and UDP by suffixing io with
  ".<protocolname>", i.e. \fBtimeout.io.tcp\fP or \fBtimeout.io.udp\fP.
-@@ -697,7 +697,7 @@
+@@ -697,7 +697,7 @@ Which servicename to use when involving pam.  Default is "danted".
  .IP \fBport\fP
  Parameter to \fBfrom\fP, \fBto\fP and \fBvia\fP.  Accepts the keywords
  \fBeq/=, neq/!=, ge/>=, le/<=, gt/>, lt/<\fP followed by a number.
@@ -25,7 +34,7 @@ Last-Update: 2016-04-06
  will match all port numbers within the range <start #> and <end #>.
  
  The default is to match all ports.
-@@ -710,10 +710,10 @@
+@@ -710,10 +710,10 @@ Requires the redirect module.
  The syntax of the redirect statement is
  as follows:
  
@@ -38,7 +47,7 @@ Last-Update: 2016-04-06
  \"\fBredirect\fP to: \fBADDRESS\fP
  
  See the redirect manual for detailed information.
-@@ -777,7 +777,7 @@
+@@ -777,7 +777,7 @@ What servicename to use when involving pam.  Default is "danted".
  .IP \fBport\fP
  Parameter to \fBfrom\fP, \fBto\fP and \fBvia\fP.  Accepts the keywords
  \fBeq/=, neq/!=, ge/>=, le/<=, gt/>, lt/<\fP followed by a number.
@@ -47,7 +56,7 @@ Last-Update: 2016-04-06
  will match all port numbers within the range <start #> and <end #>.
  
  The default is all ports.
-@@ -798,10 +798,10 @@
+@@ -798,10 +798,10 @@ Requires the redirect module.
  The syntax of the redirect statement is
  as follows:
  
@@ -60,7 +69,7 @@ Last-Update: 2016-04-06
  \fBredirect\fP to: \fBADDRESS\fP
  
  The semantics of \fBfrom\fP and \fBto\fP vary according to
-@@ -820,7 +820,7 @@
+@@ -820,7 +820,7 @@ Note that the meaning of this address is affected by \fBcommand\fP.
  
  .IP \fBudp.portrange\fP
  The argument to this keyword is two port numbers, separated by
@@ -69,7 +78,7 @@ Last-Update: 2016-04-06
  used between the \fBsocks-client\fP and the \fBDante-server for UDP
  packets.  Note that this has no relation to the UDP port-range
  used between the \fBDante-server and external, non-socks, clients/servers.
-@@ -878,12 +878,12 @@
+@@ -878,12 +878,12 @@ network traffic.
  The following example shows the general monitor syntax, specifying a
  monitor without any monitoring operations:
  
@@ -84,9 +93,11 @@ Last-Update: 2016-04-06
  
  A monitor can include many of the same keywords that are available in
  the Dante ACL rules. The following subset is currently supported:
+diff --git a/doc/socksify.1 b/doc/socksify.1
+index ebb8359..1a7e299 100755
 --- a/doc/socksify.1
 +++ b/doc/socksify.1
-@@ -138,7 +138,7 @@
+@@ -138,7 +138,7 @@ For inferno Nettverk A/S:
     Karl-Andre' Skevik
  .SH SEE ALSO
  socks.conf(5), sockd(8), sockd.conf(5)
