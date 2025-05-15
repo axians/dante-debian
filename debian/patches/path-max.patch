@@ -9,7 +9,7 @@ Last-Update: 2017-01-12
  1 file changed, 4 insertions(+)
 
 diff --git a/include/osdep.h b/include/osdep.h
-index e1c0fc5..9f64c60 100644
+index c3cd5b5..d57df44 100644
 --- a/include/osdep.h
 +++ b/include/osdep.h
 @@ -480,6 +480,10 @@ do {                                                                           \

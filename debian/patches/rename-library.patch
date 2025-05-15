@@ -154,7 +154,7 @@ index 6512415..d00757c 100644
 + libsocksd.a   - static version of the above.
 + libdsocksd.so - shared library which does "on the fly" socksification.
 diff --git a/include/socks.h b/include/socks.h
-index 3ced074..bf8dd20 100755
+index a520ad1..a5335b1 100755
 --- a/include/socks.h
 +++ b/include/socks.h
 @@ -479,7 +479,7 @@ typedef struct {
@@ -234,10 +234,10 @@ index bcbf101..c328731 100644
  CLEANFILES = $(LINTFILES)
  
 diff --git a/libscompat.m4 b/libscompat.m4
-index 913e9e5..445d6c2 100644
+index 2bd7f5f..22ceb6a 100644
 --- a/libscompat.m4
 +++ b/libscompat.m4
-@@ -227,7 +227,7 @@ for func in $CLIENTONLY $SHAREDFUNCS; do
+@@ -231,7 +231,7 @@ for func in $CLIENTONLY $SHAREDFUNCS; do
      fi
      if eval "test x\"\$${var}\" = xno"; then
  	LIBSCSRC="${LIBSCSRC}${LIBSCSRC:+ }${func}.lo"

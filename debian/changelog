@@ -16,6 +16,7 @@ dante (1.4.4+dfsg-1) UNRELEASED; urgency=medium
   * Defuzz debian/patches/typos.patch
   * Rework debian/patches/sa_siginfo.patch
   * Rework debian/patches/implicit.patch
+  * Refresh patches
 
  -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 08:00:44 -0700
 

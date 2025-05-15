@@ -12,10 +12,10 @@ the truthiness of an ioctl definition itself, at least on PowerPC.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/libscompat.m4 b/libscompat.m4
-index 445d6c2..fd16537 100644
+index 22ceb6a..ba6975c 100644
 --- a/libscompat.m4
 +++ b/libscompat.m4
-@@ -377,7 +377,7 @@ main(void)
+@@ -384,7 +384,7 @@ main(void)
  
  	return 0;
  }], [AC_MSG_RESULT(yes)

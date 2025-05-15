@@ -11,10 +11,10 @@ Avoid a duplicate case value in a switch statement on e.g. Alpha or Sparc.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/lib/tostring.c b/lib/tostring.c
-index 0663830..65f84dd 100644
+index 1eb3fa3..7ed2190 100644
 --- a/lib/tostring.c
 +++ b/lib/tostring.c
-@@ -1555,7 +1555,7 @@ signal2string(sig)
+@@ -1559,7 +1559,7 @@ signal2string(sig)
           return "SIGPROF";
  #endif /* SIGPROF */
  

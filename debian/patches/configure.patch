@@ -13,7 +13,7 @@ Do not add "-g -O2" to the Debian build's CFLAGS.
  2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/configure.ac b/configure.ac
-index 63351f5..fb3bce2 100644
+index 1531858..1764f55 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -81,6 +81,8 @@ oLDFLAGS="$LDFLAGS"
@@ -26,7 +26,7 @@ index 63351f5..fb3bce2 100644
  CFLAGS=$oCFLAGS
  LDFLAGS="$oLDFLAGS"
 diff --git a/preload.m4 b/preload.m4
-index 6d5e02a..cf2b777 100644
+index 9a159ac..e7d3785 100644
 --- a/preload.m4
 +++ b/preload.m4
 @@ -564,7 +564,8 @@ if test x"${preload_enabled}" = xt; then

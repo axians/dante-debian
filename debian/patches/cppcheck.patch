@@ -12,7 +12,7 @@ Last-Update: 2023-07-25
  4 files changed, 9 insertions(+), 4 deletions(-)
 
 diff --git a/lib/address.c b/lib/address.c
-index 89d95c8..9131356 100644
+index 864b5f6..f1cf11d 100644
 --- a/lib/address.c
 +++ b/lib/address.c
 @@ -1259,8 +1259,8 @@ socks_addrinit(void)
@@ -44,10 +44,10 @@ index 0d117ee..159823b 100644
        SOCKS_SIGUNBLOCK_IF_CLIENT(&oldset);
        goto error;
 diff --git a/lib/config_parse.c b/lib/config_parse.c
-index 4feeed4..8da1cfe 100644
+index 2561678..d562894 100644
 --- a/lib/config_parse.c
 +++ b/lib/config_parse.c
-@@ -3199,7 +3199,7 @@ yyreduce:
+@@ -3594,7 +3594,7 @@ yyreduce:
  #if !SOCKS_CLIENT
     static ruleaddr_t mem;
     struct servent    *service;
@@ -57,7 +57,7 @@ index 4feeed4..8da1cfe 100644
     bzero(&statemem, sizeof(statemem));
     state               = &statemem;
 diff --git a/lib/config_parse.y b/lib/config_parse.y
-index af26e93..f50159e 100644
+index a989aa6..b05e2c4 100644
 --- a/lib/config_parse.y
 +++ b/lib/config_parse.y
 @@ -1001,7 +1001,7 @@ internalinit: {

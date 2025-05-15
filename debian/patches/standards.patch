@@ -9,7 +9,7 @@ Last-Update: 2017-09-27
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/compiler.m4 b/compiler.m4
-index 0e7281d..aaf6da7 100644
+index afd1939..3f72224 100644
 --- a/compiler.m4
 +++ b/compiler.m4
 @@ -25,7 +25,7 @@ case $host in

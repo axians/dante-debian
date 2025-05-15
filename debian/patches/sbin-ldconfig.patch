@@ -13,7 +13,7 @@ not all; let us hope this fixes the build on some architectures.
  1 file changed, 4 insertions(+)
 
 diff --git a/preload.m4 b/preload.m4
-index b9e27e3..39b438f 100644
+index dfdc484..9a0cf56 100644
 --- a/preload.m4
 +++ b/preload.m4
 @@ -605,6 +605,8 @@ if test x"${LIBC_NAME}" = x; then

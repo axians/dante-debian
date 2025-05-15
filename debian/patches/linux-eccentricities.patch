@@ -16,7 +16,7 @@ Last-Update: 2016-04-06
  3 files changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/include/common.h b/include/common.h
-index 137f5ec..419870a 100755
+index 1c23dc3..1892aee 100755
 --- a/include/common.h
 +++ b/include/common.h
 @@ -1098,7 +1098,8 @@ do {                                                                           \
@@ -30,7 +30,7 @@ index 137f5ec..419870a 100755
  #define CMSG_CONTROLDATA(msg)   ((msg).msg_accrights)
  #endif /* HAVE_CMSGHDR */
 diff --git a/lib/Rcompat.c b/lib/Rcompat.c
-index f03e125..e31c33d 100755
+index e13d365..6261b97 100755
 --- a/lib/Rcompat.c
 +++ b/lib/Rcompat.c
 @@ -297,7 +297,7 @@ Rrecvmsg(s, msg, flags)
@@ -43,7 +43,7 @@ index f03e125..e31c33d 100755
     for (received = ioc = rc = 0; ioc < (size_t)msg->msg_iovlen; ++ioc) {
        if ((rc = Rrecvfrom(s,
 diff --git a/preload.m4 b/preload.m4
-index cf2b777..b9e27e3 100644
+index e7d3785..dfdc484 100644
 --- a/preload.m4
 +++ b/preload.m4
 @@ -438,7 +438,7 @@ if test x"$use_threads" = xt; then
