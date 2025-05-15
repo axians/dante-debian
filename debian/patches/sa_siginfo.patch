@@ -5,7 +5,7 @@ Subject: Only use SA_SIGINFO if available (e.g. not on GNU/Hurd)
 Forwarded: no
 Last-Update: 2016-04-05
 ---
- lib/connectchild.c      | 10 ++++++++++
+ lib/connectchild.c      | 12 ++++++++++++
  lib/upnp.c              |  2 ++
  sockd/monitor.c         |  4 ++++
  sockd/mother_util.c     |  6 ++++++
@@ -14,13 +14,13 @@ Last-Update: 2016-04-05
  sockd/sockd_io.c        |  4 ++++
  sockd/sockd_negotiate.c |  4 ++++
  sockd/sockd_request.c   |  4 ++++
- 9 files changed, 42 insertions(+)
+ 9 files changed, 44 insertions(+)
 
 diff --git a/lib/connectchild.c b/lib/connectchild.c
-index 9e007d8..0bf5c91 100644
+index 863b2c5..a653745 100644
 --- a/lib/connectchild.c
 +++ b/lib/connectchild.c
-@@ -130,6 +130,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
+@@ -132,6 +132,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
        return NULL;
     }
  
@@ -28,7 +28,7 @@ index 9e007d8..0bf5c91 100644
     if (currentsig.sa_flags & SA_SIGINFO) { /* sa_sigaction. */
        isourhandler = (currentsig.sa_sigaction == sigio);
  
-@@ -147,6 +148,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
+@@ -149,6 +150,7 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
        }
     }
     else { /* sa_handler. */
@@ -36,42 +36,61 @@ index 9e007d8..0bf5c91 100644
        isourhandler = 0; /* we install with SA_SIGINFO. */
  
        if (currentsig.sa_handler != SIG_IGN
-@@ -156,12 +158,16 @@ socks_nbconnectroute(s, control, packet, src, dst, emsg, emsglen)
-       else
+@@ -702,7 +704,9 @@ install_sigio(emsg, emsglen)
+ 
+    newsig               = currenthandler; /* keep same as much as possible. */
+    newsig.sa_sigaction  = sigio;
++#ifdef SA_SIGINFO
+    newsig.sa_flags     |= SA_SIGINFO;
++#endif
+ 
+    originalhandler      = currenthandler;
+ 
+@@ -728,6 +732,7 @@ our_sigio_is_installed(void)
+       return 0;
+    }
+ 
++#ifdef SA_SIGINFO
+    if (currenthandler.sa_flags & SA_SIGINFO) { /* sa_sigaction. */
+       if (currenthandler.sa_sigaction == sigio) {
+          slog(LOG_DEBUG, "%s: our SIGIO-handler is installed", function);
+@@ -752,6 +757,7 @@ our_sigio_is_installed(void)
+       }
+    }
+    else { /* we use sa_sigaction, so this is for sure not our handler. */
++#endif
+       if (currenthandler.sa_handler != SIG_IGN
+       &&  currenthandler.sa_handler != SIG_DFL) 
           slog(LOG_DEBUG,
-               "%s: no SIGIO handler previously installed", function);
+@@ -761,7 +767,9 @@ our_sigio_is_installed(void)
+          slog(LOG_DEBUG, "%s: no SIGIO-handler installed", function);
+ 
+       return 0;
 +#ifdef SA_SIGINFO
     }
 +#endif
+ }
  
-    if (!isourhandler) {
-       newsig               = currentsig; /* keep same as much as possible. */
-       newsig.sa_sigaction  = sigio;
-+#ifdef SA_SIGINFO
-       newsig.sa_flags     |= SA_SIGINFO;
-+#endif
  
-       slog(LOG_DEBUG, "%s: our signal handler is not installed, installing ...",
-            function);
-@@ -1298,6 +1304,7 @@ sigio(sig, sip, scp)
+@@ -1385,6 +1393,7 @@ sigio(sig, sip, scp)
        return;
     }
  
 +#ifdef SA_SIGINFO
-    if (originalsig.sa_flags & SA_SIGINFO
-    &&  originalsig.sa_sigaction != NULL) {
+    if (originalhandler.sa_flags & SA_SIGINFO
+    &&  originalhandler.sa_sigaction != NULL) {
        const char *msgv[] =
-@@ -1312,6 +1319,7 @@ sigio(sig, sip, scp)
-       originalsig.sa_sigaction(sig, sip, scp);
+@@ -1399,6 +1408,7 @@ sigio(sig, sip, scp)
+       originalhandler.sa_sigaction(sig, sip, scp);
     }
     else {
 +#endif
-       if (originalsig.sa_handler != SIG_IGN
-       &&  originalsig.sa_handler != SIG_DFL) {
+       if (originalhandler.sa_handler != SIG_IGN
+       &&  originalhandler.sa_handler != SIG_DFL) {
           const char *msgv[] =
-@@ -1325,7 +1333,9 @@ sigio(sig, sip, scp)
+@@ -1412,7 +1422,9 @@ sigio(sig, sip, scp)
  
-          originalsig.sa_handler(sig);
+          originalhandler.sa_handler(sig);
        }
 +#ifdef SA_SIGINFO
     }
@@ -80,10 +99,10 @@ index 9e007d8..0bf5c91 100644
     if (sockscf.connectchild == 0) {
        sockscf.state.insignal = 0;
 diff --git a/lib/upnp.c b/lib/upnp.c
-index d9535ca..2cc3101 100644
+index 92be673..1325f79 100644
 --- a/lib/upnp.c
 +++ b/lib/upnp.c
-@@ -801,7 +801,9 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
+@@ -820,7 +820,9 @@ upnp_negotiate(s, packet, gw, emsg, emsglen)
  
                 oursig = oldsig;
                 oursig.sa_handler = sighandler;
@@ -94,7 +113,7 @@ index d9535ca..2cc3101 100644
                 if (sigaction(signalv[i], &oursig, NULL) != 0) {
                    swarn("%s: sigaction(%d)", function, signalv[i]);
 diff --git a/sockd/monitor.c b/sockd/monitor.c
-index 33886b6..37485ba 100755
+index 5264432..444ad61 100755
 --- a/sockd/monitor.c
 +++ b/sockd/monitor.c
 @@ -408,7 +408,11 @@ run_monitor(void)
@@ -136,7 +155,7 @@ index a504262..c3bb5d6 100755
     if (sigaction(SIGALRM, &sigact, NULL) != 0)
        serr("sigaction(SIGALRM)");
 diff --git a/sockd/sockd.c b/sockd/sockd.c
-index 63cf068..87ec3c2 100755
+index ba02093..67d613a 100755
 --- a/sockd/sockd.c
 +++ b/sockd/sockd.c
 @@ -239,7 +239,11 @@ main(argc, argv)
@@ -152,7 +171,7 @@ index 63cf068..87ec3c2 100755
              sigact.sa_sigaction = sighup_child;
              if (sigaction(SIGHUP, &sigact, NULL) != 0) {
 diff --git a/sockd/sockd_child.c b/sockd/sockd_child.c
-index ccebf04..79b9699 100644
+index 1d93a78..877de6d 100644
 --- a/sockd/sockd_child.c
 +++ b/sockd/sockd_child.c
 @@ -1901,7 +1901,11 @@ addchild(type)
@@ -168,10 +187,10 @@ index ccebf04..79b9699 100644
           sigact.sa_sigaction = sighup_child;
           if (sigaction(SIGHUP, &sigact, NULL) != 0)
 diff --git a/sockd/sockd_io.c b/sockd/sockd_io.c
-index c9b4a63..52580f2 100644
+index 194cd63..8e6cc0a 100644
 --- a/sockd/sockd_io.c
 +++ b/sockd/sockd_io.c
-@@ -329,7 +329,11 @@ run_io()
+@@ -330,7 +330,11 @@ run_io()
  #endif /* DIAGNOSTIC */
  
     bzero(&sigact, sizeof(sigact));
@@ -184,7 +203,7 @@ index c9b4a63..52580f2 100644
  
  #if HAVE_SIGNAL_SIGINFO
 diff --git a/sockd/sockd_negotiate.c b/sockd/sockd_negotiate.c
-index e5e896a..a1c56c8 100644
+index 03e2a42..072e8b5 100644
 --- a/sockd/sockd_negotiate.c
 +++ b/sockd/sockd_negotiate.c
 @@ -227,7 +227,11 @@ run_negotiate()
@@ -200,7 +219,7 @@ index e5e896a..a1c56c8 100644
  
  #if HAVE_SIGNAL_SIGINFO
 diff --git a/sockd/sockd_request.c b/sockd/sockd_request.c
-index f87b8ce..934a29b 100644
+index 7a20082..86c176a 100644
 --- a/sockd/sockd_request.c
 +++ b/sockd/sockd_request.c
 @@ -251,7 +251,11 @@ run_request()
