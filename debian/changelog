@@ -13,6 +13,7 @@ dante (1.4.4+dfsg-1) UNRELEASED; urgency=medium
   * Exclude autoconf/automake files
   * New upstream release 1.4.4 (Closes: #1108486, #1090930)
     - Fix CVE-2024-54662
+  * Defuzz debian/patches/typos.patch
 
  -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 08:00:44 -0700
 
