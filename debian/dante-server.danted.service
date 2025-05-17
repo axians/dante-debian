@@ -5,19 +5,33 @@ After=network.target
 
 [Service]
 Type=simple
-PIDFile=/run/danted.pid
-ExecStart=/usr/sbin/danted
+PIDFile=/run/danted/pid
+ExecStart=/usr/sbin/danted -p /run/danted/pid
 ExecStartPre=/bin/sh -c ' \
 	uid=`sed -n -e "s/[[:space:]]//g" -e "s/#.*//" -e "/^user\\.privileged/{s/[^:]*://p;q;}" /etc/danted.conf`; \
 	if [ -n "$uid" ]; then \
-		touch /var/run/danted.pid; \
-		chown $uid /var/run/danted.pid; \
+		touch /run/danted/pid; \
+		chown $uid /run/danted/pid; \
 	fi \
 	'
+
+# sandbox
 PrivateTmp=yes
 InaccessibleDirectories=/boot /home /media /mnt /opt /root
 ReadOnlyDirectories=/bin /etc /lib -/lib64 /sbin /usr /var
 DeviceAllow=/dev/null rw
+ProtectSystem=strict
+RuntimeDirectory=danted
+LockPersonality=yes
+NoNewPrivileges=yes
+ProtectControlGroups=yes
+ProtectHome=true
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_LOCAL AF_NETLINK
+RestrictRealtime=yes
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=multi-user.target
