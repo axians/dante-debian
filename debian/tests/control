@@ -1,4 +1,4 @@
-Test-Command: adequate dante-server dante-client libsocksd0 libsocksd0-dev libdsocksd0
+Test-Command: adequate dante-server dante-client libsocksd0t64 libsocksd0-dev libdsocksd0t64
 Depends:
  adequate,
  @,

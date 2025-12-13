@@ -1,9 +1,20 @@
 dante (1.4.3+dfsg-3.2) testing; urgency=high
 
+  [ 何庆 Ching He ]
   * Add libcrypt-dev to Build-Depends (Closes: #1106926)
   * Fix RC bug to prevent autoremoval from testing (deadline: 2025-12-24)
 
- -- 何庆 Ching He <heqing@rool.me>  Sat, 13 Dec 2025 15:42:40 +0800
+  [ Adrian Bunk ]
+  * Acknowledge NMU (Closes: #1102547)
+
+ -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 07:59:42 -0700
+
+dante (1.4.3+dfsg-3.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Fix the autopkgtest for the time_t changes.
+
+ -- Adrian Bunk <bunk@debian.org>  Thu, 10 Apr 2025 12:28:54 +0300
 
 dante (1.4.3+dfsg-3) unstable; urgency=medium
 
