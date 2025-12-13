@@ -1,4 +1,4 @@
-dante (1.4.4+dfsg-1) UNRELEASED; urgency=medium
+dante (1.4.4+dfsg-1) unstable; urgency=medium
 
   [ 何庆 Ching He ]
   * Add libcrypt-dev to Build-Depends (Closes: #1106926)
@@ -22,7 +22,7 @@ dante (1.4.4+dfsg-1) UNRELEASED; urgency=medium
   * Tighten systemd sandbox
   * Re-encode files as UTF-8
 
- -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 08:00:44 -0700
+ -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 08:27:01 -0700
 
 dante (1.4.3+dfsg-3.1) unstable; urgency=medium
 
