@@ -15,3 +15,4 @@ signal-names.patch
 path-max.patch
 implicit.patch
 sbin-ldconfig.patch
+reencode-files-as-utf-8.patch

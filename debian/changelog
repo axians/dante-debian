@@ -20,6 +20,7 @@ dante (1.4.4+dfsg-1) UNRELEASED; urgency=medium
   * Bump Standards-Version to 4.7.2 with no changes
   * Update debian/copyright
   * Tighten systemd sandbox
+  * Re-encode files as UTF-8
 
  -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 08:00:44 -0700
 
