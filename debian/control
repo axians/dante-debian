@@ -1,7 +1,7 @@
 Source: dante
 Section: net
 Priority: optional
-Maintainer: Peter Pentchev <roam@debian.org>
+Maintainer: Antonio Enrico Russo <aerusso@aerusso.net>
 Build-Depends:
  debhelper-compat (= 13),
  libcrypt-dev,
@@ -12,8 +12,8 @@ Build-Depends:
  libwrap0-dev,
 Homepage: https://www.inet.no/dante/
 Standards-Version: 4.7.0
-Vcs-Git: https://gitlab.com/dante/pkg-debian-full.git
-Vcs-Browser: https://gitlab.com/dante/pkg-debian-full
+Vcs-Git: https://salsa.debian.org/debian/dante.git
+Vcs-Browser: https://salsa.debian.org/debian/dante
 Rules-Requires-Root: no
 X-Style: black
 

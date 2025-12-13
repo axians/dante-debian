@@ -7,7 +7,10 @@ dante (1.4.3+dfsg-3.2) testing; urgency=high
   [ Adrian Bunk ]
   * Acknowledge NMU (Closes: #1102547)
 
- -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 07:59:42 -0700
+  [ Antonio Enrico Russo ]
+  * New maintainer.  Thanks Peter! (Closes: #1122500)
+
+ -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 08:00:44 -0700
 
 dante (1.4.3+dfsg-3.1) unstable; urgency=medium
 
