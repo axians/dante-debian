@@ -1,4 +1,4 @@
-dante (1.4.3+dfsg-3.2) testing; urgency=high
+dante (1.4.4+dfsg-1) UNRELEASED; urgency=medium
 
   [ 何庆 Ching He ]
   * Add libcrypt-dev to Build-Depends (Closes: #1106926)
@@ -11,6 +11,8 @@ dante (1.4.3+dfsg-3.2) testing; urgency=high
   * New maintainer.  Thanks Peter! (Closes: #1122500)
   * Standardize patches
   * Exclude autoconf/automake files
+  * New upstream release 1.4.4 (Closes: #1108486, #1090930)
+    - Fix CVE-2024-54662
 
  -- Antonio Enrico Russo <aerusso@aerusso.net>  Sat, 13 Dec 2025 08:00:44 -0700
 
