@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Peter Pentchev <roam@debian.org>
 Build-Depends:
  debhelper-compat (= 13),
+ libcrypt-dev,
  bison,
  flex,
  libpam0g-dev,
