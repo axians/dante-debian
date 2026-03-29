@@ -472,7 +472,7 @@ index 1773d23..2ad1d7f 100755
      * "clientdata" contains the request received from the client,
      * already parsed into "request".
      */
-@@ -2416,15 +2416,15 @@ typedef struct {
+@@ -2416,7 +2416,7 @@ typedef struct {
                                       * should it be included in any counts.
                                       *
                                       * Basically just waiting for the SIGCHLD
@@ -481,7 +481,7 @@ index 1773d23..2ad1d7f 100755
                                       * our counters.
                                       */
     unsigned         exitingnormally;/* exiting normally, on our request?      */
- 
+@@ -2424,7 +2424,7 @@ typedef struct {
     int              ack;            /* connection to child for acks.          */
     int              s;              /* connection to child for data.          */
  

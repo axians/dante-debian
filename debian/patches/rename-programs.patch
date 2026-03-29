@@ -61,7 +61,7 @@ index e49a50d..e8a8889 100644
  .TP
  .BI \-p file
  .B Dante
-@@ -134,18 +134,18 @@ It is recommended that
+@@ -134,10 +134,10 @@ It is recommended that
  be set to a (local) filesystem with low latency.  The directory
  should have read/write/execute permission by both the
  privileged and unprivileged userid (as specified in
@@ -74,7 +74,7 @@ index e49a50d..e8a8889 100644
  .B Dante
  server configuration file.
  .SH AUTHORS
- For inferno Nettverk A/S:
+@@ -145,7 +145,7 @@ For inferno Nettverk A/S:
     Michael Shuldman
     Karl-Andre' Skevik
  .SH SEE ALSO

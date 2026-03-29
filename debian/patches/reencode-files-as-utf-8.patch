@@ -5,10 +5,9 @@ Subject: Re-encode files as utf-8
 Signed-off-by: Antonio Enrico Russo <aerusso@aerusso.net>
 ---
  CREDITS         | 8 ++++----
- capi/socks.h    | 2 +-
  capi/socks.h.in | 2 +-
  include/socks.h | 2 +-
- 4 files changed, 7 insertions(+), 7 deletions(-)
+ 3 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/CREDITS b/CREDITS
 index 1de6315..9dd34ef 100644
@@ -44,19 +43,6 @@ index 1de6315..9dd34ef 100644
    implementation of getipnodebyname().
  
  - Motoyuki Kasahara <m-kasahr@sra.co.jp.example.com> contributed the
-diff --git a/capi/socks.h b/capi/socks.h
-index 114dd61..d9ab5c0 100644
---- a/capi/socks.h
-+++ b/capi/socks.h
-@@ -32,7 +32,7 @@
-  *  Software Distribution Coordinator  or  sdc@inet.no
-  *  Inferno Nettverk A/S
-  *  Oslo Research Park
-- *  Gaustadalléen 21
-+ *  GaustadallÃ©en 21
-  *  NO-0349 Oslo
-  *  Norway
-  *
 diff --git a/capi/socks.h.in b/capi/socks.h.in
 index 114dd61..d9ab5c0 100644
 --- a/capi/socks.h.in
