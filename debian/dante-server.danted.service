@@ -1,7 +1,7 @@
 [Unit]
 Description=SOCKS (v4 and v5) proxy daemon (danted)
 Documentation=man:danted(8) man:danted.conf(5)
-After=network.target
+After=network.target network-online.target
 
 [Service]
 Type=simple
