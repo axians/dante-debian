@@ -3,7 +3,7 @@ Upstream-Name: dante
 Upstream-Contact: Inferno Nettverk A/S, Norway <dante-bugs@inet.no>
 Source: https://www.inet.no/dante/
 License: BSD-3-clause-Inferno
-Files-Excluded: */Makefile.in aclocal.m4 config.guess config.sub compile configure depcomp doc/rfc1928.txt doc/rfc1929.txt doc/rfc1961.txt install-sh ltmain.sh missing
+Files-Excluded: */Makefile.in aclocal.m4 capi/socks.h config.guess config.sub compile configure depcomp doc/rfc1928.txt doc/rfc1929.txt doc/rfc1961.txt install-sh ltmain.sh missing bin/convert_sid.c include/redefac.h sockd/bandwidth.c sockd/bandwidth_key.c sockd/checkmodule.c sockd/ldap.c sockd/ldap_key.c sockd/pac.c sockd/pac_key.c sockd/redirect.c sockd/redirect_key.c SPECS/dante.spec include/autoconf.h.in m4
 
 Files: *
 Copyright: (c) 1997 - 2024
