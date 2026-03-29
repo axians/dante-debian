@@ -1,4 +1,5 @@
 #!/usr/bin/make -f
+include /usr/share/dpkg/default.mk
 
 # This script uses debhelper by Joey Hess
 #export DH_VERBOSE=1
@@ -17,7 +18,7 @@ override_dh_auto_configure:
 	  --without-gssapi
 
 execute_after_dh_auto_clean:
-	for d in sockd dlib; do \
+	for d in sockd dlib bin; do \
 	  cd $$d; \
 	  for i in *; do \
 	    if [ -L "$$i" ]; then rm $$i; cp -a ../lib/$$i . ; fi \
@@ -25,6 +26,7 @@ execute_after_dh_auto_clean:
 	  cd ..; \
 	done
 	rm -rf example/renamed
+	printf "Dante %s\n" "$$(echo $(DEB_VERSION_UPSTREAM) | sed 's/\+.*//')" >VERSION
 
 execute_before_dh_install:
 	cp $(DEB)/usr/share/man/man5/socks.conf.5  $(DEB)/usr/share/man/man5/dante.conf.5
