@@ -1,3 +1,12 @@
+dante (1.4.4+dfsg2-1) unstable; urgency=medium
+
+  * Wait for network-online.target
+  * Exclude more files from upstream
+  * Build cleanly
+  * Fix time64 redirects (Closes: #1141957, #1067709)
+
+ -- Antonio Enrico Russo <aerusso@aerusso.net>  Sun, 02 Aug 2026 08:47:23 -0600
+
 dante (1.4.4+dfsg-1) unstable; urgency=medium
 
   [ 何庆 Ching He ]
