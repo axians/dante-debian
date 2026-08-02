@@ -1,0 +1,253 @@
+From: Chris Hofstaedtler <zeha@debian.org>
+Date: Sun, 2 Aug 2026 09:18:21 -0600
+Subject: glibc-time64-redirects
+
+---
+ dlib/interposition.c        | 187 +++++++++++++++++++++++++++++++++++++++++++-
+ include/symbols_preload.txt |   3 +
+ 2 files changed, 187 insertions(+), 3 deletions(-)
+
+diff --git a/dlib/interposition.c b/dlib/interposition.c
+index c61e9ce..6d45c6f 100644
+--- a/dlib/interposition.c
++++ b/dlib/interposition.c
+@@ -161,6 +161,42 @@ write$NOCANCEL(HAVE_PROT_WRITE_1, HAVE_PROT_WRITE_2, HAVE_PROT_WRITE_3);
+ #undef sendto
+ #undef write
+ #undef writev
++
++#if defined(__GLIBC__)                                                         \
++&& (defined(__USE_TIME64_REDIRECTS)                                            \
++    || (defined(__USE_TIME_BITS64) && defined(__TIMESIZE) && __TIMESIZE == 32))
++
++/*
++ * On _TIME_BITS=64 platforms, sys/socket.h redirects the declarations
++ * of getsockopt, recvmsg, sendmsg to __getsockopt64, __recvmsg64, __sendmsg64
++ * respectively.
++ * Unfortunately this also redirects our functions below, so we end up defining
++ * the __*64 symbols.
++ * On such platforms we need to interpose both the __*64 and the original symbols,
++ * to cover programs compiled with the original 32bit headers.
++ */
++
++#define SOCKS_TIME64_REDIRECTS 1
++
++#define SYMBOL_GETSOCKOPT64 SYMBOLPREFIX "__getsockopt64"
++#define SYMBOL_RECVMSG64    SYMBOLPREFIX "__recvmsg64"
++#define SYMBOL_SENDMSG64    SYMBOLPREFIX "__sendmsg64"
++
++/* the libc symbols matching the ABI this library is compiled with. */
++#define SYMBOL_GETSOCKOPT_NATIVE SYMBOL_GETSOCKOPT64
++#define SYMBOL_RECVMSG_NATIVE    SYMBOL_RECVMSG64
++#define SYMBOL_SENDMSG_NATIVE    SYMBOL_SENDMSG64
++
++#else /* !glibc time64 redirects */
++
++#define SOCKS_TIME64_REDIRECTS 0
++
++#define SYMBOL_GETSOCKOPT_NATIVE SYMBOL_GETSOCKOPT
++#define SYMBOL_RECVMSG_NATIVE    SYMBOL_RECVMSG
++#define SYMBOL_SENDMSG_NATIVE    SYMBOL_SENDMSG
++
++#endif /* !glibc time64 redirects */
++
+ #if HAVE_GSSAPI && HAVE_LINUX_GLIBC_WORKAROUND
+ #undef getc
+ #undef fgetc
+@@ -236,6 +272,12 @@ static libsymbol_t libsymbolv[] = {
+ { SYMBOL_WRITE,                LIBRARY_WRITE,          NULL,   NULL, NULL },
+ { SYMBOL_WRITEV,               LIBRARY_WRITEV,         NULL,   NULL, NULL },
+ 
++#if SOCKS_TIME64_REDIRECTS
++{ SYMBOL_GETSOCKOPT64,         LIBRARY_GETSOCKOPT,     NULL,   NULL, NULL },
++{ SYMBOL_RECVMSG64,            LIBRARY_RECVMSG,        NULL,   NULL, NULL },
++{ SYMBOL_SENDMSG64,            LIBRARY_SENDMSG,        NULL,   NULL, NULL },
++#endif /* SOCKS_TIME64_REDIRECTS */
++
+ { SYMBOL_GETHOSTBYNAME,        LIBRARY_GETHOSTBYNAME,  NULL,   NULL, NULL },
+ 
+ #if HAVE_GETHOSTBYNAME2
+@@ -966,7 +1008,7 @@ sys_getsockopt(s, level, optname, optval, optlen)
+                              HAVE_PROT_GETSOCKOPT_4,
+                              HAVE_PROT_GETSOCKOPT_5);
+    GETSOCKOPT_FUNC_T function
+-   = (GETSOCKOPT_FUNC_T)symbolfunction(SYMBOL_GETSOCKOPT);
++   = (GETSOCKOPT_FUNC_T)symbolfunction(SYMBOL_GETSOCKOPT_NATIVE);
+    const int tagged = (doing_addrinit ? 0 : 1);
+ 
+    if (tagged)
+@@ -1122,7 +1164,8 @@ sys_recvmsg(s, msg, flags)
+    typedef HAVE_PROT_RECVMSG_0 (*RECVMSG_FUNC_T)(HAVE_PROT_RECVMSG_1,
+                                                  HAVE_PROT_RECVMSG_2,
+                                                  HAVE_PROT_RECVMSG_3);
+-   RECVMSG_FUNC_T function = (RECVMSG_FUNC_T)symbolfunction(SYMBOL_RECVMSG);
++   RECVMSG_FUNC_T function
++   = (RECVMSG_FUNC_T)symbolfunction(SYMBOL_RECVMSG_NATIVE);
+    const int tagged = (doing_addrinit ? 0 : 1);
+ 
+    if (tagged)
+@@ -1187,7 +1230,8 @@ sys_sendmsg(s, msg, flags)
+    typedef HAVE_PROT_SENDMSG_0 (*SENDMSG_FUNC_T)(HAVE_PROT_SENDMSG_1,
+                                                  HAVE_PROT_SENDMSG_2,
+                                                  HAVE_PROT_SENDMSG_3);
+-   SENDMSG_FUNC_T function = (SENDMSG_FUNC_T)symbolfunction(SYMBOL_SENDMSG);
++   SENDMSG_FUNC_T function
++   = (SENDMSG_FUNC_T)symbolfunction(SYMBOL_SENDMSG_NATIVE);
+    const int tagged = (doing_addrinit ? 0 : 1);
+ 
+    if (tagged)
+@@ -1874,6 +1918,143 @@ sendmsg(s, msg, flags)
+ }
+ #endif /* HAVE_EXTRA_OSF_SYMBOLS */
+ 
++#if SOCKS_TIME64_REDIRECTS
++
++/*
++ * 32-bit time_t variants, for programs defined before time_t-64bit became
++ * default. The original names can not be defined directly, as glibc's headers
++ * redirect them, so asm labels are used.
++ */
++
++static HAVE_PROT_GETSOCKOPT_0
++sys_getsockopt_time32(HAVE_PROT_GETSOCKOPT_1 s,
++                      HAVE_PROT_GETSOCKOPT_2 level,
++                      HAVE_PROT_GETSOCKOPT_3 optname,
++                      HAVE_PROT_GETSOCKOPT_4 optval,
++                      HAVE_PROT_GETSOCKOPT_5 optlen)
++{
++   int rc;
++   typedef HAVE_PROT_GETSOCKOPT_0
++       (*GETSOCKOPT_FUNC_T)(HAVE_PROT_GETSOCKOPT_1,
++                             HAVE_PROT_GETSOCKOPT_2,
++                             HAVE_PROT_GETSOCKOPT_3,
++                             HAVE_PROT_GETSOCKOPT_4,
++                             HAVE_PROT_GETSOCKOPT_5);
++   GETSOCKOPT_FUNC_T function
++   = (GETSOCKOPT_FUNC_T)symbolfunction(SYMBOL_GETSOCKOPT);
++   const int tagged = (doing_addrinit ? 0 : 1);
++
++   if (tagged)
++      socks_syscall_start(s);
++
++   rc = function(s, level, optname, optval, optlen);
++
++   if (tagged)
++      socks_syscall_end(s);
++
++   return rc;
++}
++
++static HAVE_PROT_RECVMSG_0
++sys_recvmsg_time32(HAVE_PROT_RECVMSG_1 s,
++                   HAVE_PROT_RECVMSG_2 msg,
++                   HAVE_PROT_RECVMSG_3 flags)
++{
++   ssize_t rc;
++   typedef HAVE_PROT_RECVMSG_0 (*RECVMSG_FUNC_T)(HAVE_PROT_RECVMSG_1,
++                                                 HAVE_PROT_RECVMSG_2,
++                                                 HAVE_PROT_RECVMSG_3);
++   RECVMSG_FUNC_T function = (RECVMSG_FUNC_T)symbolfunction(SYMBOL_RECVMSG);
++   const int tagged = (doing_addrinit ? 0 : 1);
++
++   if (tagged)
++      socks_syscall_start(s);
++
++   rc = function(s, msg, flags);
++
++   if (tagged)
++      socks_syscall_end(s);
++
++   return rc;
++}
++
++static HAVE_PROT_SENDMSG_0
++sys_sendmsg_time32(HAVE_PROT_SENDMSG_1 s,
++                   HAVE_PROT_SENDMSG_2 msg,
++                   HAVE_PROT_SENDMSG_3 flags)
++{
++   ssize_t rc;
++   typedef HAVE_PROT_SENDMSG_0 (*SENDMSG_FUNC_T)(HAVE_PROT_SENDMSG_1,
++                                                 HAVE_PROT_SENDMSG_2,
++                                                 HAVE_PROT_SENDMSG_3);
++   SENDMSG_FUNC_T function = (SENDMSG_FUNC_T)symbolfunction(SYMBOL_SENDMSG);
++   const int tagged = (doing_addrinit ? 0 : 1);
++
++   if (tagged)
++      socks_syscall_start(s);
++
++   rc = function(s, msg, flags);
++
++   if (tagged)
++      socks_syscall_end(s);
++
++   return rc;
++}
++
++HAVE_PROT_GETSOCKOPT_0
++getsockopt_time32(HAVE_PROT_GETSOCKOPT_1 s,
++                  HAVE_PROT_GETSOCKOPT_2 level,
++                  HAVE_PROT_GETSOCKOPT_3 optname,
++                  HAVE_PROT_GETSOCKOPT_4 optval,
++                  HAVE_PROT_GETSOCKOPT_5 optlen)
++   __asm__("getsockopt");
++
++HAVE_PROT_GETSOCKOPT_0
++getsockopt_time32(HAVE_PROT_GETSOCKOPT_1 s,
++                  HAVE_PROT_GETSOCKOPT_2 level,
++                  HAVE_PROT_GETSOCKOPT_3 optname,
++                  HAVE_PROT_GETSOCKOPT_4 optval,
++                  HAVE_PROT_GETSOCKOPT_5 optlen)
++{
++   if (socks_issyscall(s, SYMBOL_GETSOCKOPT))
++      return sys_getsockopt_time32(s, level, optname, optval, optlen);
++   return Rgetsockopt(s, level, optname, optval, optlen);
++}
++
++HAVE_PROT_RECVMSG_0
++recvmsg_time32(HAVE_PROT_RECVMSG_1 s,
++               HAVE_PROT_RECVMSG_2 msg,
++               HAVE_PROT_RECVMSG_3 flags)
++   __asm__("recvmsg");
++
++HAVE_PROT_RECVMSG_0
++recvmsg_time32(HAVE_PROT_RECVMSG_1 s,
++               HAVE_PROT_RECVMSG_2 msg,
++               HAVE_PROT_RECVMSG_3 flags)
++{
++   if (socks_issyscall(s, SYMBOL_RECVMSG))
++      return sys_recvmsg_time32(s, msg, flags);
++   return Rrecvmsg(s, msg, flags);
++}
++
++HAVE_PROT_SENDMSG_0
++sendmsg_time32(HAVE_PROT_SENDMSG_1 s,
++               HAVE_PROT_SENDMSG_2 msg,
++               HAVE_PROT_SENDMSG_3 flags)
++   __asm__("sendmsg");
++
++HAVE_PROT_SENDMSG_0
++sendmsg_time32(HAVE_PROT_SENDMSG_1 s,
++               HAVE_PROT_SENDMSG_2 msg,
++               HAVE_PROT_SENDMSG_3 flags)
++{
++   if (socks_issyscall(s, SYMBOL_SENDMSG))
++      return sys_sendmsg_time32(s, msg, flags);
++   return Rsendmsg(s, msg, flags);
++}
++
++#endif /* SOCKS_TIME64_REDIRECTS */
++
+ #if !HAVE_EXTRA_OSF_SYMBOLS
+ HAVE_PROT_SENDTO_0
+ sendto(s, msg, len, flags, to, tolen)
+diff --git a/include/symbols_preload.txt b/include/symbols_preload.txt
+index 0261818..ab5b920 100644
+--- a/include/symbols_preload.txt
++++ b/include/symbols_preload.txt
+@@ -22,3 +22,6 @@ sendmsg
+ sendto
+ write
+ writev
++__getsockopt64
++__recvmsg64
++__sendmsg64

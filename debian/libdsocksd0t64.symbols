@@ -1,4 +1,7 @@
 libdsocksd.so.0 libdsocksd0t64 #MINVER#
+ (arch=armel armhf)__getsockopt64@Base 1.4.4+dfsg
+ (arch=armel armhf)__recvmsg64@Base 1.4.4+dfsg
+ (arch=armel armhf)__sendmsg64@Base 1.4.4+dfsg
  accept@Base 1.4.1+dfsg
  bind@Base 1.4.1+dfsg
  bindresvport@Base 1.4.1+dfsg
