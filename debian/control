@@ -4,9 +4,9 @@ Priority: optional
 Maintainer: Antonio Enrico Russo <aerusso@aerusso.net>
 Build-Depends:
  debhelper-compat (= 13),
- libcrypt-dev,
  bison,
  flex,
+ libcrypt-dev,
  libpam0g-dev,
  libtool-bin,
  libwrap0-dev,
