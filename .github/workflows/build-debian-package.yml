@@ -1,0 +1,125 @@
+---
+name: Build Debian package
+
+"on":
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+concurrency:
+  group: debian-package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Debian 13 (trixie)
+    runs-on: ubuntu-24.04
+    container:
+      image: >-
+        debian:13-slim@sha256:abc9cb88a5587630d7f915f47b23b0668fe250fbfc6457aa4d52b534c1bbf73f
+    timeout-minutes: 45
+
+    steps:
+      - name: Install packaging tools
+        run: |
+          apt-get update
+          apt-get install --yes --no-install-recommends \
+            adequate \
+            autopkgtest \
+            ca-certificates \
+            devscripts \
+            equivs \
+            git \
+            git-buildpackage \
+            lintian \
+            pristine-tar
+
+      - name: Check out repository
+        # actions/checkout v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Restore packaging branches
+        run: |
+          git fetch origin \
+            refs/heads/pristine-tar:refs/heads/pristine-tar \
+            refs/heads/upstream:refs/heads/upstream
+
+      - name: Install package build dependencies
+        run: |
+          mk-build-deps \
+            --install \
+            --remove \
+            --tool 'apt-get --yes --no-install-recommends' \
+            debian/control
+          rm -f dante-build-deps_*.deb
+
+      - name: Export package source
+        run: |
+          version="$(dpkg-parsechangelog --show-field Version)"
+          upstream_version="${version%-*}"
+          mkdir -p build/source
+          pristine-tar checkout \
+            "build/dante_${upstream_version}.orig.tar.xz"
+          git archive HEAD -- . ':(exclude).github' \
+            | tar --extract --directory=build/source
+
+      - name: Build source and binary packages
+        working-directory: build/source
+        run: dpkg-buildpackage --build=full --no-sign
+
+      - name: Run Lintian
+        run: lintian --allow-root --fail-on error build/dante_*.changes
+
+      - name: Run autopkgtest
+        run: |
+          changes_file="$(find build -maxdepth 1 \
+            -name 'dante_*_amd64.changes' -print -quit)"
+          test -n "$changes_file"
+          set +e
+          autopkgtest "$changes_file" \
+            --summary=autopkgtest-summary \
+            -- null
+          status=$?
+          set -e
+
+          if [ "$status" -eq 8 ] && \
+             grep -Eq '^adequate[[:space:]]+PASS \(superficial\)$' \
+               autopkgtest-summary; then
+            status=0
+          fi
+
+          exit "$status"
+
+      - name: Collect package artifacts
+        if: always()
+        run: |
+          mkdir -p artifacts
+          find build -maxdepth 1 -type f \
+            \( -name 'dante_*.buildinfo' \
+            -o -name 'dante_*.changes' \
+            -o -name 'dante_*.debian.tar.*' \
+            -o -name 'dante_*.dsc' \
+            -o -name 'dante_*.orig.tar.*' \
+            -o -name '*.deb' \
+            -o -name '*.ddeb' \) \
+            -exec cp --target-directory=artifacts {} +
+          if [ -f autopkgtest-summary ]; then
+            cp autopkgtest-summary artifacts/
+          fi
+
+      - name: Upload package artifacts
+        if: always()
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dante-debian13-amd64
+          path: artifacts/
+          if-no-files-found: error
