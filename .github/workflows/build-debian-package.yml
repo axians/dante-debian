@@ -126,3 +126,59 @@ jobs:
           name: dante-debian13-amd64
           path: artifacts/
           if-no-files-found: warn
+
+  release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/debian/')
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download package artifacts
+        # actions/download-artifact v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: dante-debian13-amd64
+          path: release-assets
+
+      - name: Verify release assets
+        id: release
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          version="${TAG_NAME#debian/}"
+          changes_files=(release-assets/dante_*_amd64.changes)
+          test "${#changes_files[@]}" -eq 1
+          package_version="$(sed -n 's/^Version: //p' \
+            "${changes_files[0]}")"
+          test "$package_version" = "$version"
+
+          for pattern in \
+            'dante_*.buildinfo' \
+            'dante_*.changes' \
+            'dante_*.debian.tar.*' \
+            'dante_*.dsc' \
+            'dante_*.orig.tar.*' \
+            '*.deb'; do
+            compgen -G "release-assets/$pattern" >/dev/null
+          done
+
+          (
+            cd release-assets
+            sha256sum * | LC_ALL=C sort --key=2 > SHA256SUMS
+          )
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        # softprops/action-gh-release v3.0.3
+        uses: >-
+          softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64
+        with:
+          name: Dante ${{ steps.release.outputs.version }} for Debian 13
+          files: release-assets/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          make_latest: true
