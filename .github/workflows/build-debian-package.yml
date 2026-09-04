@@ -69,7 +69,9 @@ jobs:
               "../build/dante_${upstream_version}.orig.tar.xz"
           )
           git -c safe.directory="$GITHUB_WORKSPACE" \
-            archive HEAD -- . ':(exclude).github' \
+            archive HEAD -- . \
+            ':(exclude).github' \
+            ':(exclude)README.md' \
             | tar --extract --directory=build/source
 
       - name: Build source and binary packages

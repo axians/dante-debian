@@ -44,7 +44,7 @@ The GitHub Actions workflow builds in a pinned `debian:13-slim` container on
 an Ubuntu 24.04 runner. It performs the following steps:
 
 1. Reconstructs the original source archive with `pristine-tar`.
-2. Exports the package source without `.github` CI metadata.
+2. Exports the package source without repository-only CI and backport files.
 3. Installs build dependencies from `debian/control`.
 4. Runs `dpkg-buildpackage --build=full --no-sign`.
 5. Runs Lintian with errors treated as failures.
