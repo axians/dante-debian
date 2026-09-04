@@ -68,7 +68,8 @@ jobs:
             pristine-tar checkout \
               "../build/dante_${upstream_version}.orig.tar.xz"
           )
-          git archive HEAD -- . ':(exclude).github' \
+          git -c safe.directory="$GITHUB_WORKSPACE" \
+            archive HEAD -- . ':(exclude).github' \
             | tar --extract --directory=build/source
 
       - name: Build source and binary packages
