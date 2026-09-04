@@ -36,21 +36,22 @@ jobs:
             devscripts \
             equivs \
             git \
-            git-buildpackage \
             lintian \
             pristine-tar
 
       - name: Check out repository
-        # actions/checkout v4.2.2
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        # actions/checkout v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
 
-      - name: Restore packaging branches
+      - name: Restore pristine-tar branch
         run: |
           git fetch origin \
-            refs/heads/pristine-tar:refs/heads/pristine-tar \
-            refs/heads/upstream:refs/heads/upstream
+            +refs/heads/pristine-tar:refs/remotes/origin/pristine-tar
+          git update-ref \
+            refs/heads/pristine-tar \
+            refs/remotes/origin/pristine-tar
 
       - name: Install package build dependencies
         run: |
@@ -102,24 +103,26 @@ jobs:
         if: always()
         run: |
           mkdir -p artifacts
-          find build -maxdepth 1 -type f \
-            \( -name 'dante_*.buildinfo' \
-            -o -name 'dante_*.changes' \
-            -o -name 'dante_*.debian.tar.*' \
-            -o -name 'dante_*.dsc' \
-            -o -name 'dante_*.orig.tar.*' \
-            -o -name '*.deb' \
-            -o -name '*.ddeb' \) \
-            -exec cp --target-directory=artifacts {} +
+          if [ -d build ]; then
+            find build -maxdepth 1 -type f \
+              \( -name 'dante_*.buildinfo' \
+              -o -name 'dante_*.changes' \
+              -o -name 'dante_*.debian.tar.*' \
+              -o -name 'dante_*.dsc' \
+              -o -name 'dante_*.orig.tar.*' \
+              -o -name '*.deb' \
+              -o -name '*.ddeb' \) \
+              -exec cp --target-directory=artifacts {} +
+          fi
           if [ -f autopkgtest-summary ]; then
             cp autopkgtest-summary artifacts/
           fi
 
       - name: Upload package artifacts
         if: always()
-        # actions/upload-artifact v4.6.2
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        # actions/upload-artifact v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: dante-debian13-amd64
           path: artifacts/
-          if-no-files-found: error
+          if-no-files-found: warn
