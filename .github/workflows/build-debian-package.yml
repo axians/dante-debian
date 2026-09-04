@@ -43,15 +43,16 @@ jobs:
         # actions/checkout v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Restore pristine-tar branch
-        run: |
-          git fetch origin \
-            +refs/heads/pristine-tar:refs/remotes/origin/pristine-tar
-          git update-ref \
-            refs/heads/pristine-tar \
-            refs/remotes/origin/pristine-tar
+      - name: Check out pristine-tar data
+        # actions/checkout v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: pristine-tar
+          path: pristine-tar-data
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Install package build dependencies
         run: |
@@ -67,8 +68,11 @@ jobs:
           version="$(dpkg-parsechangelog --show-field Version)"
           upstream_version="${version%-*}"
           mkdir -p build/source
-          pristine-tar checkout \
-            "build/dante_${upstream_version}.orig.tar.xz"
+          (
+            cd pristine-tar-data
+            pristine-tar checkout \
+              "../build/dante_${upstream_version}.orig.tar.xz"
+          )
           git archive HEAD -- . ':(exclude).github' \
             | tar --extract --directory=build/source
 
