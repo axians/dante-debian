@@ -45,14 +45,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check out pristine-tar data
-        # actions/checkout v7.0.1
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          path: pristine-tar-data
-          fetch-depth: 0
-          persist-credentials: false
-
       - name: Install package build dependencies
         run: |
           mk-build-deps \
@@ -67,9 +59,10 @@ jobs:
           version="$(dpkg-parsechangelog --show-field Version)"
           upstream_version="${version%-*}"
           mkdir -p build/source
-          git -C pristine-tar-data switch \
-            --create pristine-tar \
-            --track origin/pristine-tar
+          git clone --quiet --no-single-branch \
+            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" \
+            pristine-tar-data
+          git -C pristine-tar-data switch --quiet pristine-tar
           (
             cd pristine-tar-data
             pristine-tar checkout \
